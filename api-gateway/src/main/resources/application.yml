@@ -1,0 +1,44 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service-api
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: product-service-api
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+
+        - id: notification-service-api
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        - id: notification-service-ws
+          uri: lb:ws://notification-service
+          predicates:
+            - Path=/ws/**
+
+        - id: order-service-api
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**
+
+        - id: user-service-api
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/user/**
+
+eureka:
+  client:
+    serviceUrl:
+#      defaultZone: http://discovery-server:8761/eureka
+      defaultZone: http://localhost:8761/eureka
+
