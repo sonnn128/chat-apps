@@ -32,11 +32,7 @@ public class ChatController {
     public ResponseEntity<ChannelMessage> sendChannelMessage(
             @RequestBody SendMessageRequest request,
             @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId) {
-
-        log.info("Received message send request for channelId: {}", request.getChannelId());
         ChannelMessage sentMessage = channelMessageService.sendMessage(request, UUID.fromString(authenticatedUserId));
-
-        // Trả về 201 Created để báo hiệu tài nguyên đã được tạo thành công
         return new ResponseEntity<>(sentMessage, HttpStatus.CREATED);
     }
 }

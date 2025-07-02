@@ -65,10 +65,10 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                         return unauthenticated(exchange.getResponse());
                     }
 
-                    // Thêm thông tin user và roles vào header
                     ServerHttpRequest newRequest = exchange.getRequest().mutate()
                             .header("X-Authenticated-User-Username", introspectResponse.username())
                             .header("X-Authenticated-User-Roles", String.join(",", introspectResponse.roles()))
+                            .header("X-Authenticated-User-Id", introspectResponse.userId().toString())
                             .build();
 
                     log.info("Authenticated user {}, forwarding request to service", introspectResponse.username());

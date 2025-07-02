@@ -33,7 +33,7 @@ public class IdentityService {
                 })
                 .onErrorResume(throwable -> {
                     log.error("Error in WebClient call to introspect token", throwable);
-                    return Mono.just(new IntrospectResponse(false, null, null));
+                    return Mono.just(new IntrospectResponse(false, null, null, null));
                 });
     }
 }

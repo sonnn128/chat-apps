@@ -4,7 +4,7 @@ import com.example.authservice.dto.IntrospectRequest;
 import com.example.authservice.dto.IntrospectResponse;
 import com.example.authservice.dto.request.AuthRequest;
 import com.example.authservice.dto.request.UserRegistrationRequest;
-import com.example.authservice.dto.response.AuthResponse;
+import com.example.authservice.dto.response.ApiResponse;
 import com.example.authservice.service.AuthService;
 import com.example.authservice.service.JwtService;
 import com.example.authservice.service.UserService;
@@ -29,8 +29,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(ApiResponse.builder()
+                .message("success")
+                .data(authService.login(request))
+                .success(true)
+                .build());
     }
 
     @PostMapping("/introspect")

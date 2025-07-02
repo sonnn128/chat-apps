@@ -43,8 +43,27 @@ public class JwtService {
                 .compact();
     }
 
+    //    public String generateToken(UserAuthDetailResponse user, int timeToLive) {
+//        return generateToken(new HashMap<>(), user, timeToLive);
+//    }
     public String generateToken(UserAuthDetailResponse user, int timeToLive) {
-        return generateToken(new HashMap<>(), user, timeToLive);
+        // Tạo một map để chứa các thông tin thêm (extra claims)
+        Map<String, Object> extraClaims = new HashMap<>();
+
+        // Thêm userId và roles vào claims
+        // .toString() để đảm bảo kiểu dữ liệu là String, dễ xử lý hơn khi đọc ra
+        extraClaims.put("userId", user.getId().toString());
+
+        // Chuyển Role enum thành String
+        // Giả sử user.getRole() trả về một enum
+        if (user.getRole() != null) {
+            extraClaims.put("roles", List.of(user.getRole().name()));
+        } else {
+            extraClaims.put("roles", Collections.emptyList());
+        }
+
+        // Gọi phương thức generateToken gốc với extraClaims
+        return generateToken(extraClaims, user, timeToLive);
     }
 
     public boolean isTokenValid(String token, UserAuthDetailResponse user) {
@@ -76,7 +95,11 @@ public class JwtService {
 
     public IntrospectResponse introspectToken(String token) {
         Claims claims = this.extractAllClaims(token);
+
         String username = claims.getSubject();
+
+        String userIdStr = claims.get("userId", String.class);
+        UUID userId = (userIdStr != null) ? UUID.fromString(userIdStr) : null;
 
         @SuppressWarnings("unchecked")
         List<String> roles = claims.get("roles", List.class);
@@ -84,6 +107,6 @@ public class JwtService {
             roles = Collections.emptyList();
         }
 
-        return new IntrospectResponse(true, username, roles);
+        return new IntrospectResponse(true, username, userId, roles);
     }
 }
