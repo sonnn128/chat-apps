@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.model;
+package com.sonnguyen.chatservice.model;
 
 public enum ChannelMessageType {
     CHAT,

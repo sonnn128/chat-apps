@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.model;
+package com.sonnguyen.chatservice.model;
 
 import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;

@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.model;
+package com.sonnguyen.chatservice.model;
 
 import lombok.Getter;
 import lombok.Setter;

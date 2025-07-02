@@ -8,5 +8,9 @@ import java.util.UUID;
 
 @Repository
 public interface ChannelParticipantRepository extends JpaRepository<ChannelParticipant, Long> {
+
     List<ChannelParticipant> findByUserId(UUID userId);
+
+    // Thêm phương thức này để kiểm tra quyền
+    boolean existsByChannelIdAndUserId(UUID channelId, UUID userId);
 }

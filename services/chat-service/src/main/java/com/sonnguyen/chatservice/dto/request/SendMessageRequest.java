@@ -1,6 +1,6 @@
-package com.sonnguyen.channelservice.dto.request;
+package com.sonnguyen.chatservice.dto.request;
 
-import com.sonnguyen.channelservice.model.ChannelMessageType;
+import com.sonnguyen.chatservice.model.ChannelMessageType;
 import lombok.Data;
 
 import java.util.UUID;

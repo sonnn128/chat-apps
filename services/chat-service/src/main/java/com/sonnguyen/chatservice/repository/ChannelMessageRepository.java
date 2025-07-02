@@ -1,7 +1,7 @@
-package com.sonnguyen.channelservice.repository;
+package com.sonnguyen.chatservice.repository;
 
-import com.sonnguyen.channelservice.model.ChannelMessage;
-import com.sonnguyen.channelservice.model.ChannelMessageKey;
+import com.sonnguyen.chatservice.model.ChannelMessage;
+import com.sonnguyen.chatservice.model.ChannelMessageKey;
 import org.springframework.data.cassandra.repository.CassandraRepository;
 
 import java.util.List;

@@ -11,11 +11,6 @@ spring:
           predicates:
             - Path=/api/v1/auth/**
 
-        - id: product-service-api
-          uri: lb://product-service
-          predicates:
-            - Path=/api/v1/products/**
-
         - id: notification-service-api
           uri: lb://notification-service
           predicates:
@@ -26,15 +21,21 @@ spring:
           predicates:
             - Path=/ws/**
 
-        - id: order-service-api
-          uri: lb://order-service
-          predicates:
-            - Path=/api/v1/orders/**
-
         - id: user-service-api
           uri: lb://user-service
           predicates:
             - Path=/api/v1/user/**
+
+        - id: channel-service-api
+          uri: lb://channel-service
+          predicates:
+            - Path=/api/v1/channels/**
+
+        - id: chat-service-api
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/v1/messages/**
+
 
 eureka:
   client:
