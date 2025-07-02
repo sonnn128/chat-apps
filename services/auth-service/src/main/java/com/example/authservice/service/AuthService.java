@@ -1,13 +1,21 @@
 package com.example.authservice.service;
 
+import com.example.authservice.client.UserClient;
 import com.example.authservice.dto.UserDto;
 import com.example.authservice.dto.request.AuthRequest;
+import com.example.authservice.dto.response.AuthResponse;
+import com.example.authservice.dto.response.UserAuthDetailResponse;
+import com.example.authservice.dto.response.UserResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -15,38 +23,24 @@ public class AuthService {
     private final RestTemplate restTemplate;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final String url = "http://user-service/internal/users/username/";
+    private final UserClient userClient;
+    private final int JWT_EXPIRATION_TIME = 1000 * 60 * 60 * 24;
 
-    public String loginAndGenerateToken(AuthRequest authRequest) {
-        // 1. Gọi User Service để lấy thông tin user
-        UserDto user;
-        try {
-            // "user-service" là tên đã đăng ký với Eureka
-            String url = "http://user-service/internal/users/username/" + authRequest.getUsername();
-            user = restTemplate.getForObject(url, UserDto.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new RuntimeException("User not found or Invalid credentials");
+    public AuthResponse login(AuthRequest request) {
+        UserAuthDetailResponse userDetails;
+        ResponseEntity<UserAuthDetailResponse> response = userClient.getUserByEmailForAuth(request.getEmail());
+        userDetails = response.getBody();
+
+        if (userDetails == null) {
+            throw new BadCredentialsException("Invalid email or password");
         }
 
-        if (user == null) {
-            throw new RuntimeException("Invalid credentials");
+        if (!passwordEncoder.matches(request.getPassword(), userDetails.getPassword())) {
+            throw new BadCredentialsException("Invalid email or password");
         }
 
-        // 2. So sánh mật khẩu
-        if (passwordEncoder.matches(authRequest.getPassword(), user.getPassword())) {
-            // 3. Nếu khớp, tạo JWT token
-            return jwtService.generateToken(user.getUsername());
-        } else {
-            // Nếu không khớp, ném ra ngoại lệ
-            throw new RuntimeException("Invalid credentials");
-        }
-    }
+        String token = jwtService.generateToken(userDetails, JWT_EXPIRATION_TIME);
 
-    public void validateToken(String token) {
-        jwtService.validateToken(token);
+        return new AuthResponse(token);
     }
-    public void register(AuthRequest authRequest) {
-        jwtService.validateToken(token);
-    }
-
 }

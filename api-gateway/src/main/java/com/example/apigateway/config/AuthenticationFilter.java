@@ -29,13 +29,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private final IdentityService identityService;
     private final ObjectMapper objectMapper;
-    private final String[] publicEndpoints = {
-            "/api/auth/login",
-            "/api/auth/introspect",
-            "/api/products/admin",
-            "/ws/.*",
-    };
 
+    private final List<String> publicPaths = Arrays.asList(
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/introspect"
+    );
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -45,43 +44,58 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        List<String> authHeader = request.getHeaders().get(HttpHeaders.AUTHORIZATION);
-        if (CollectionUtils.isEmpty(authHeader)) {
+        List<String> authHeaders = request.getHeaders().get(HttpHeaders.AUTHORIZATION);
+        if (CollectionUtils.isEmpty(authHeaders)) {
+            log.warn("Unauthenticated request: missing Authorization header");
             return unauthenticated(exchange.getResponse());
         }
 
-        String token = authHeader.get(0).replace("Bearer ", "");
+        String authHeader = authHeaders.get(0);
+        if (!authHeader.startsWith("Bearer ")) {
+            log.warn("Unauthenticated request: Authorization header is not a Bearer token");
+            return unauthenticated(exchange.getResponse());
+        }
+
+        String token = authHeader.substring(7);
 
         return identityService.introspect(token)
-                .flatMap(response -> {
-                    if (!response.valid()) {
+                .flatMap(introspectResponse -> {
+                    if (introspectResponse == null || !introspectResponse.active()) {
+                        log.warn("Token is invalid or inactive");
                         return unauthenticated(exchange.getResponse());
                     }
-                    String username = response.username();
-                    List<String> roles = response.roles();
+
+                    // Thêm thông tin user và roles vào header
                     ServerHttpRequest newRequest = exchange.getRequest().mutate()
-                            .header("X-Authenticated-User-Name", username)
-                            .header("X-Authenticated-User-Roles", String.join(",", roles))
+                            .header("X-Authenticated-User-Username", introspectResponse.username())
+                            .header("X-Authenticated-User-Roles", String.join(",", introspectResponse.roles()))
                             .build();
-                    ServerWebExchange newExchange = exchange.mutate().request(newRequest).build();
-                    log.info("Authenticated user {}, forwarding request to service", username);
-                    return chain.filter(newExchange);
+
+                    log.info("Authenticated user {}, forwarding request to service", introspectResponse.username());
+                    return chain.filter(exchange.mutate().request(newRequest).build());
                 });
     }
 
     @Override
     public int getOrder() {
-        return -1;
+        return -1; // Đặt độ ưu tiên cao
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request) {
         String path = request.getURI().getPath();
-        return Arrays.stream(publicEndpoints).anyMatch(path::matches);
+        boolean isPublic = publicPaths.contains(path);
+
+        // Xử lý riêng cho WebSocket
+        if (!isPublic && path.startsWith("/ws")) {
+            return true;
+        }
+
+        return isPublic;
     }
 
     private Mono<Void> unauthenticated(ServerHttpResponse response) {
         ApiResponse<?> apiResponse = ApiResponse.builder()
-                .code(401)
+                .code(HttpStatus.UNAUTHORIZED.value()) // Dùng HttpStatus cho nhất quán
                 .message("Unauthenticated")
                 .build();
         String body;
@@ -89,7 +103,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             body = objectMapper.writeValueAsString(apiResponse);
         } catch (JsonProcessingException e) {
             log.error("Error writing JSON response", e);
-            body = "";
+            body = "{\"code\":401,\"message\":\"Unauthenticated\"}";
         }
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);

@@ -1,12 +1,13 @@
 package com.example.authservice.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public record IntrospectResponse(boolean valid, String username, List<String> roles) {
-    public IntrospectResponse(boolean valid) {
-        this(valid, null, null);
-    }
-
+@Data
+@AllArgsConstructor
+public class IntrospectResponse {
+    private boolean active;
+    private String username;
+    private List<String> roles;
 }

@@ -3,48 +3,45 @@ package com.example.authservice.controller;
 import com.example.authservice.dto.IntrospectRequest;
 import com.example.authservice.dto.IntrospectResponse;
 import com.example.authservice.dto.request.AuthRequest;
+import com.example.authservice.dto.request.UserRegistrationRequest;
 import com.example.authservice.dto.response.AuthResponse;
-import com.example.authservice.security.JwtTokenProvider;
 import com.example.authservice.service.AuthService;
-import io.jsonwebtoken.Claims;
+import com.example.authservice.service.JwtService;
+import com.example.authservice.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-
+@Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final JwtTokenProvider tokenProvider;
     private final AuthService authService;
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) {
-        String token = authService.loginAndGenerateToken(authRequest);
-        return ResponseEntity.ok(new AuthResponse(token));
-    }
+    private final UserService userService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest authRequest) {
-        String token = authService.register(authRequest);
-        return ResponseEntity.ok(new AuthResponse(token));
+    public ResponseEntity<?> register(@RequestBody UserRegistrationRequest userRegistrationRequest) {
+        return ResponseEntity.ok(userService.registerUser(userRegistrationRequest));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/introspect")
     public ResponseEntity<IntrospectResponse> introspect(@RequestBody IntrospectRequest request) {
-        String token = request.getToken();
-        boolean isValid = tokenProvider.validateToken(token);
-
-        Claims claims = tokenProvider.getClaimsFromToken(token);
-        String username = claims.getSubject();
-        @SuppressWarnings("unchecked")
-        List<String> roles = claims.get("roles", List.class);
-        return ResponseEntity.ok(new IntrospectResponse(true, username, roles));
+        IntrospectResponse response = jwtService.introspectToken(request.getToken());
+        log.info("IntrospectResponse introspection response: {}", response);
+        return ResponseEntity.ok(response);
     }
 
-
+    @GetMapping
+    public ResponseEntity<?> test() {
+        return ResponseEntity.ok("OK");
+    }
 }
