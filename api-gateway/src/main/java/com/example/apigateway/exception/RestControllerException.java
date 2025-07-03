@@ -12,6 +12,4 @@ public class RestControllerException {
     public String handleException(Exception e) {
         return e.getMessage();
     }
-
-
 }
