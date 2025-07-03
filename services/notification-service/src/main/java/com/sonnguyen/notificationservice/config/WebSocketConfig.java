@@ -1,25 +1,28 @@
-package com.example.notificationservice.config;
+package com.sonnguyen.notificationservice.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
+import lombok.RequiredArgsConstructor; // Thêm import
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor // Thêm annotation này
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // "/topic" là tiền tố cho các "chủ đề" mà client có thể đăng ký (subscribe) để nhận tin.
-        // Server sẽ gửi tin nhắn đến các đích bắt đầu bằng /topic.
+        // "/topic" là tiền tố chung cho các broadcast messages
+        // "/user" là tiền tố cho các user-specific messages
         config.enableSimpleBroker("/topic", "/user");
-
-        // "/app" là tiền tố cho các đích mà client gửi tin nhắn đến server.
-        // Ví dụ: client gửi đến /app/hello, nó sẽ được route đến một method @MessageMapping("/hello").
         config.setApplicationDestinationPrefixes("/app");
-//        config.setUserDestinationPrefix("/user");
+        // Quan trọng: Định nghĩa tiền tố cho các đích đến của người dùng.
+        // Điều này cho phép SimpMessagingTemplate gửi đến "/user/{userId}/..."
+        config.setUserDestinationPrefix("/user");
     }
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws").setAllowedOriginPatterns("*").withSockJS();
     }
+
 }

@@ -86,9 +86,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         boolean isPublic = publicPaths.contains(path);
 
         // Xử lý riêng cho WebSocket
-        if (!isPublic && path.startsWith("/ws")) {
+        if(path.startsWith("/ws")){
             return true;
         }
+
+//        if (!isPublic && path.startsWith("/ws")) {
+//            return true;
+//        }
 
         return isPublic;
     }

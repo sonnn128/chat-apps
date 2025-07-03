@@ -19,20 +19,9 @@ public class IdentityService {
                 .uri("http://auth-service/api/v1/auth/introspect")
                 .bodyValue(new IntrospectRequest(token))
                 .retrieve()
-                .onStatus(
-                        status -> status.isError(), // Kiểm tra nếu là lỗi 4xx hoặc 5xx
-                        clientResponse -> clientResponse.bodyToMono(String.class)
-                                .flatMap(errorBody -> {
-                                    log.error("Error response from auth-service. Status: {}, Body: {}", clientResponse.statusCode(), errorBody);
-                                    return Mono.error(new RuntimeException("Introspection failed with status: " + clientResponse.statusCode()));
-                                })
-                )
                 .bodyToMono(IntrospectResponse.class)
-                .doOnSuccess(response -> {
-                    log.info("Gateway received successful introspection response: {}", response);
-                })
                 .onErrorResume(throwable -> {
-                    log.error("Error in WebClient call to introspect token", throwable);
+                    log.error("Introspection call failed: {}", throwable.getMessage());
                     return Mono.just(new IntrospectResponse(false, null, null, null));
                 });
     }

@@ -36,7 +36,7 @@ public class RestControlExceptionHandle {
                     .status(status)
                     .body(ApiResponse.builder()
                             .success(false)
-                            .message(realErrorMessage) // <-- Chỉ chứa thông điệp, không phải cả chuỗi JSON
+                            .message(realErrorMessage)
                             .build());
 
         } catch (JsonProcessingException jsonException) {
