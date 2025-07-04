@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.exception;
+package com.sonnguyen.userservice.exception;
 
 import lombok.Getter;
 import lombok.Setter;

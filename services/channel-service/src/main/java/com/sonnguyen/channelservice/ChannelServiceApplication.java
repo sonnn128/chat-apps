@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice;
+package com.sonnguyen.userservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.dto;
+package com.sonnguyen.userservice.dto;
 
 import lombok.Builder;
 import lombok.Data;

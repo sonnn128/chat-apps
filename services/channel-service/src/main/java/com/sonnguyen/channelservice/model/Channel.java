@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.model;
+package com.sonnguyen.userservice.model;
 
 import jakarta.persistence.*;
 import lombok.*;

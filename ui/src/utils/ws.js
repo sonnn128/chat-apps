@@ -2,10 +2,11 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { errorToast } from "./toast";
 
-const chatServerUrl = import.meta.env.VITE_REACT_CHAT_SERVER_URL || "http://localhost:8888";
+const notificationServer = import.meta.env.VITE_REACT_CHAT_SERVER_URL || 'http://localhost:8888/ws';
+
 
 const stompClient = new Client({
-  webSocketFactory: () => new SockJS(`${chatServerUrl}/ws`),
+  webSocketFactory: () => new SockJS(notificationServer),
   reconnectDelay: 5000, 
 });
 

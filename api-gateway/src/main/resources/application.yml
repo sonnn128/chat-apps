@@ -17,14 +17,8 @@ spring:
           predicates:
             - Path=/api/v1/notifications/**
 
-        - id: notification-service-sockjs-http
-          uri: lb://notification-service
-          predicates:
-            - Path=/ws/**
-            - Method=GET,POST,OPTIONS
-
         - id: notification-service-websocket
-          uri: lb:ws://notification-service
+          uri: lb://notification-service
           predicates:
             - Path=/ws/**
 

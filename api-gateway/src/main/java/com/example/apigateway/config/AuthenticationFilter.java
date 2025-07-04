@@ -1,7 +1,6 @@
 package com.example.apigateway.config;
 
 import com.example.apigateway.dto.ApiResponse;
-import com.example.apigateway.dto.IntrospectResponse; // Đảm bảo DTO này đã được tạo và có các trường cần thiết
 import com.example.apigateway.service.IdentityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

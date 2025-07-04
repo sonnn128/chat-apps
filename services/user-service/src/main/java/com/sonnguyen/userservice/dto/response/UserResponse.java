@@ -1,7 +1,7 @@
-package com.sonnguyen.channelservice.dto.response;
+package com.sonnguyen.userservice.dto.response;
 
-import com.sonnguyen.channelservice.model.Role;
-import com.sonnguyen.channelservice.model.User;
+import com.sonnguyen.userservice.model.Role;
+import com.sonnguyen.userservice.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -16,4 +16,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"), // Phải trỏ đến thư mục gốc của source
     },
   },
+  server: {
+    proxy: {
+      "/ws": {
+        target: "http://localhost:8888",
+        ws: true, // quan trọng: cho phép WebSocket proxy
+        changeOrigin: true,
+      },
+    },
+  },
 });

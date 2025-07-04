@@ -1,15 +1,15 @@
-package com.sonnguyen.channelservice.service;
+package com.sonnguyen.userservice.service;
 
-import com.sonnguyen.channelservice.client.UserServiceClient;
-import com.sonnguyen.channelservice.dto.request.CreateChannelRequest;
-import com.sonnguyen.channelservice.dto.response.ChannelResponse;
-import com.sonnguyen.channelservice.dto.response.UserResponse;
-import com.sonnguyen.channelservice.events.dto.NewChannelCreatedEvent;
-import com.sonnguyen.channelservice.model.Channel;
-import com.sonnguyen.channelservice.model.ChannelParticipant;
-import com.sonnguyen.channelservice.model.ParticipantRole;
-import com.sonnguyen.channelservice.repository.ChannelParticipantRepository;
-import com.sonnguyen.channelservice.repository.ChannelRepository;
+import com.sonnguyen.userservice.client.UserServiceClient;
+import com.sonnguyen.userservice.dto.request.CreateChannelRequest;
+import com.sonnguyen.userservice.dto.response.ChannelResponse;
+import com.sonnguyen.userservice.dto.response.UserResponse;
+import com.sonnguyen.userservice.events.dto.NewChannelCreatedEvent;
+import com.sonnguyen.userservice.model.Channel;
+import com.sonnguyen.userservice.model.ChannelParticipant;
+import com.sonnguyen.userservice.model.ParticipantRole;
+import com.sonnguyen.userservice.repository.ChannelParticipantRepository;
+import com.sonnguyen.userservice.repository.ChannelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

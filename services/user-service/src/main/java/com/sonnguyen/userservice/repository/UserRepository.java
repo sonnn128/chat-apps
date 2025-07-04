@@ -1,6 +1,6 @@
-package com.sonnguyen.channelservice.repository;
+package com.sonnguyen.userservice.repository;
 
-import com.sonnguyen.channelservice.model.User;
+import com.sonnguyen.userservice.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

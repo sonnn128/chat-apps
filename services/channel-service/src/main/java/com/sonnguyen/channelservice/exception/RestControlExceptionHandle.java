@@ -1,8 +1,8 @@
-package com.sonnguyen.channelservice.exception;
+package com.sonnguyen.userservice.exception;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sonnguyen.channelservice.dto.response.ApiResponse;
+import com.sonnguyen.userservice.dto.response.ApiResponse;
 import feign.FeignException;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;

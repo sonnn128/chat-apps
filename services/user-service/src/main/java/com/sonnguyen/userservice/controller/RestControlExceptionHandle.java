@@ -1,7 +1,7 @@
-package com.sonnguyen.channelservice.controller;
+package com.sonnguyen.userservice.controller;
 
-import com.sonnguyen.channelservice.dto.ApiResponse;
-import com.sonnguyen.channelservice.exception.CommonException;
+import com.sonnguyen.userservice.dto.ApiResponse;
+import com.sonnguyen.userservice.exception.CommonException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;

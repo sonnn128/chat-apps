@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.dto.response;
+package com.sonnguyen.userservice.dto.response;
 
 import lombok.Builder;
 import lombok.Data;

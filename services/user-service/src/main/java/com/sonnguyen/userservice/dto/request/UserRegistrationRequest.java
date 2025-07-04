@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.dto.request;
+package com.sonnguyen.userservice.dto.request;
 
 import lombok.Data;
 

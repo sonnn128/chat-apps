@@ -1,19 +1,18 @@
-package com.sonnguyen.channelservice.service;
+package com.sonnguyen.userservice.service;
 
-import com.sonnguyen.channelservice.dto.request.UserRegistrationRequest;
-import com.sonnguyen.channelservice.dto.response.UserResponse;
-import com.sonnguyen.channelservice.exception.CommonException;
-import com.sonnguyen.channelservice.repository.UserRepository;
+import com.sonnguyen.userservice.dto.request.UserRegistrationRequest;
+import com.sonnguyen.userservice.dto.response.UserResponse;
+import com.sonnguyen.userservice.exception.CommonException;
+import com.sonnguyen.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.sonnguyen.channelservice.model.Role;
-import com.sonnguyen.channelservice.model.User;
+import com.sonnguyen.userservice.model.Role;
+import com.sonnguyen.userservice.model.User;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.UUID;
 

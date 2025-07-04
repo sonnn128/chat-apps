@@ -1,6 +1,6 @@
-package com.sonnguyen.channelservice.client;
+package com.sonnguyen.userservice.client;
 
-import com.sonnguyen.channelservice.dto.response.UserResponse; // DTO này cần được định nghĩa
+import com.sonnguyen.userservice.dto.response.UserResponse; // DTO này cần được định nghĩa
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -1,9 +1,9 @@
-package com.sonnguyen.channelservice.controller;
+package com.sonnguyen.userservice.controller;
 
-import com.sonnguyen.channelservice.dto.request.CreateChannelRequest;
-import com.sonnguyen.channelservice.dto.response.ApiResponse;
-import com.sonnguyen.channelservice.dto.response.ChannelResponse;
-import com.sonnguyen.channelservice.service.ChannelService;
+import com.sonnguyen.userservice.dto.request.CreateChannelRequest;
+import com.sonnguyen.userservice.dto.response.ApiResponse;
+import com.sonnguyen.userservice.dto.response.ChannelResponse;
+import com.sonnguyen.userservice.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

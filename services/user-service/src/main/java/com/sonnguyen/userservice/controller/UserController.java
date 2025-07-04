@@ -1,10 +1,10 @@
-package com.sonnguyen.channelservice.controller;
+package com.sonnguyen.userservice.controller;
 
-import com.sonnguyen.channelservice.dto.request.UserRegistrationRequest;
-import com.sonnguyen.channelservice.dto.response.UserResponse;
-import com.sonnguyen.channelservice.model.User;
-import com.sonnguyen.channelservice.repository.UserRepository;
-import com.sonnguyen.channelservice.service.UserService;
+import com.sonnguyen.userservice.dto.request.UserRegistrationRequest;
+import com.sonnguyen.userservice.dto.response.UserResponse;
+import com.sonnguyen.userservice.model.User;
+import com.sonnguyen.userservice.repository.UserRepository;
+import com.sonnguyen.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
