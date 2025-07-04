@@ -13,6 +13,7 @@ import com.sonnguyen.channelservice.model.Role;
 import com.sonnguyen.channelservice.model.User;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.UUID;
 
@@ -56,6 +57,10 @@ public class UserService {
             return UserResponse.fromUser(userRepository.findById(id).get());
         }
         throw new CommonException("User with id " + id + " not found.", HttpStatus.NOT_FOUND);
+    }
+
+    public UserResponse getUserProfile(String userId){
+        return getUserById(UUID.fromString(userId));
     }
 
 }

@@ -46,4 +46,9 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, user));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getUserProfile(@RequestHeader("X-Authenticated-User-Id") String userId) {
+        return ResponseEntity.ok(userService.getUserProfile(userId));
+    }
+
 }
