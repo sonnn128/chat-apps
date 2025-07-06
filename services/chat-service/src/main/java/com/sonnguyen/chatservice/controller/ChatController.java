@@ -32,7 +32,9 @@ public class ChatController {
     public ResponseEntity<ChannelMessage> sendChannelMessage(
             @RequestBody SendMessageRequest request,
             @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId) {
+        log.info("Sending a message to channelId: {}", request);
         ChannelMessage sentMessage = channelMessageService.sendMessage(request, UUID.fromString(authenticatedUserId));
         return new ResponseEntity<>(sentMessage, HttpStatus.CREATED);
     }
+
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -10,24 +10,19 @@ import {
   UserAddOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
+
 import ChannelList from "@/components/channels/ChannelList";
 import FriendList from "@/components/friends/FriendList";
 import FriendsModal from "@/components/modals/FriendsModal";
 import FriendRequestsModal from "@/components/modals/FriendRequestsModal";
 import FriendSuggestionsModal from "@/components/modals/FriendSuggestionsModal";
-import { successToast, errorToast } from "@/utils/toast";
-import { stompClient } from "@/utils/ws";
-import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
+import { successToast } from "@/utils/toast";
+
 import {
   sendFriendRequest,
   acceptFriendRequest,
 } from "@/stores/middlewares/friendShipMiddleware";
-import {
-  // setCurrentFriend,
-  receiveMessage,
-  removeCurrentChannel,
-  setCurrentChannel,
-} from "@/stores/slices/channelSlice";
+import { removeCurrentChannel } from "@/stores/slices/channelSlice";
 
 const { Title } = Typography;
 
@@ -36,12 +31,7 @@ const Sidebar = () => {
   const { friendSuggestions, friends, pendingRequests } = useSelector(
     (state) => state.friendship
   );
-  const { channels, currentChannelId } = useSelector((state) => state.channel);
-  const {
-    firstname: userFirstname,
-    lastname: userLastname,
-    id: userId,
-  } = useSelector((state) => state.auth.user);
+
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
   const [openModal, setOpenModal] = useState({
@@ -55,122 +45,75 @@ const Sidebar = () => {
     if (res) successToast("Friend request sent");
   };
 
-  const handleAcceptRequest = (requestId) =>
+  const handleAcceptRequest = (requestId) => {
     dispatch(acceptFriendRequest(requestId));
-
-  const handleChannelSubmit = async (e) => {
-    if (e.key === "Enter" && newChannelName.trim()) {
-      try {
-        const res = await dispatch(fetchCreateChannel(newChannelName)).unwrap();
-        stompClient.subscribe(`/channels/${res.id}`, (msg) => {
-          dispatch(setCurrentChannel(res));
-          dispatch(receiveMessage(JSON.parse(msg.body)));
-        });
-        stompClient.publish({
-          destination: `/app/channels/${res.id}`,
-          body: JSON.stringify({
-            key: { channelId: res.id },
-            userId,
-            content: `${userFirstname} ${userLastname} created channel!`,
-            type: "NOTICE",
-            timestamp: Date.now(),
-          }),
-        });
-
-        setNewChannelName("");
-        setIsAddingChannel(false);
-        successToast("Channel added");
-      } catch (error) {
-        errorToast("Channel creation failed");
-        console.error(error);
-      }
-    }
   };
 
   const toggleModal = (type) =>
     setOpenModal((prev) => ({ ...prev, [type]: !prev[type] }));
 
   const onSelectUser = () => {
-    dispatch(setCurrentFriend());
     dispatch(removeCurrentChannel());
   };
 
-  useEffect(() => {
-    stompClient.activate();
-    stompClient.onConnect = () => {
-      console.log("WebSocket connected");
-      channels.forEach((channel) =>
-        stompClient.subscribe(`/channels/${channel.id}`, (msg) => {
-          dispatch(receiveMessage(JSON.parse(msg.body)));
-        })
-      );
-    };
-    return () => stompClient.deactivate();
-  }, [channels, dispatch]);
+  const handleChannelSubmit = () => {
+    // TODO: Thêm logic tạo channel
+    console.log("Create channel:", newChannelName);
+    setNewChannelName("");
+    setIsAddingChannel(false);
+  };
+
+  const headerActions = [
+    {
+      title: "Friend Requests",
+      icon: <TeamOutlined />,
+      count: pendingRequests.length,
+      onClick: () => toggleModal("requests"),
+    },
+    {
+      title: "Friends",
+      icon: <UserOutlined />,
+      count: friends.length,
+      onClick: () => toggleModal("friends"),
+    },
+    {
+      title: "Friend Suggestions",
+      icon: <UserAddOutlined />,
+      count: friendSuggestions.length,
+      onClick: () => toggleModal("suggestions"),
+    },
+    { title: "Settings", icon: <SettingOutlined />, to: "/settings" },
+  ];
 
   return (
     <motion.div
       initial={{ x: -300 }}
       animate={{ x: 0 }}
       transition={{ type: "spring", stiffness: 100 }}
-      style={{
-        width: 320,
-        backgroundColor: "white",
-        borderRight: "1px solid #f0f0f0",
-        display: "flex",
-        flexDirection: "column",
-      }}
+      className="w-80 bg-white border-r flex flex-col"
     >
-      <div
-        style={{
-          padding: 12,
-          backgroundColor: "white",
-          borderBottom: "1px solid #f0f0f0",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Title level={4} style={{ margin: 0, color: "#050505" }}>
+      {/* HEADER */}
+      <div className="flex items-center justify-between p-3 border-b bg-white">
+        <Title level={4} className="!m-0 !text-[#050505]">
           Messenger
         </Title>
         <Space>
-          {[
-            {
-              title: "Friend Requests",
-              icon: <TeamOutlined />,
-              count: pendingRequests.length,
-              onClick: () => toggleModal("requests"),
-            },
-            {
-              title: "Friends",
-              icon: <UserOutlined />,
-              count: friends.length,
-              onClick: () => toggleModal("friends"),
-            },
-            {
-              title: "Friend Suggestions",
-              icon: <UserAddOutlined />,
-              count: friendSuggestions.length,
-              onClick: () => toggleModal("suggestions"),
-            },
-            { title: "Settings", icon: <SettingOutlined />, to: "/settings" },
-          ].map(({ title, icon, count, onClick, to }) => (
+          {headerActions.map(({ title, icon, count, onClick, to }) => (
             <Tooltip key={title} title={title}>
               {to ? (
                 <Link to={to}>
-                  <Button type="text" icon={icon} style={{ color: "#65676b" }} />
+                  <Button type="text" icon={icon} className="text-[#65676b]" />
                 </Link>
               ) : (
                 <Button
                   type="text"
                   icon={
-                    <Badge count={count || 0} offset={[10, 0]}>
+                    <Badge count={count} offset={[10, 0]}>
                       {icon}
                     </Badge>
                   }
                   onClick={onClick}
-                  style={{ color: "#65676b" }}
+                  className="text-[#65676b]"
                 />
               )}
             </Tooltip>
@@ -178,11 +121,12 @@ const Sidebar = () => {
         </Space>
       </div>
 
-      <div style={{ padding: 12 }}>
+      {/* SEARCH */}
+      <div className="p-3">
         <Input
           placeholder="Search Messenger"
           style={{
-            borderRadius: "9999px",
+            borderRadius: 9999,
             backgroundColor: "#f0f2f5",
             border: "none",
             padding: "8px 16px",
@@ -190,18 +134,13 @@ const Sidebar = () => {
         />
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          <Title level={5} style={{ color: "#65676b", margin: 0 }}>
+      {/* MAIN LIST */}
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex items-center justify-between mb-2">
+          <Title level={5} className="!m-0 !text-[#65676b]">
             Channels
           </Title>
+
           {isAddingChannel ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Input
@@ -212,7 +151,7 @@ const Sidebar = () => {
                 onPressEnter={handleChannelSubmit}
                 style={{
                   width: 150,
-                  borderRadius: "9999px",
+                  borderRadius: 9999,
                   backgroundColor: "#f0f2f5",
                   border: "none",
                   padding: "8px 16px",
@@ -236,10 +175,12 @@ const Sidebar = () => {
             </motion.div>
           )}
         </div>
+
         <ChannelList />
         <FriendList friends={friends} />
       </div>
 
+      {/* MODALS */}
       <FriendsModal
         open={openModal.friends}
         onClose={() => toggleModal("friends")}

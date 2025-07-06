@@ -15,7 +15,7 @@ import {
 // so direct import might not be needed unless you customize iconRender heavily.
 // For default behavior, they are not needed.
 import { loginUser } from "@/stores/middlewares/authMiddleware";
-import { errorToast, successToast } from "@/utils/toast";
+import { successToast } from "@/utils/toast";
 
 const { Title, Text, Link } = Typography;
 
@@ -26,21 +26,13 @@ function Login() {
   const [form] = Form.useForm(); // Optional: if you need to interact with form instance
 
   const handleSubmit = async (values) => {
-    setIsLoading(true);
-    try {
-      // AntD Form validation rules handle empty fields before onFinish is called
-      const result = await dispatch(
-        loginUser({ email: values.email.trim(), password: values.password })
-      ).unwrap();
+    const result = await dispatch(
+      loginUser({ email: values.email.trim(), password: values.password })
+    ).unwrap();
 
-      if (result) {
-        successToast("Log in successfully");
-        navigate("/");
-      }
-    } catch (err) {
-      errorToast(err.message || "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (result) {
+      successToast("Log in successfully");
+      navigate("/");
     }
   };
 
@@ -52,7 +44,6 @@ function Login() {
         alignItems: "center",
         minHeight: "calc(100vh - 64px)", // Assuming 64px is header height
         padding: "20px", // Add some padding for smaller screens
-        // paddingTop: 64, // User's original style, can be kept or adjusted
       }}
     >
       <Card style={{ width: "100%", maxWidth: 400 }}>

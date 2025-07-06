@@ -1,11 +1,11 @@
 package com.sonnguyen.chatservice.dto.response;
 
+import com.sonnguyen.chatservice.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.management.relation.Role;
 import java.util.UUID;
 
 @Data

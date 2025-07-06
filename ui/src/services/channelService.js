@@ -11,9 +11,6 @@ const getChannels = async () => get(CHANNEL_API, { headers: getAuthHeaders() });
 const getChannelById = async (channelId) =>
   get(`${CHANNEL_API}/${channelId}`, { headers: getAuthHeaders() });
 
-const getAllMembersOfChannel = async (channelId) =>
-  get(`${CHANNEL_API}/${channelId}/members`, { headers: getAuthHeaders() });
-
 const addMembersToChannel = async (channelId, userIds) =>
   post(`${CHANNEL_API}/${channelId}/members`, {userIds}, { headers: getAuthHeaders() });
 
@@ -21,7 +18,6 @@ const channelService = {
   createChannel,
   getChannels,
   getChannelById,
-  getAllMembersOfChannel,
   addMembersToChannel
 };
 

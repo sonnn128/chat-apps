@@ -17,10 +17,6 @@ public class WebConfig {
         return new RestTemplate();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 
     public AuthenticationManager authenticationManager() {
         return authentication -> null;

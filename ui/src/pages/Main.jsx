@@ -3,30 +3,25 @@ import { useDispatch, useSelector } from "react-redux";
 import Sidebar from "@/pages/components/Sidebar";
 import ChatSection from "@/pages/components/ChatSection";
 import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
-import {
-  fetchFriendList,
-  fetchFriendSuggestions,
-  fetchPendingRequests,
-} from "@/stores/middlewares/friendShipMiddleware";
+import { websocketService } from "@/utils/ws";
 function Main() {
+  const channels = useSelector((state) => state.channel.channels);
+
   const dispatch = useDispatch();
-  const messagesOfCurrentChannel = useSelector(
-    (state) => state.channel.messagesOfCurrentChannel
-  );
-  console.log("messagesOfCurrentChannel: ", messagesOfCurrentChannel);
-  
   useEffect(() => {
-    // dispatch(fetchFriendList());
-    // dispatch(fetchPendingRequests());
-    // dispatch(fetchFriendSuggestions());
     dispatch(fetchAllChannels());
-    // dispatch(fetchFriendList());
     console.log("Fetch success");
   }, [dispatch]);
+  useEffect(() => {
+    websocketService.connect();
+    return () => {
+      websocketService.disconnect();
+    };
+  }, [dispatch, localStorage.getItem("token")]);
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans antialiased overflow-hidden">
-      <Sidebar />
+      {channels.length > 0 && <Sidebar />}
       <ChatSection />
     </div>
   );

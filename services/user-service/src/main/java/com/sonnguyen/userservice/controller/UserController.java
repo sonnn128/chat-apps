@@ -1,5 +1,6 @@
 package com.sonnguyen.userservice.controller;
 
+import com.sonnguyen.userservice.dto.ApiResponse;
 import com.sonnguyen.userservice.dto.request.UserRegistrationRequest;
 import com.sonnguyen.userservice.dto.response.UserResponse;
 import com.sonnguyen.userservice.model.User;
@@ -28,16 +29,20 @@ public class UserController {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
-
     @GetMapping("/by-email")
     public ResponseEntity<User> getUserByEmailForAuth(@RequestParam("email") String email) {
         User user = userService.findUserByEmailForAuth(email);
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        return ResponseEntity.ok(userRepository.findAll());
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<?> getUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public UserResponse getUserById(@PathVariable UUID id) {
+        return userService.getUserById(id);
     }
 
     @PutMapping("/{id}")
@@ -49,6 +54,15 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<?> getUserProfile(@RequestHeader("X-Authenticated-User-Id") String userId) {
         return ResponseEntity.ok(userService.getUserProfile(userId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUserById(@PathVariable UUID id) {
+        userRepository.deleteById(id);
+        return ResponseEntity.ok(ApiResponse.builder()
+                        .success(true)
+                        .message("User has been deleted: " + id)
+                .build());
     }
 
 }

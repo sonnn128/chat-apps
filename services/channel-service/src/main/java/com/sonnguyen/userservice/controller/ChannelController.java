@@ -1,10 +1,14 @@
 package com.sonnguyen.userservice.controller;
 
+import com.sonnguyen.userservice.client.ChatServiceClient;
 import com.sonnguyen.userservice.dto.request.CreateChannelRequest;
 import com.sonnguyen.userservice.dto.response.ApiResponse;
 import com.sonnguyen.userservice.dto.response.ChannelResponse;
+import com.sonnguyen.userservice.dto.response.MessageResponse;
 import com.sonnguyen.userservice.service.ChannelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,12 +16,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/channels")
 @RequiredArgsConstructor
 public class ChannelController {
 
     private final ChannelService channelService;
+    private final ChatServiceClient chatServiceClient;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ChannelResponse>> createChannel(
@@ -49,10 +55,19 @@ public class ChannelController {
             @RequestHeader("X-Authenticated-User-Id") String userId) {
 
         List<ChannelResponse> channels = channelService.getChannelsForUser(UUID.fromString(userId));
+
+        List<ChannelResponse> updatedChannels = channels.stream()
+                .map(channel -> {
+                    List<MessageResponse> messages = chatServiceClient.getMessagesByChannel(channel.getId()).getBody();
+                    return ChannelResponse.fromChannelAndMessage(channel, messages);
+                })
+                .toList();
+
+
         ApiResponse<List<ChannelResponse>> response = ApiResponse.<List<ChannelResponse>>builder()
                 .success(true)
                 .message("Get All channels successfully")
-                .data(channels)
+                .data(updatedChannels)
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -62,4 +77,15 @@ public class ChannelController {
         List<UUID> participantIds = channelService.getParticipantIdsByChannelId(channelId);
         return ResponseEntity.ok(participantIds);
     }
+
+    @DeleteMapping("/{channelId}")
+    public ResponseEntity<?> deleteChannel(@PathVariable UUID channelId) {
+        channelService.deleteChannel(channelId);
+        return ResponseEntity.ok(ApiResponse.builder()
+                .message("Channel has been deleted successfully")
+                .success(true)
+                .build());
+    }
+
+
 }

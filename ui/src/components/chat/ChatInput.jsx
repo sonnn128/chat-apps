@@ -1,65 +1,54 @@
 import React, { useState } from "react";
 import { Input, Button, Tooltip } from "antd";
 import { SendOutlined } from "@ant-design/icons";
-import { useSelector } from "react-redux";
-import { stompClient } from "@/utils/ws";
-import { errorToast } from "@/utils/toast";
+import { useDispatch, useSelector } from "react-redux";
+import chatService from "@/services/chatService";
+import { sendChannelMessage } from "@/stores/middlewares/channelMiddleware";
 
 const ChatInput = () => {
   const [message, setMessage] = useState("");
-  const { currentChannelId } = useSelector((state) => state.channel);
-  const { user } = useSelector((state) => state.auth);
-
-  const handleSendMessage = () => {
-    if (!currentChannelId) {
-      errorToast("Please select a channel first");
-      return;
-    }
-    if (message.trim()) {
-      const messageSend = {
-        key: { channelId: currentChannelId },
-        userId: user.id,
-        content: message,
-        type: "CHAT",
-        timestamp: Date.now(),
-      };
-      try {
-        stompClient.publish({
-          destination: `/app/channels/${currentChannelId}`,
-          body: JSON.stringify(messageSend),
-        });
-        setMessage("");
-      } catch (error) {
-        console.error("Error sending message: ", error);
-        errorToast("Failed to send message");
-      }
-    }
+  const { channels, currentChannelId } = useSelector((state) => state.channel);
+  const dispatch = useDispatch();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (message.trim() === "") return;
+    console.log("Sending message: ", message);
+    const form = {
+      channelId: currentChannelId,
+      content: message,
+      type: "CHAT",
+    };
+    // push to topic particapants subsribes
+    dispatch(sendChannelMessage(form));
+    setMessage("");
   };
 
   return (
-    <div className="p-3 border-t flex items-center bg-white">
+    <form
+      onSubmit={handleSubmit}
+      className="p-3 border-t flex items-center bg-white"
+    >
       <Input
         placeholder="Aa"
         value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onPressEnter={handleSendMessage}
         style={{
           borderRadius: "9999px",
           backgroundColor: "#f0f2f5",
           border: "none",
           padding: "8px 16px",
         }}
+        onChange={(e) => setMessage(e.target.value)}
       />
       <Tooltip title="Send">
         <Button
           type="primary"
           shape="circle"
           icon={<SendOutlined />}
-          onClick={handleSendMessage}
           style={{ marginLeft: 8 }}
+          htmlType="submit"
         />
       </Tooltip>
-    </div>
+    </form>
   );
 };
 

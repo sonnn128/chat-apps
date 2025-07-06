@@ -1,7 +1,6 @@
-package com.sonnguyen.userservice.controller;
+package com.sonnguyen.userservice.exception;
 
 import com.sonnguyen.userservice.dto.ApiResponse;
-import com.sonnguyen.userservice.exception.CommonException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;

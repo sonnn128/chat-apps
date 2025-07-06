@@ -12,6 +12,8 @@ import com.sonnguyen.chatservice.model.ChannelMessageType;
 import com.sonnguyen.chatservice.repository.ChannelMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -50,9 +52,9 @@ public class ChannelMessageService {
                 .type(request.getType() != null ? request.getType() : ChannelMessageType.CHAT)
                 .timestamp(new Date())
                 .build();
-
         ChannelMessage savedMessage = channelMessageRepository.save(messageToSave);
         log.info("Message saved to Cassandra with ID: {}", savedMessage.getKey().getMessageId());
+
 
         produceNewMessageEvent(savedMessage);
 
@@ -66,6 +68,7 @@ public class ChannelMessageService {
 
     private void produceNewMessageEvent(ChannelMessage message) {
         UserResponse senderProfile = userServiceClient.getUserById(message.getUserId());
+
         List<UUID> recipientIds = channelServiceClient.getParticipantIdsByChannelId(message.getKey().getChannelId());
 
         String senderName = senderProfile != null ? (senderProfile.getFirstname() + " " + senderProfile.getLastname()) : "A user";

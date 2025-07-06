@@ -4,17 +4,15 @@ import {
   fetchAllChannels,
   fetchAllMembersOfChannel,
   addMembersToChannel,
+  sendChannelMessage,
 } from "@/stores/middlewares/channelMiddleware";
 
 const initialState = {
   channels: [],
-  currentChannel: null,
-  loading: false,
-  error: null,
   currentChannelId: null,
-  joinedChannels: [],
-  messagesByChannel: {},
-  messagesOfCurrentChannel: [],
+  currentChannel: null,
+  error: null,
+  status: "idle",
 };
 
 const channelSlice = createSlice({
@@ -62,34 +60,11 @@ const channelSlice = createSlice({
       const channel = action.payload;
       state.currentChannel = channel;
       state.currentChannelId = channel?.id || null;
-
-      if (channel?.id) {
-        state.messagesByChannel[channel.id] =
-          state.messagesByChannel[channel.id] || [];
-
-        if (Array.isArray(channel?.messages)) {
-          const existingLocalMessages = state.messagesByChannel[channel.id] || [];
-          state.messagesByChannel[channel.id] = [
-            ...channel.messages,
-            ...existingLocalMessages.filter(
-              (msg) =>
-                !channel.messages.some((m) => m.key?.messageId === msg.key?.messageId)
-            ),
-          ];
-        }
-
-        state.messagesOfCurrentChannel = [...state.messagesByChannel[channel.id]];
-      } else {
-        state.messagesOfCurrentChannel = [];
-      }
+      state.currentChannel = channel;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchCreateChannel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchCreateChannel.fulfilled, (state, action) => {
         state.loading = false;
         state.channels.push(action.payload);
@@ -97,63 +72,29 @@ const channelSlice = createSlice({
         state.currentChannelId = action.payload?.id || null;
         state.messagesOfCurrentChannel = action.payload?.messages || [];
       })
-      .addCase(fetchCreateChannel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(fetchAllChannels.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(fetchAllChannels.fulfilled, (state, action) => {
         state.loading = false;
-        console.log("action.payload: ", action.payload);
-        
-        state.channels = action.payload.data;
-        // action.payload.forEach((channel) => {
-        //   if (channel.id && Array.isArray(channel.messages)) {
-        //     state.messagesByChannel[channel.id] =
-        //       state.messagesByChannel[channel.id] || [];
-        //     state.messagesByChannel[channel.id] = [
-        //       ...channel.messages,
-        //       ...state.messagesByChannel[channel.id].filter(
-        //         (msg) => !channel.messages.some((m) => m.id === msg.id)
-        //       ),
-        //     ];
-        //   }
-        // });
-        // if (state.currentChannelId) {
-        //   state.messagesOfCurrentChannel =
-        //     state.messagesByChannel[state.currentChannelId] || [];
-        // }
-      })
-      .addCase(fetchAllChannels.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(fetchAllMembersOfChannel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.channels = action.payload;
       })
       .addCase(fetchAllMembersOfChannel.fulfilled, (state, action) => {
         state.loading = false;
         state.joinedChannels = action.payload;
       })
-      .addCase(fetchAllMembersOfChannel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(addMembersToChannel.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(addMembersToChannel.fulfilled, (state, action) => {
         state.loading = false;
         state.joinedChannels = action.payload;
       })
-      .addCase(addMembersToChannel.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+      .addCase(sendChannelMessage.fulfilled, (state, action) => {
+        console.log("action.payload: ", action.payload);
+        console.log(
+          "state.channels: ",
+          JSON.parse(JSON.stringify(state.channels))
+        );
+
+        const channelFind = state.channels.find(
+          (item) => item.id == action.payload.key.channelId
+        );
+        channelFind.messages.push(action.payload);
       });
   },
 });

@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import channelService from "@/services/channelService";
+import chatService from "@/services/chatService";
 
 export const fetchCreateChannel = createAsyncThunk(
   "channels/createChannel",
@@ -10,7 +11,7 @@ export const fetchAllChannels = createAsyncThunk(
   "channels/fetchAllChannels",
   async () => {
     const res = await channelService.getChannels();
-    return res;
+    return res.data;
   }
 );
 
@@ -23,3 +24,10 @@ export const addMembersToChannel = createAsyncThunk(
   async ({ channelId, userIds }) =>
     await channelService.addMembersToChannel(channelId, userIds)
 );
+
+export const sendChannelMessage = createAsyncThunk(
+  "chat/sendChannelMessage",
+  async (form) =>
+    await chatService.sendChannelMessage(form)
+);
+

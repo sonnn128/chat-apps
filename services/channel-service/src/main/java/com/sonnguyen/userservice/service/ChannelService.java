@@ -5,6 +5,7 @@ import com.sonnguyen.userservice.dto.request.CreateChannelRequest;
 import com.sonnguyen.userservice.dto.response.ChannelResponse;
 import com.sonnguyen.userservice.dto.response.UserResponse;
 import com.sonnguyen.userservice.events.dto.NewChannelCreatedEvent;
+import com.sonnguyen.userservice.exception.CommonException;
 import com.sonnguyen.userservice.model.Channel;
 import com.sonnguyen.userservice.model.ChannelParticipant;
 import com.sonnguyen.userservice.model.ParticipantRole;
@@ -12,6 +13,7 @@ import com.sonnguyen.userservice.repository.ChannelParticipantRepository;
 import com.sonnguyen.userservice.repository.ChannelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,7 +60,7 @@ public class ChannelService {
 
         produceNewChannelEvent(savedChannel, creatorId, new ArrayList<>(allMemberIds));
 
-        return toChannelResponse(savedChannel);
+        return ChannelResponse.from(savedChannel);
     }
 
     public boolean isUserParticipant(UUID channelId, UUID userId) {
@@ -89,22 +91,21 @@ public class ChannelService {
 
     }
 
-    private ChannelResponse toChannelResponse(Channel channel) {
-        return ChannelResponse.builder()
-                .id(channel.getId())
-                .channelName(channel.getChannelName())
-                .createdBy(channel.getCreatedBy())
-                .createdAt(channel.getCreatedAt())
-                .build();
-    }
 
     public List<ChannelResponse> getChannelsForUser(UUID userId) {
         List<ChannelParticipant> participations = participantRepository.findByUserId(userId);
 
         return participations.stream()
                 .map(ChannelParticipant::getChannel)
-                .map(this::toChannelResponse)
+                .map(ChannelResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    public void deleteChannel(UUID channelId) {
+        if (channelRepository.existsById(channelId)) {
+            channelRepository.deleteById(channelId);
+        }
+        throw new CommonException(channelId + " Not found", HttpStatus.NOT_FOUND);
     }
 
 }
