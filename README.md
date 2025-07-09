@@ -14,7 +14,7 @@ services
         user-service
 ```
         
-
+com/sonnguyen/notificationservice/events/dto/NewMessageSentEvent
 
 
 ```

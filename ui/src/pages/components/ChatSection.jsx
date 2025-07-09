@@ -1,30 +1,44 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessages from "@/components/chat/ChatMessages";
 import ChatInput from "@/components/chat/ChatInput";
 import AddMemberModal from "@/components/modals/AddMemberModal";
-import { useSelector } from "react-redux";
+import ChatInfoSidebar from "@/components/chat/ChatInfoSidebar";
+import { websocketService } from "@/utils/ws";
+import { receiveMessage } from "@/stores/slices/channelSlice";
 
 const ChatSection = () => {
-  const currentChannelId = useSelector(
-    (state) => state.channel.currentChannelId
-  );
-  console.log("currentChannelId: ", currentChannelId);
+  const { channels, currentChannelId } = useSelector((state) => state.channel);
+
+  const currentChannel = channels.find((x) => x.id === currentChannelId);
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  useEffect(() => {
+    const destination = `/user/${user.id}/queue/notifications`;
+    websocketService.subscribe(destination, (message) => {
+      dispatch(receiveMessage(message));
+    });
+  }, [dispatch, channels]);
 
   return (
-    <div className="flex-1 flex flex-col bg-white relative">
-      {/* Chat Header */}
-      {currentChannelId && (
-        <ChatHeader title="Channel or Friend Name" onAddMember={() => {}} />
-      )}
+    <div className="flex-1 flex flex-row bg-white overflow-hidden">
+      <div className="flex-1 flex flex-col relative">
+        {currentChannelId ? (
+          <>
+            <ChatHeader title={currentChannel?.name || "Channel"} />
+            <ChatMessages />
+            <ChatInput />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            Select a conversation to start chatting
+          </div>
+        )}
+      </div>
 
-      {/* Chat Messages */}
-      {currentChannelId && <ChatMessages />}
+      {currentChannelId && <ChatInfoSidebar />}
 
-      {/* Chat Input */}
-      {currentChannelId && <ChatInput />}
-
-      {/* Add Member Modal */}
       <AddMemberModal open={false} onClose={() => {}} channelId={null} />
     </div>
   );

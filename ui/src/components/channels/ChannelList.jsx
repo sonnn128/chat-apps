@@ -9,6 +9,7 @@ import { websocketService } from "@/utils/ws";
 function ChannelList() {
   const dispatch = useDispatch();
   const { channels, currentChannelId } = useSelector((state) => state.channel);
+  const user = useSelector((state) => state.auth.user);
 
   useEffect(() => {
     if (currentChannelId) {
@@ -16,27 +17,11 @@ function ChannelList() {
     }
   }, [currentChannelId, dispatch]);
 
+
   const onSelectChannel = (channel) => {
     dispatch(setCurrentChannel(channel));
     dispatch(removeCurrentFriend());
   };
-
-  useEffect(() => {
-    if (channels.length > 0 && websocketService.isConnected()) {
-      console.log("📌 Subscribing to channels...");
-      channels.forEach((channel) => {
-        const destination = `/topic/channels/${channel.id}`;
-        websocketService.subscribe(destination, (message) => {
-          console.log(
-            `📩 Received message for channel ${channel.id}:`,
-            message
-          );
-          dispatch(addMessageToChannel({ channelId: channel.id, message }));
-        });
-        console.log(`✅ Subscribed to channel ${channel.id}`);
-      });
-    }
-  }, [channels]);
 
   return (
     <div style={{ padding: "10px" }}>

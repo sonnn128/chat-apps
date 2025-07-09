@@ -1,7 +1,7 @@
 package com.sonnguyen.notificationservice.service;
 
-import com.sonnguyen.notificationservice.events.dto.NewChannelCreatedEvent;
-import com.sonnguyen.notificationservice.events.dto.NewMessageSentEvent;
+import com.sonnguyen.notificationservice.events.NewChannelCreatedEvent;
+import com.sonnguyen.notificationservice.events.NewMessageSentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaHandler;
@@ -17,17 +17,17 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @KafkaListener(topics = {"new-messages-topic", "new-channels-topic"}, groupId = "notification-group")
-public class NotificationConsumer {
+public class NotificationService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
     @KafkaHandler
     public void handleNewMessage(NewMessageSentEvent event) {
         log.info("Event Received: NEW_MESSAGE in channel {}. Notifying {} recipients.",
-                event.getChannelId(), event.getRecipientIds().size());
+                event.getKey().getChannelId(), event.getRecipientIds().size());
 
         List<UUID> actualRecipients = event.getRecipientIds().stream()
-                .filter(recipientId -> !recipientId.equals(event.getSenderId()))
+                .filter(recipientId -> !recipientId.equals(event.getUserId()))
                 .collect(Collectors.toList());
 
         pushToUsers(actualRecipients, event);
@@ -47,6 +47,8 @@ public class NotificationConsumer {
 
     @KafkaHandler(isDefault = true)
     public void handleUnknown(Object object) {
+        log.warn("Received an unknown event type from Kafka: {}", object);
+        log.warn("Received an unknown event type from Kafka: {}", object.getClass());
         log.warn("Received an unknown event type from Kafka: {}", object.getClass().getName());
     }
 
@@ -60,7 +62,9 @@ public class NotificationConsumer {
 
         userIds.forEach(userId -> {
             try {
+                log.info("Sending message to userId: {}", userId);
                 messagingTemplate.convertAndSendToUser(userId.toString(), destination, payload);
+//                "/user/{user-id}/queue/notifications"
             } catch (Exception e) {
                 log.error("Failed to push payload to user {}. Error: {}", userId, e.getMessage());
             }

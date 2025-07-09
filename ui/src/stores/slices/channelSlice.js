@@ -41,26 +41,17 @@ const channelSlice = createSlice({
       state.currentChannelId = null;
       state.messagesOfCurrentChannel = [];
     },
-    receiveMessage: (state, action) => {
-      const message = action.payload;
-      if (message && typeof message === "object" && state.currentChannelId) {
-        const channelId = state.currentChannelId;
-        state.messagesByChannel[channelId] =
-          state.messagesByChannel[channelId] || [];
-        state.messagesByChannel[channelId] = [
-          ...state.messagesByChannel[channelId],
-          message,
-        ];
-        state.messagesOfCurrentChannel = [
-          ...state.messagesByChannel[channelId],
-        ];
-      }
-    },
+
     setCurrentChannel: (state, action) => {
       const channel = action.payload;
       state.currentChannel = channel;
       state.currentChannelId = channel?.id || null;
       state.currentChannel = channel;
+    },
+    receiveMessage: (state, action) => {
+      const channelId = action.payload.key.channelId;
+      const channelFind = state.channels.find((item) => item.id == channelId);
+      channelFind.messages.push(action.payload);
     },
   },
   extraReducers: (builder) => {
@@ -85,12 +76,6 @@ const channelSlice = createSlice({
         state.joinedChannels = action.payload;
       })
       .addCase(sendChannelMessage.fulfilled, (state, action) => {
-        console.log("action.payload: ", action.payload);
-        console.log(
-          "state.channels: ",
-          JSON.parse(JSON.stringify(state.channels))
-        );
-
         const channelFind = state.channels.find(
           (item) => item.id == action.payload.key.channelId
         );

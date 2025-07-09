@@ -7,6 +7,7 @@ const WEBSOCKET_URL =
 
 let stompClient = null;
 const subscriptions = new Map();
+const pendingSubscriptions = [];
 
 const connect = (onConnectedCallback) => {
   if (stompClient?.active) {
@@ -29,7 +30,11 @@ const connect = (onConnectedCallback) => {
 
   stompClient.onConnect = (frame) => {
     console.log("Connect successfully: ", frame);
-
+    // Process pending subscriptions
+    pendingSubscriptions.forEach(({ destination, callback }) => {
+      subscribe(destination, callback);
+    });
+    pendingSubscriptions.length = 0;
     if (onConnectedCallback) onConnectedCallback();
   };
 
@@ -55,7 +60,10 @@ const disconnect = () => {
 
 const subscribe = (destination, callback) => {
   if (!stompClient || !stompClient.connected) {
-    console.error("Cannot subscribe, STOMP client is not connected.");
+    pendingSubscriptions.push({ destination, callback });
+    if (!stompClient?.active) {
+      connect();
+    }
     return;
   }
 

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Input, Button, Tooltip } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
-import chatService from "@/services/chatService";
 import { sendChannelMessage } from "@/stores/middlewares/channelMiddleware";
 
 const ChatInput = () => {
@@ -12,14 +11,13 @@ const ChatInput = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (message.trim() === "") return;
-    console.log("Sending message: ", message);
     const form = {
       channelId: currentChannelId,
       content: message,
       type: "CHAT",
     };
     // push to topic particapants subsribes
-    dispatch(sendChannelMessage(form));
+    await dispatch(sendChannelMessage(form));
     setMessage("");
   };
 

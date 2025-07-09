@@ -6,16 +6,14 @@ import com.sonnguyen.chatservice.client.UserServiceClient;
 import com.sonnguyen.chatservice.dto.request.SendMessageRequest;
 import com.sonnguyen.chatservice.dto.response.UserResponse;
 import com.sonnguyen.chatservice.events.dto.NewMessageSentEvent;
+import com.sonnguyen.chatservice.events.dto.NewMessageSentEventKey;
 import com.sonnguyen.chatservice.model.ChannelMessage;
 import com.sonnguyen.chatservice.model.ChannelMessageKey;
 import com.sonnguyen.chatservice.model.ChannelMessageType;
 import com.sonnguyen.chatservice.repository.ChannelMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
-import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -55,7 +53,6 @@ public class ChannelMessageService {
         ChannelMessage savedMessage = channelMessageRepository.save(messageToSave);
         log.info("Message saved to Cassandra with ID: {}", savedMessage.getKey().getMessageId());
 
-
         produceNewMessageEvent(savedMessage);
 
         return savedMessage;
@@ -70,18 +67,20 @@ public class ChannelMessageService {
         UserResponse senderProfile = userServiceClient.getUserById(message.getUserId());
 
         List<UUID> recipientIds = channelServiceClient.getParticipantIdsByChannelId(message.getKey().getChannelId());
-
         String senderName = senderProfile != null ? (senderProfile.getFirstname() + " " + senderProfile.getLastname()) : "A user";
 
         NewMessageSentEvent event = NewMessageSentEvent.builder()
-                .messageId(message.getKey().getMessageId())
-                .channelId(message.getKey().getChannelId())
-                .senderId(message.getUserId())
-                .senderName(senderName)
+                .key(NewMessageSentEventKey.builder()
+                        .channelId(message.getKey().getChannelId())
+                        .messageId(message.getKey().getMessageId())
+                        .build())
+                .type(message.getType())
+                .userId(message.getUserId())
                 .content(message.getContent())
                 .timestamp(message.getTimestamp())
                 .recipientIds(recipientIds)
                 .build();
+        log.info("event: " + event);
 
         kafkaTemplate.send(NEW_MESSAGES_TOPIC, event);
         log.info("Produced NewMessageSentEvent for message {}", message.getKey().getMessageId());

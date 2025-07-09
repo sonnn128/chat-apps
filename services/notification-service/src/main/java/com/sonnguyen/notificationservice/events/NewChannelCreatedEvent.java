@@ -1,4 +1,4 @@
-package com.sonnguyen.notificationservice.events.dto;
+package com.sonnguyen.notificationservice.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,24 +14,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NewChannelCreatedEvent {
-    /**
-     * Loại sự kiện để client phân biệt.
-     */
     private final String eventType = "NEW_CHANNEL";
 
-    // --- Thông tin về kênh mới ---
     private UUID channelId;
     private String channelName; // Có thể là null nếu là chat 1-1
     private LocalDateTime createdAt;
 
-    // --- Thông tin về người tạo ---
     private UUID creatorId;
     private String creatorName;
 
-    // --- Thông tin về người nhận ---
-    /**
-     * Danh sách ID của tất cả các thành viên trong kênh (bao gồm cả người tạo).
-     * notification-service sẽ dùng danh sách này để đẩy thông báo.
-     */
     private List<UUID> memberIds; // Đổi tên từ recipientIds cho rõ nghĩa hơn trong ngữ cảnh này
 }
+
+
