@@ -2,7 +2,9 @@ package com.sonnguyen.chatservice.model;
 
 public enum ChannelMessageType {
     CHAT,
-    NOTICE
+    NOTICE,
+    REACTION,
+    EMOJI
 }
 
 

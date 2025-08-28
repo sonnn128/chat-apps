@@ -1,6 +1,6 @@
 import Avatar from "antd/es/avatar/Avatar";
 
-const UserMessage = ({ content, isCurrentUser, senderName = "Phương", senderAvatar }) => (
+const UserMessage = ({ content, isCurrentUser, senderName = "Default", senderAvatar }) => (
   <div className={`flex items-start ${isCurrentUser ? "justify-end" : ""}`}>
     {!isCurrentUser && (
       <Avatar
