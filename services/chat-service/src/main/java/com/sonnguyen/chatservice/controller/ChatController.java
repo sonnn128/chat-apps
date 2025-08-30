@@ -18,7 +18,6 @@ import java.util.UUID;
 @RequestMapping("/api/v1/messages")
 public class ChatController {
 
-    // Chỉ giữ lại Service, bỏ Repository
     private final ChannelMessageService channelMessageService;
 
     @GetMapping("/{channelId}")
@@ -33,8 +32,19 @@ public class ChatController {
             @RequestBody SendMessageRequest request,
             @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId) {
         log.info("Sending a message to channelId: {}", request);
+        log.info("authenticatedUserId: {}", authenticatedUserId);
         ChannelMessage sentMessage = channelMessageService.sendMessage(request, UUID.fromString(authenticatedUserId));
         return new ResponseEntity<>(sentMessage, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/save-only")
+    public ResponseEntity<ChannelMessage> saveChannelMessage(
+            @RequestBody SendMessageRequest request,
+            @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId) {
+        log.info("Saving a message (without producing event) to channelId: {}", request.getChannelId());
+
+        ChannelMessage savedMessage = channelMessageService.saveMessage(request, UUID.fromString(authenticatedUserId));
+        return new ResponseEntity<>(savedMessage, HttpStatus.CREATED);
     }
 
 }

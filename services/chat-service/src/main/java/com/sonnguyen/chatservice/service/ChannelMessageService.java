@@ -5,6 +5,7 @@ import com.sonnguyen.chatservice.client.ChannelServiceClient;
 import com.sonnguyen.chatservice.client.UserServiceClient;
 import com.sonnguyen.chatservice.dto.request.SendMessageRequest;
 import com.sonnguyen.chatservice.dto.response.UserResponse;
+import com.sonnguyen.chatservice.events.dto.EventWrapper;
 import com.sonnguyen.chatservice.events.dto.NewMessageSentEvent;
 import com.sonnguyen.chatservice.events.dto.NewMessageSentEventKey;
 import com.sonnguyen.chatservice.model.ChannelMessage;
@@ -25,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChannelMessageService {
 
-    private static final String NEW_MESSAGES_TOPIC = "new-messages-topic";
+    private static final String NOTIFICATION_TOPIC = "notifications-topic";
 
     private final ChannelMessageRepository channelMessageRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -36,7 +37,7 @@ public class ChannelMessageService {
         return channelMessageRepository.findAllByKeyChannelIdOrderByKeyMessageIdAsc(channelId);
     }
 
-    public ChannelMessage sendMessage(SendMessageRequest request, UUID senderId) {
+    public ChannelMessage saveMessage(SendMessageRequest request, UUID senderId) {
         authorizeUserForChannel(request.getChannelId(), senderId);
 
         ChannelMessageKey key = new ChannelMessageKey();
@@ -50,17 +51,17 @@ public class ChannelMessageService {
                 .type(request.getType() != null ? request.getType() : ChannelMessageType.CHAT)
                 .timestamp(new Date())
                 .build();
-        ChannelMessage savedMessage = channelMessageRepository.save(messageToSave);
-        log.info("Message saved to Cassandra with ID: {}", savedMessage.getKey().getMessageId());
+        return channelMessageRepository.save(messageToSave);
+    }
 
+    public ChannelMessage sendMessage(SendMessageRequest request, UUID senderId) {
+        ChannelMessage savedMessage = saveMessage(request, senderId);
         produceNewMessageEvent(savedMessage);
-
         return savedMessage;
     }
 
     private void authorizeUserForChannel(UUID channelId, UUID userId) {
         channelServiceClient.checkUserIsParticipant(channelId, userId);
-        log.info("Authorization successful for user {} in channel {}", userId, channelId);
     }
 
     private void produceNewMessageEvent(ChannelMessage message) {
@@ -82,7 +83,10 @@ public class ChannelMessageService {
                 .build();
         log.info("event: " + event);
 
-        kafkaTemplate.send(NEW_MESSAGES_TOPIC, event);
+        EventWrapper<NewMessageSentEvent> wrapper =
+                new EventWrapper<>("NEW_MESSAGE", event);
+
+        kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);
         log.info("Produced NewMessageSentEvent for message {}", message.getKey().getMessageId());
     }
 }

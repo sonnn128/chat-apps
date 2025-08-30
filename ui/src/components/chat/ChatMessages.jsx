@@ -9,7 +9,7 @@ const ChatMessages = () => {
   const { channels, currentChannelId } = useSelector((state) => state.channel);
   const currentChannel = channels.find((x) => x.id === currentChannelId);
   const messagesOfCurrentChannel = currentChannel
-    ? currentChannel.messages
+    ? currentChannel.messages || []
     : [];
 
   const messagesEndRef = useRef(null);

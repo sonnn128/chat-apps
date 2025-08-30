@@ -23,6 +23,7 @@ import {
   acceptFriendRequest,
 } from "@/stores/middlewares/friendShipMiddleware";
 import { removeCurrentChannel } from "@/stores/slices/channelSlice";
+import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
 
 const { Title } = Typography;
 
@@ -56,9 +57,15 @@ const Sidebar = () => {
     dispatch(removeCurrentChannel());
   };
 
-  const handleChannelSubmit = () => {
+  const handleChannelSubmit = async () => {
     // TODO: Thêm logic tạo channel
-    console.log("Create channel:", newChannelName);
+    const name = newChannelName.trim();
+    if (!name) return;
+    const form = {
+      channelName: name,
+      memberIds: []
+    }
+    await dispatch(fetchCreateChannel(form));
     setNewChannelName("");
     setIsAddingChannel(false);
   };

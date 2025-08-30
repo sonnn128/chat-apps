@@ -3,6 +3,8 @@ package com.sonnguyen.userservice.dto.response;
 import com.sonnguyen.userservice.model.Channel;
 import lombok.Builder;
 import lombok.Data;
+import org.aspectj.bridge.Message;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -33,5 +35,4 @@ public class ChannelResponse {
                 .createdAt(channel.getCreatedAt())
                 .build();
     }
-
 }

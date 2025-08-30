@@ -3,8 +3,8 @@ import { get, post } from "@/utils/httpRequest";
 
 const CHANNEL_API = "/channels";
 
-const createChannel = async (name) =>
-  post(CHANNEL_API, { name }, { headers: getAuthHeaders() });
+const createChannel = async (form) =>
+  post(CHANNEL_API, form , { headers: getAuthHeaders() });
 
 const getChannels = async () => get(CHANNEL_API, { headers: getAuthHeaders() });
 

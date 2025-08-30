@@ -8,8 +8,9 @@ import { websocketService } from "@/utils/ws";
 
 function ChannelList() {
   const dispatch = useDispatch();
-  const { channels, currentChannelId } = useSelector((state) => state.channel);
-  const user = useSelector((state) => state.auth.user);
+  const { channels, currentChannelId } = useSelector((state) => {
+    return state.channel
+  });
 
   useEffect(() => {
     if (currentChannelId) {

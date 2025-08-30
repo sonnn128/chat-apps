@@ -4,6 +4,7 @@ import com.sonnguyen.userservice.client.ChatServiceClient;
 import com.sonnguyen.userservice.dto.request.CreateChannelRequest;
 import com.sonnguyen.userservice.dto.response.ApiResponse;
 import com.sonnguyen.userservice.dto.response.ChannelResponse;
+import com.sonnguyen.userservice.dto.response.CreateChannelResponse;
 import com.sonnguyen.userservice.dto.response.MessageResponse;
 import com.sonnguyen.userservice.service.ChannelService;
 import lombok.RequiredArgsConstructor;
@@ -26,18 +27,22 @@ public class ChannelController {
     private final ChatServiceClient chatServiceClient;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ChannelResponse>> createChannel(
+    public ResponseEntity<ApiResponse<CreateChannelResponse>> createChannel(
             @RequestBody CreateChannelRequest request,
-            @RequestHeader("X-Authenticated-User-Id") String creatorId) {
+            @RequestHeader("X-Authenticated-User-Id") String creatorIdStr) {
 
-        ChannelResponse newChannel = channelService.createChannel(request, UUID.fromString(creatorId));
-        ApiResponse<ChannelResponse> response = ApiResponse.<ChannelResponse>builder()
+        UUID creatorId = UUID.fromString(creatorIdStr);
+        CreateChannelResponse newChannel = channelService.createChannel(request, creatorId);
+
+        ApiResponse<CreateChannelResponse> response = ApiResponse.<CreateChannelResponse>builder()
                 .success(true)
                 .message("Channel created successfully")
                 .data(newChannel)
                 .build();
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
 
     @GetMapping("/{channelId}/participants/{userId}/check")
     public ResponseEntity<Void> checkUserIsParticipant(
@@ -45,6 +50,7 @@ public class ChannelController {
             @PathVariable UUID userId) {
 
         boolean isParticipant = channelService.isUserParticipant(channelId, userId);
+        log.warn("User {} has been checked for participant", isParticipant);
         return isParticipant
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.status(HttpStatus.FORBIDDEN).build();

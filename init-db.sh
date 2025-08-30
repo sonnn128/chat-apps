@@ -6,7 +6,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     CREATE DATABASE db_channelservice;
     CREATE DATABASE db_d;
 
-    GRANT ALL PRIVILEGES ON DATABASE db_b TO dbuser;
-    GRANT ALL PRIVILEGES ON DATABASE db_c TO dbuser;
+    GRANT ALL PRIVILEGES ON DATABASE db_userservice TO dbuser;
+    GRANT ALL PRIVILEGES ON DATABASE db_channelservice TO dbuser;
     GRANT ALL PRIVILEGES ON DATABASE db_d TO dbuser;
 EOSQL

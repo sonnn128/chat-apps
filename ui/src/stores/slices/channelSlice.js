@@ -6,6 +6,7 @@ import {
   addMembersToChannel,
   sendChannelMessage,
 } from "@/stores/middlewares/channelMiddleware";
+import { act } from "react";
 
 const initialState = {
   channels: [],
@@ -58,10 +59,28 @@ const channelSlice = createSlice({
     builder
       .addCase(fetchCreateChannel.fulfilled, (state, action) => {
         state.loading = false;
-        state.channels.push(action.payload);
-        state.currentChannel = action.payload;
-        state.currentChannelId = action.payload?.id || null;
-        state.messagesOfCurrentChannel = action.payload?.messages || [];
+
+        const channelCreate = {
+          ...action.payload.channel,
+          messages: action.payload.messages || [],
+        };
+      
+        state.channels.push(channelCreate);
+        state.currentChannel = channelCreate;
+        state.currentChannelId = channelCreate?.id || null;
+      
+        const messageReceived = action.payload.message;
+        if (messageReceived) {
+          const channelId = messageReceived.key.channelId;
+          const channelFind = state.channels.find((item) => item.id === channelId);
+      
+          console.log("ChannelFind: ", channelFind);
+          console.log("channelCreate: ", channelCreate);
+      
+          if (channelFind) {
+            channelFind.messages.push(messageReceived);
+          }
+        }
       })
       .addCase(fetchAllChannels.fulfilled, (state, action) => {
         state.loading = false;
@@ -79,6 +98,7 @@ const channelSlice = createSlice({
         const channelFind = state.channels.find(
           (item) => item.id == action.payload.key.channelId
         );
+        console.log("create message: ", action.payload);
         channelFind.messages.push(action.payload);
       });
   },

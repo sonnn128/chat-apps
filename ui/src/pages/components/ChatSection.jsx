@@ -17,9 +17,11 @@ const ChatSection = () => {
   useEffect(() => {
     const destination = `/user/${user.id}/queue/notifications`;
     websocketService.subscribe(destination, (message) => {
+      console.log("message: ", message);
+      
       dispatch(receiveMessage(message));
     });
-  }, [dispatch, channels]);
+  }, [dispatch, user.id, channels]);
 
   return (
     <div className="flex-1 flex flex-row bg-white overflow-hidden">

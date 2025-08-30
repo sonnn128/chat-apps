@@ -4,7 +4,10 @@ import chatService from "@/services/chatService";
 
 export const fetchCreateChannel = createAsyncThunk(
   "channels/createChannel",
-  async (name) => await channelService.createChannel(name)
+  async (form) => {
+    const res = await channelService.createChannel(form)
+    return res.data
+  }
 );
 
 export const fetchAllChannels = createAsyncThunk(
@@ -27,7 +30,5 @@ export const addMembersToChannel = createAsyncThunk(
 
 export const sendChannelMessage = createAsyncThunk(
   "chat/sendChannelMessage",
-  async (form) =>
-    await chatService.sendChannelMessage(form)
+  async (form) => await chatService.sendChannelMessage(form)
 );
-
