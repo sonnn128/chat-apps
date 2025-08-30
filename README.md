@@ -1,10 +1,17 @@
-## For production
-## For docker
+# HOW TO RUN THE APP?  
+## 1. For production
+## 2. For docker
 ```
-docker compose -f compose.dev.yml
-run discovery server
-run api-gateway
+docker compose up -d
+then visit localhost:5173 to access the app
 ```
+
+## 3. For development
+### 3.1 Run database / MQ with docker
+```
+docker compose -f compose.dev.yml up -d
+```
+### 3.2 Check containers
 ```
 C:\Users\son>docker ps
 IMAGE                             PORTS                                         NAMES
@@ -15,12 +22,7 @@ cassandra:latest                  0.0.0.0:9042->9042/tcp, [::]:9042->9042/tcp   
 postgres:16                       0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp   chat-apps-postgres-1
 
 ```
-## For development
-### Run database / MQ with docker
-```
-docker compose up -d
-```
-### Run configuration service
+### 3.3 Run configuration service
 ```
 cd <project folder/discovery-server>
 mvn install -DskipTests=true
@@ -31,7 +33,7 @@ cd <project folder/api-gateway>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/api-gateway-0.0.1-SNAPSHOT.jar
 ```
-### Run services
+### 3.4 Run services
 ```
 cd <project folder/services/auth-service>
 mvn install -DskipTests=true
@@ -57,9 +59,7 @@ cd <project folder/services/notification-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/notification-service-0.0.1-SNAPSHOT.jar
 ```
-```
-#### Then visit: localhost:5173
-```
+Then visit: localhost:5173 to access this app
 ## Git commit invention
 ```
 feat: chat 
