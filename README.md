@@ -3,8 +3,8 @@
 ## 2. For docker
 ```
 docker compose up -d
-then visit localhost:5173 to access the app
 ```
+Then visit: [http://localhost:5173](http://localhost:5173) to access this app
 
 ## 3. For development
 ### 3.1 Run database / MQ with docker
@@ -59,7 +59,7 @@ cd <project folder/services/notification-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/notification-service-0.0.1-SNAPSHOT.jar
 ```
-Then visit: localhost:5173 to access this app
+Then visit: [http://localhost:5173](http://localhost:5173) to access this app
 ## Git commit invention
 ```
 feat: chat 
