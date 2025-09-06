@@ -5,8 +5,8 @@ import {
   fetchAllMembersOfChannel,
   addMembersToChannel,
   sendChannelMessage,
+  fetchDeleteChannel,
 } from "@/stores/middlewares/channelMiddleware";
-import { act } from "react";
 
 const initialState = {
   channels: [],
@@ -62,21 +62,22 @@ const channelSlice = createSlice({
 
         const channelCreate = {
           ...action.payload.channel,
+          participants: action.payload.participants,
           messages: action.payload.messages || [],
         };
-      
+        console.log("channelCreate: ", channelCreate);
+
         state.channels.push(channelCreate);
         state.currentChannel = channelCreate;
         state.currentChannelId = channelCreate?.id || null;
-      
+
         const messageReceived = action.payload.message;
         if (messageReceived) {
           const channelId = messageReceived.key.channelId;
-          const channelFind = state.channels.find((item) => item.id === channelId);
-      
-          console.log("ChannelFind: ", channelFind);
-          console.log("channelCreate: ", channelCreate);
-      
+          const channelFind = state.channels.find(
+            (item) => item.id === channelId
+          );
+
           if (channelFind) {
             channelFind.messages.push(messageReceived);
           }
@@ -98,9 +99,21 @@ const channelSlice = createSlice({
         const channelFind = state.channels.find(
           (item) => item.id == action.payload.key.channelId
         );
-        console.log("create message: ", action.payload);
         channelFind.messages.push(action.payload);
-      });
+      })
+      .addCase(fetchDeleteChannel.fulfilled, (state, action) => {
+        state.loading = false;
+        state.channels = state.channels.filter(
+          (channel) => channel.id !== action.payload.data
+        );
+        if (state.currentChannelId === action.payload) {
+          state.currentChannelId = null;
+          state.currentChannel = null;
+        }
+        state.currentChannelId = null;
+        state.currentChannel = null;
+      })
+      ;
   },
 });
 

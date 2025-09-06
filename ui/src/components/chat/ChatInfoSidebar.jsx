@@ -1,16 +1,19 @@
-import React from "react";
-import { Avatar } from "antd";
-import { User, Bell, Search, ChevronRight, Lock } from "lucide-react";
 import { useSelector } from "react-redux";
+import ChannelMembers from "../ChannelMembers";
+import React, { useState } from "react";
+import { Avatar } from "antd";
+import { User, Bell, Search, ChevronRight, Lock, UserPlus } from "lucide-react";
 
 const ChatInfoSidebar = () => {
-  const { currentChannel } = useSelector((state) => state.channel);
+  const { currentChannel, channels } = useSelector((state) => state.channel);
+  const [showMembers, setShowMembers] = useState(false);
 
   const menuItems = [
-    { label: "Chat info" },
-    { label: "Customize chat" },
-    { label: "Media & files" },
-    { label: "Privacy & support" },
+    { label: "Chat info", key: "chatInfo" },
+    { label: "Customize chat", key: "customizeChat" },
+    { label: "Chat members", key: "chatMembers" },
+    { label: "Media, files and links", key: "mediaFiles" },
+    { label: "Privacy & support", key: "privacySupport" },
   ];
 
   const actionButtons = [
@@ -19,13 +22,21 @@ const ChatInfoSidebar = () => {
     { icon: <Search size={20} />, label: "Search" },
   ];
 
+  const handleMenuItemClick = (key) => {
+    if (key === "chatMembers") {
+      setShowMembers(!showMembers);
+    } else {
+      console.log(`Clicked on: ${key}`);
+    }
+  };
+
   return (
-    <div className="w-80 flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col">
+    <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col items-center text-center">
           <Avatar size={80}>A</Avatar>
           <h2 className="mt-4 text-xl font-bold text-gray-900">
-            {currentChannel.channelName}
+            {currentChannel.channelName || "Channel Name"}
           </h2>
           <p className="text-gray-500 text-sm">@channel_tag</p>
 
@@ -51,13 +62,26 @@ const ChatInfoSidebar = () => {
 
         <div className="mt-8">
           {menuItems.map((item) => (
-            <button
-              key={item.label}
-              className="w-full flex justify-between items-center p-3 hover:bg-gray-100 rounded-lg"
-            >
-              <span>{item.label}</span>
-              <ChevronRight size={20} className="text-gray-400" />
-            </button>
+            <div key={item.key}>
+              <button
+                onClick={() => handleMenuItemClick(item.key)}
+                className="w-full flex justify-between items-center p-3 hover:bg-gray-100 rounded-lg"
+              >
+                <h2 className="text-sm font-semibold">{item.label}</h2>
+                {item.key === "chatMembers" ? (
+                  <ChevronRight
+                    size={20}
+                    className={`text-gray-400 transform transition-transform ${
+                      showMembers ? "rotate-90" : ""
+                    }`}
+                  />
+                ) : (
+                  <ChevronRight size={20} className="text-gray-400" />
+                )}
+              </button>
+
+              {item.key === "chatMembers" && showMembers && <ChannelMembers />}
+            </div>
           ))}
         </div>
       </div>

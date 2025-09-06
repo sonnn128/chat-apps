@@ -27,6 +27,9 @@ public class UserService {
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.BAD_REQUEST);
         });
+        userRepository.findByPhone(request.getPhone()).ifPresent(user -> {
+            throw new CommonException("Phone " + request.getPhone() + " is already in use.", HttpStatus.BAD_REQUEST);
+        });
 
         User newUser = User.builder()
                 .firstname(request.getFirstname())
@@ -34,6 +37,7 @@ public class UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
+                .phone(request.getPhone())
                 .build();
 
         User savedUser = userRepository.save(newUser);

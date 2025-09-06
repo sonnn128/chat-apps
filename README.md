@@ -59,6 +59,12 @@ cd <project folder/services/notification-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/notification-service-0.0.1-SNAPSHOT.jar
 ```
+### 3.4 Run ui
+```
+cd <project folder/ui>
+npm install 
+npm run dev
+```
 Then visit: [http://localhost:5173](http://localhost:5173) to access this app
 ## Git commit invention
 ```

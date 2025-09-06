@@ -27,15 +27,6 @@ const ChatHeader = () => {
         </div>
 
         <Space>
-          <Tooltip title="Add Friend">
-            <Button icon={<UserAddOutlined />} />
-          </Tooltip>
-          <Tooltip title="Add Member">
-            <Button icon={<UsergroupAddOutlined />} />
-          </Tooltip>
-          <Tooltip title="View Members">
-            <Button icon={<TeamOutlined />} />
-          </Tooltip>
           <Tooltip title="Call">
             <Button icon={<PhoneOutlined />} />
           </Tooltip>

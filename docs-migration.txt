@@ -1,0 +1,37 @@
+Title: Triển khai dự án Messenger theo mô hình microservices
+
+step by step impliment project
+
+1. Triển khai discovery-server
+2. 
+kafka:
+    - noti (notification)
+    - hieu suat
+    - realtime
+
+redis: cache dữ liệu
+    - giảm tải query cho database
+
+
+ 
+
+request response 
+    - Input - output data
+    - validate
+
+
+
+
+
+
+gateway
+    - kong gateway - 10 -> 20 services
+    - api gateway (google) > 30 services
+
+Kong gateway (a type of api gateway)
+    - dựa trên nginx
+    - xử lý hàng triệu request / s
+    - tối ưu hiệu suất
+    - scale (vertial, horizontal)
+    - api manangement, security
+    - 

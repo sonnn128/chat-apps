@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,7 +9,9 @@ import {
   UserOutlined,
   UserAddOutlined,
   PlusOutlined,
+  PhoneOutlined, // Import icon PhoneOutlined cho trường hợp tìm kiếm SĐT
 } from "@ant-design/icons";
+import debounce from "lodash.debounce";
 
 import ChannelList from "@/components/channels/ChannelList";
 import FriendList from "@/components/friends/FriendList";
@@ -28,10 +30,20 @@ import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
 const { Title } = Typography;
 
 const Sidebar = () => {
+  const dataFakeForSearch = {
+    firstname: "Dương",
+    lastname: "Hoàng",
+    email: "sonvipkl0423@gmail.com",
+    password: "sonvipkl042@gmail.com",
+    phone: "0799199917",
+    avatar: "https://static.vecteezy.com/system/resources/previews/024/183/535/original/male-avatar-portrait-of-a-young-man-with-glasses-illustration-of-male-character-in-modern-color-style-vector.jpg",
+  };
+
   const dispatch = useDispatch();
   const { friendSuggestions, friends, pendingRequests } = useSelector(
     (state) => state.friendship
   );
+  const { channels } = useSelector((state) => state.channel);
 
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
@@ -40,6 +52,8 @@ const Sidebar = () => {
     requests: false,
     suggestions: false,
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [displayedSearchTerm, setDisplayedSearchTerm] = useState(""); // State để lưu giá trị hiển thị trên Input
 
   const handleAddFriend = async (userId) => {
     const res = await dispatch(sendFriendRequest(userId)).unwrap();
@@ -58,17 +72,63 @@ const Sidebar = () => {
   };
 
   const handleChannelSubmit = async () => {
-    // TODO: Thêm logic tạo channel
     const name = newChannelName.trim();
     if (!name) return;
     const form = {
       channelName: name,
-      memberIds: []
-    }
+      memberIds: [],
+    };
     await dispatch(fetchCreateChannel(form));
     setNewChannelName("");
     setIsAddingChannel(false);
   };
+
+  /**
+   * SEARCH OPTIMIZATION
+   * - debounce để tránh spam filter/API call
+   */
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setSearchTerm(value.trim()); // Cập nhật searchTerm cho logic hiển thị
+    }, 200),
+    []
+  );
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setDisplayedSearchTerm(value); // Cập nhật giá trị hiển thị ngay lập tức
+    debouncedSearch(value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    debouncedSearch.flush(); // chạy ngay lập tức khi nhấn Enter
+  };
+
+  // Filter local list (nếu chưa dùng backend)
+  const filteredChannels = useMemo(() => {
+    if (!searchTerm) return channels;
+    return channels.filter((channel) =>
+      channel.channelName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [channels, searchTerm]);
+
+  const filteredFriends = useMemo(() => {
+    if (!searchTerm) return friends;
+    return friends.filter((friend) =>
+      friend.userName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [friends, searchTerm]);
+
+  // Kiểm tra nếu có dữ liệu tìm kiếm để quyết định hiển thị
+  const hasSearchInput = useMemo(() => {
+    return displayedSearchTerm.trim() !== "";
+  }, [displayedSearchTerm]);
+
+  // Kiểm tra nếu số điện thoại trùng khớp với dataFakeForSearch
+  const isMatchingFakePhone = useMemo(() => {
+    return hasSearchInput && searchTerm === dataFakeForSearch.phone;
+  }, [hasSearchInput, searchTerm, dataFakeForSearch.phone]);
 
   const headerActions = [
     {
@@ -97,7 +157,7 @@ const Sidebar = () => {
       initial={{ x: -300 }}
       animate={{ x: 0 }}
       transition={{ type: "spring", stiffness: 100 }}
-      className="w-80 bg-white border-r flex flex-col"
+      className="w-[420px] bg-white border-r flex flex-col"
     >
       {/* HEADER */}
       <div className="flex items-center justify-between p-3 border-b bg-white">
@@ -129,62 +189,104 @@ const Sidebar = () => {
       </div>
 
       {/* SEARCH */}
-      <div className="p-3">
-        <Input
-          placeholder="Search Messenger"
-          style={{
-            borderRadius: 9999,
-            backgroundColor: "#f0f2f5",
-            border: "none",
-            padding: "8px 16px",
-          }}
-        />
+      <div className="p-3 border-b bg-white">
+        <form onSubmit={handleSearchSubmit}>
+          <Input
+            placeholder="Tìm kiếm bằng số điện thoại"
+            prefix={<UserOutlined />}
+            style={{
+              borderRadius: 9999,
+              backgroundColor: "#f0f2f5",
+              border: "none",
+              padding: "8px 16px",
+            }}
+            onChange={handleSearchChange}
+            value={displayedSearchTerm} // Sử dụng displayedSearchTerm để kiểm soát giá trị của input
+            allowClear
+          />
+        </form>
       </div>
 
       {/* MAIN LIST */}
       <div className="flex-1 overflow-y-auto p-3">
-        <div className="flex items-center justify-between mb-2">
-          <Title level={5} className="!m-0 !text-[#65676b]">
-            Channels
-          </Title>
+        {hasSearchInput && !isMatchingFakePhone && (
+          // Hiển thị như ảnh nếu có input search và không trùng SĐT fake
+          <div className="flex flex-col items-center justify-center p-4">
+            <PhoneOutlined
+              style={{ fontSize: "48px", color: "#1890ff", marginBottom: "16px" }}
+            />
+            <Title level={5} className="!m-0 !text-[#65676b] text-center">
+              Số điện thoại chưa đăng ký tài khoản hoặc không cho phép tìm kiếm.
+            </Title>
+          </div>
+        )}
 
-          {isAddingChannel ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Input
-                autoFocus
-                placeholder="Channel name"
-                value={newChannelName}
-                onChange={(e) => setNewChannelName(e.target.value)}
-                onPressEnter={handleChannelSubmit}
-                style={{
-                  width: 150,
-                  borderRadius: 9999,
-                  backgroundColor: "#f0f2f5",
-                  border: "none",
-                  padding: "8px 16px",
-                }}
-              />
-            </motion.div>
-          ) : (
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsAddingChannel(true)}
-                style={{
-                  borderRadius: 20,
-                  backgroundColor: "#2196F3",
-                  border: "none",
-                }}
-              >
-                Add
-              </Button>
-            </motion.div>
-          )}
-        </div>
+        {isMatchingFakePhone && (
+          // Hiển thị dataFakeForSearch nếu trùng SĐT fake
+          <div className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
+            <img
+              src={dataFakeForSearch.avatar} // Sử dụng avatar của dataFakeForSearch
+              alt="Avatar"
+              className="w-10 h-10 rounded-full object-cover"
+            />
+            <div>
+              <p className="font-semibold m-0">
+                {dataFakeForSearch.firstname} {dataFakeForSearch.lastname}
+              </p>
+              <p className="text-sm text-gray-600 m-0">
+                {dataFakeForSearch.phone}
+              </p>
+            </div>
+          </div>
+        )}
 
-        <ChannelList />
-        <FriendList friends={friends} />
+        {!hasSearchInput && (
+          // Hiển thị Channels và Friends nếu không có input search
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <Title level={5} className="!m-0 !text-[#65676b]">
+                Channels
+              </Title>
+
+              {isAddingChannel ? (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <Input
+                    autoFocus
+                    placeholder="Channel name"
+                    value={newChannelName}
+                    onChange={(e) => setNewChannelName(e.target.value)}
+                    onPressEnter={handleChannelSubmit}
+                    style={{
+                      width: 150,
+                      borderRadius: 9999,
+                      backgroundColor: "#f0f2f5",
+                      border: "none",
+                      padding: "8px 16px",
+                    }}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsAddingChannel(true)}
+                    style={{
+                      borderRadius: 20,
+                      backgroundColor: "#2196F3",
+                      border: "none",
+                    }}
+                  >
+                    Add
+                  </Button>
+                </motion.div>
+              )}
+            </div>
+
+            <ChannelList channels={filteredChannels} />
+            <FriendList friends={filteredFriends} />
+          </>
+        )}
       </div>
 
       {/* MODALS */}

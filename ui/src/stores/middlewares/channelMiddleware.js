@@ -32,3 +32,8 @@ export const sendChannelMessage = createAsyncThunk(
   "chat/sendChannelMessage",
   async (form) => await chatService.sendChannelMessage(form)
 );
+
+export const fetchDeleteChannel = createAsyncThunk(
+  "channels/deleteChannel",
+  async (channelId) => await channelService.deleteChannel(channelId)
+);
