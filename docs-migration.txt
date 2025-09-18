@@ -35,3 +35,6 @@ Kong gateway (a type of api gateway)
     - scale (vertial, horizontal)
     - api manangement, security
     - 
+
+mvn clean install -DskipTests=true
+dos2unix ./init-db.sh
