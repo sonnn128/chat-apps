@@ -7,12 +7,15 @@ import { websocketService } from "@/utils/ws";
 function Main() {
   const dispatch = useDispatch();
   useEffect(() => {
-    dispatch(fetchAllChannels());
-    console.log("Fetch success");
+    console.log("🚀 Main: Application initialized");
+    // Channels are now loaded after login, no need to load here
   }, [dispatch]);
 
-  useEffect( () => {
-    websocketService.connect();
+  useEffect(() => {
+    console.log("🔌 Main: Connecting to WebSocket...");
+    websocketService.connect(() => {
+      console.log("✅ Main: WebSocket connection established successfully");
+    });
   }, []);
 
   return (

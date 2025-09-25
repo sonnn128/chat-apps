@@ -14,6 +14,9 @@ const initialState = {
   currentChannel: null,
   error: null,
   status: "idle",
+  // Message cache for each channel
+  messageCache: {}, // Cache messages for each channel
+  preloadedChannels: {}, // Track which channels have been preloaded (channelId: true)
 };
 
 const channelSlice = createSlice({
@@ -52,40 +55,80 @@ const channelSlice = createSlice({
     receiveMessage: (state, action) => {
       const channelId = action.payload.key.channelId;
       const channelFind = state.channels.find((item) => item.id == channelId);
-      channelFind.messages.push(action.payload);
+      
+      if (channelFind) {
+        if (!channelFind.messages) {
+          channelFind.messages = [];
+        }
+        channelFind.messages.push(action.payload);
+        console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
+      } else {
+        console.warn("⚠️ Channel: Channel not found for message:", channelId);
+      }
+    },
+    
+    // Message cache actions
+    cacheChannelMessages: (state, action) => {
+      const { channelId, messages } = action.payload;
+      state.messageCache[channelId] = messages;
+      state.preloadedChannels[channelId] = true;
+      console.log(`✅ Channel: Cached ${messages.length} messages for channel ${channelId}`);
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchCreateChannel.fulfilled, (state, action) => {
         state.loading = false;
+        console.log("✅ Channel: Channel created successfully:", action.payload);
 
         const channelCreate = {
-          ...action.payload.channel,
-          participants: action.payload.participants,
-          messages: action.payload.messages || [],
+          ...action.payload,
+          participants: [],
+          messages: [],
         };
-        console.log("channelCreate: ", channelCreate);
+        console.log("✅ Channel: Channel data prepared:", channelCreate);
 
         state.channels.push(channelCreate);
         state.currentChannel = channelCreate;
         state.currentChannelId = channelCreate?.id || null;
-
-        const messageReceived = action.payload.message;
-        if (messageReceived) {
-          const channelId = messageReceived.key.channelId;
-          const channelFind = state.channels.find(
-            (item) => item.id === channelId
-          );
-
-          if (channelFind) {
-            channelFind.messages.push(messageReceived);
-          }
-        }
+        console.log("✅ Channel: Channel added to state and set as current");
+      })
+      .addCase(fetchCreateChannel.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        console.error("❌ Channel: Failed to create channel:", action.error);
       })
       .addCase(fetchAllChannels.fulfilled, (state, action) => {
         state.loading = false;
-        state.channels = action.payload;
+        console.log("📋 ChannelSlice: fetchAllChannels.fulfilled - action.payload:", action.payload);
+        console.log("📋 ChannelSlice: action.payload type:", typeof action.payload);
+        console.log("📋 ChannelSlice: action.payload length:", action.payload?.length);
+        
+        const channels = action.payload || [];
+        state.channels = channels;
+        
+        // Cache messages for each channel if they exist
+        channels.forEach(channel => {
+          if (channel.messages && channel.messages.length > 0) {
+            state.messageCache[channel.id] = channel.messages;
+            state.preloadedChannels[channel.id] = true;
+            console.log(`✅ Channel: Cached ${channel.messages.length} messages for channel ${channel.id}`);
+          } else {
+            // Initialize empty message cache for channels without messages
+            if (!state.messageCache[channel.id]) {
+              state.messageCache[channel.id] = [];
+            }
+            console.log(`✅ Channel: Initialized empty message cache for channel ${channel.id}`);
+          }
+        });
+        
+        console.log("✅ Channel: All channels with messages loaded:", state.channels.length, "channels");
+        console.log("✅ Channel: Channels data:", state.channels);
+      })
+      .addCase(fetchAllChannels.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        console.error("❌ Channel: Failed to load channels:", action.error);
       })
       .addCase(fetchAllMembersOfChannel.fulfilled, (state, action) => {
         state.loading = false;
@@ -99,7 +142,19 @@ const channelSlice = createSlice({
         const channelFind = state.channels.find(
           (item) => item.id == action.payload.key.channelId
         );
-        channelFind.messages.push(action.payload);
+        
+        if (channelFind) {
+          if (!channelFind.messages) {
+            channelFind.messages = [];
+          }
+          channelFind.messages.push(action.payload);
+          console.log("✅ Channel: Message sent and added to channel:", action.payload.key.channelId);
+        } else {
+          console.warn("⚠️ Channel: Channel not found for sent message:", action.payload.key.channelId);
+        }
+      })
+      .addCase(sendChannelMessage.rejected, (state, action) => {
+        console.error("❌ Channel: Failed to send message:", action.error);
       })
       .addCase(fetchDeleteChannel.fulfilled, (state, action) => {
         state.loading = false;
@@ -125,5 +180,6 @@ export const {
   removeCurrentChannel,
   setCurrentChannel,
   receiveMessage,
+  cacheChannelMessages,
 } = channelSlice.actions;
 export default channelSlice.reducer;

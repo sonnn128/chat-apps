@@ -19,7 +19,6 @@ import java.util.UUID;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     private String firstname;
@@ -35,8 +34,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String phone;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+//    @Enumerated(EnumType.STRING)
+//    private Role role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

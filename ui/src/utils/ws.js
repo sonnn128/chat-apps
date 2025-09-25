@@ -11,6 +11,7 @@ const pendingSubscriptions = [];
 
 const connect = (onConnectedCallback) => {
   if (stompClient?.active) {
+    console.log("WebSocket: Already connecting/connected, skipping...");
     return;
   }
 
@@ -22,29 +23,44 @@ const connect = (onConnectedCallback) => {
     return;
   }
 
+  console.log("WebSocket: Attempting to connect to", WEBSOCKET_URL);
+  
   stompClient = new Client({
     webSocketFactory: () => new SockJS(WEBSOCKET_URL),
     connectHeaders: headers,
     reconnectDelay: 5000,
+    debug: (str) => {
+      console.log("STOMP Debug:", str);
+    },
   });
 
   stompClient.onConnect = (frame) => {
-    console.log("Connect successfully: ", frame);
+    console.log("✅ WebSocket: Connected successfully!", frame);
+    console.log("WebSocket: Processing", pendingSubscriptions.length, "pending subscriptions");
+    
     // Process pending subscriptions
     pendingSubscriptions.forEach(({ destination, callback }) => {
       subscribe(destination, callback);
     });
     pendingSubscriptions.length = 0;
-    if (onConnectedCallback) onConnectedCallback();
+    
+    if (onConnectedCallback) {
+      console.log("WebSocket: Executing connection callback");
+      onConnectedCallback();
+    }
   };
 
   stompClient.onStompError = (frame) => {
-    console.error("Broker reported STOMP error: " + frame.headers["message"]);
-    console.error("Additional details: " + frame.body);
+    console.error("❌ WebSocket: STOMP error:", frame.headers["message"]);
+    console.error("WebSocket: Additional details:", frame.body);
   };
 
   stompClient.onWebSocketError = (error) => {
-    console.error("WebSocket transport error: ", error);
+    console.error("❌ WebSocket: Transport error:", error);
+  };
+
+  stompClient.onDisconnect = () => {
+    console.log("⚠️ WebSocket: Disconnected");
   };
 
   stompClient.activate();
@@ -59,7 +75,8 @@ const disconnect = () => {
 };
 
 const subscribe = (destination, callback) => {
-  if (!stompClient || !stompClient.connected) {
+  if (!stompClient?.connected) {
+    console.log("WebSocket: Client not connected, adding to pending subscriptions:", destination);
     pendingSubscriptions.push({ destination, callback });
     if (!stompClient?.active) {
       connect();
@@ -68,23 +85,33 @@ const subscribe = (destination, callback) => {
   }
 
   if (subscriptions.has(destination)) {
+    console.log("WebSocket: Already subscribed to:", destination);
     return;
   }
 
+  console.log("✅ WebSocket: Subscribing to:", destination);
   const subscription = stompClient.subscribe(destination, (message) => {
-    const parsedMessage = JSON.parse(message.body);
-    callback(parsedMessage);
+    try {
+      const parsedMessage = JSON.parse(message.body);
+      console.log("📨 WebSocket: Message received from", destination, ":", parsedMessage);
+      callback(parsedMessage);
+    } catch (error) {
+      console.error("❌ WebSocket: Error parsing message from", destination, ":", error);
+      console.error("Raw message:", message.body);
+    }
   });
 
   subscriptions.set(destination, subscription);
+  console.log("WebSocket: Total active subscriptions:", subscriptions.size);
 };
 
 const sendMessage = (destination, body) => {
   if (!stompClient?.connected) {
-    console.error("Cannot send message, STOMP client is not connected.");
+    console.error("❌ WebSocket: Cannot send message, STOMP client is not connected.");
     return;
   }
 
+  console.log("📤 WebSocket: Sending message to", destination, ":", body);
   stompClient.publish({
     destination: destination,
     body: JSON.stringify(body),

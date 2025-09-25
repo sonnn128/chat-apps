@@ -14,14 +14,33 @@ const ChatSection = () => {
   const currentChannel = channels.find((x) => x.id === currentChannelId);
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  
   useEffect(() => {
+    if (!user?.id) {
+      console.warn("⚠️ ChatSection: User ID not available, skipping WebSocket subscription");
+      return;
+    }
+
     const destination = `/user/${user.id}/queue/notifications`;
+    console.log("🔔 ChatSection: Setting up WebSocket subscription for user:", user.id);
+    
     websocketService.subscribe(destination, (message) => {
-      console.log("message: ", message);
+      console.log("📨 ChatSection: WebSocket message received:", message);
       
-      dispatch(receiveMessage(message));
+      try {
+        // Dispatch to Redux store for real-time messages
+        dispatch(receiveMessage(message));
+        console.log("✅ ChatSection: Real-time message dispatched to Redux store");
+      } catch (error) {
+        console.error("❌ ChatSection: Error dispatching message:", error);
+      }
     });
-  }, [dispatch, user.id, channels]);
+
+    // Cleanup function
+    return () => {
+      console.log("🧹 ChatSection: Cleaning up WebSocket subscription");
+    };
+  }, [dispatch, user?.id]);
 
   return (
     <div className="flex-1 flex flex-row bg-white overflow-hidden">

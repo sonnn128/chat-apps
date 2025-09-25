@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Avatar, List, Dropdown, Menu, Button } from "antd";
+import { Avatar, List, Dropdown, Menu } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
+import PropTypes from "prop-types";
 import {
   MoreOutlined,
   MailOutlined,
@@ -17,7 +18,7 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 
-import { removeChannel, setCurrentChannel } from "@/stores/slices/channelSlice";
+import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { removeCurrentFriend } from "@/stores/slices/friendshipSlice";
 import { fetchAllMembersOfChannel, fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
 
@@ -43,9 +44,12 @@ const StyledListItem = styled(List.Item)`
   }
 `;
 
-function ChannelList() {
+function ChannelList({ channels }) {
   const dispatch = useDispatch();
-  const { channels, currentChannelId } = useSelector((state) => state.channel);
+  const { channels: storeChannels, currentChannelId, status, error } = useSelector((state) => state.channel);
+  
+  // Use prop channels if provided, otherwise use store channels
+  const channelsToRender = channels || storeChannels;
 
   const [openDropdownId, setOpenDropdownId] = useState(null);
 
@@ -102,8 +106,8 @@ function ChannelList() {
   const handleLeaveGroupConfirm = () => {
     if (selectedChannelToLeave) {
       console.log(`Leaving group: ${selectedChannelToLeave.channelName}`);
-      // TODO: Dispatch action rời nhóm tại đây
-      // dispatch(leaveGroup(selectedChannelToLeave.id));
+      // TODO: Implement leave group functionality
+      console.log("Leave group functionality not implemented yet");
     }
     setIsLeaveGroupModalVisible(false);
     setSelectedChannelToLeave(null);
@@ -149,10 +153,32 @@ function ChannelList() {
     </Menu>
   );
 
+  // Log channel data for debugging
+  console.log("📋 ChannelList: Rendering", channelsToRender?.length || 0, "channels, status:", status);
+  console.log("📋 ChannelList: Channels data:", channelsToRender);
+  console.log("📋 ChannelList: Channels type:", typeof channelsToRender);
+  console.log("📋 ChannelList: Channels is array:", Array.isArray(channelsToRender));
+
+  if (status === 'loading') {
+    return (
+      <div style={{ padding: "10px", textAlign: "center" }}>
+        <div>Loading channels...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: "10px", textAlign: "center", color: "red" }}>
+        <div>Error loading channels: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: "10px" }}>
       <List
-        dataSource={channels}
+        dataSource={channelsToRender || []}
         renderItem={(channel) => (
           <StyledListItem
             key={channel.id}
@@ -221,5 +247,9 @@ function ChannelList() {
     </div>
   );
 }
+
+ChannelList.propTypes = {
+  channels: PropTypes.array,
+};
 
 export default ChannelList;

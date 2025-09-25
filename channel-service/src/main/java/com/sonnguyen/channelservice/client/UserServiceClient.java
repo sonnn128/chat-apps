@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "user-service", path = "/api/v1/users")
+@FeignClient(name = "user-service", path = "/api/v1/users", configuration = com.sonnguyen.channelservice.config.FeignConfig.class)
 public interface UserServiceClient {
     @GetMapping("/{id}")
     UserResponse getUserById(@PathVariable("id") UUID id);

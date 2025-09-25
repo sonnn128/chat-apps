@@ -21,6 +21,47 @@ services:
     container_name: notification-service
     depends_on: [discovery-server]
     networks: [microservice-net]
+
+  keycloak-mysql:
+    image: mysql:8.0
+    container_name: keycloak-mysql
+    restart: always
+    volumes:
+      - ./data/mysql_keycloak_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: password
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.0
+    container_name: keycloak
+    command: [ "start-dev", "--import-realm" ]
+    restart: always
+    depends_on:
+      keycloak-mysql:
+        condition: service_healthy
+    environment:
+      KC_DB: mysql
+      KC_DB_URL_HOST: keycloak-mysql
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak-realms/:/opt/keycloak/data/import/
+      # - ./keycloak-realms:/opt/keycloak/data/export
+# everything in keycloaks is storage in keycloak-mysql
+# how to export json file in keycloak
 networks:
   microservice-net:
     driver: bridge

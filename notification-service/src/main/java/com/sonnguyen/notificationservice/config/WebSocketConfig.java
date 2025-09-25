@@ -1,14 +1,17 @@
 package com.sonnguyen.notificationservice.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
-import lombok.RequiredArgsConstructor; // Thêm import
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSocketMessageBroker
-@RequiredArgsConstructor // Thêm annotation này
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final WebSocketAuthInterceptor webSocketAuthInterceptor;
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // "/topic" là tiền tố chung cho các broadcast messages
@@ -21,10 +24,20 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(webSocketAuthInterceptor);
+    }
+
+    @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*") // Cho phép tất cả các nguồn
-                .withSockJS(); // Hỗ trợ fallback cho các trình duyệt không hỗ trợ WebSocket
+                .setHandshakeHandler(new org.springframework.web.socket.server.support.DefaultHandshakeHandler())
+                .withSockJS() // Hỗ trợ fallback cho các trình duyệt không hỗ trợ WebSocket
+                .setHeartbeatTime(25000) // Heartbeat every 25 seconds
+                .setDisconnectDelay(5000) // Disconnect delay 5 seconds
+                .setStreamBytesLimit(128 * 1024) // 128KB stream limit
+                .setHttpMessageCacheSize(1000); // Cache size for HTTP messages
     }
 
 }

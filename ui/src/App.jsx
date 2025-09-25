@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 
 import { fetchUserProfile } from "@/stores/middlewares/authMiddleware";
+import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
 import Loading from "@/components/Loading";
 import Login from "@/pages/Login";
 import Main from "@/pages/Main";
@@ -19,12 +20,23 @@ function App() {
     const fetchProfile = async () => {
       if (token) {
         setIsLoading(true);
-        dispatch(fetchUserProfile());
+        console.log("🔄 App: Fetching user profile after reload...");
+        await dispatch(fetchUserProfile());
+        console.log("✅ App: User profile loaded, now fetching channels...");
+        dispatch(fetchAllChannels());
         setIsLoading(false);
       }
     };
     fetchProfile();
   }, [token, dispatch]);
+
+  // Auto-fetch channels when user is loaded (for both login and reload)
+  useEffect(() => {
+    if (user && token) {
+      console.log("🔄 App: User is authenticated, fetching channels...");
+      dispatch(fetchAllChannels());
+    }
+  }, [user, token, dispatch]);
 
   if (isLoading) {
     return <Loading />;

@@ -1,29 +1,23 @@
 package com.sonnguyen.channelservice.client;
 
-import com.sonnguyen.channelservice.dto.request.SendMessageRequest;
+import com.sonnguyen.channelservice.dto.response.ApiResponse;
+import com.sonnguyen.channelservice.dto.response.ChannelMessageDto;
 import com.sonnguyen.channelservice.dto.response.MessageResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "chat-service", path = "/api/v1/messages")
+@FeignClient(name = "chat-service", url = "${chat-service.url}")
 public interface ChatServiceClient {
-    @GetMapping("/{channelId}")
-    ResponseEntity<List<MessageResponse>> getMessagesByChannel(@PathVariable("channelId") UUID channelId);
 
-    @PostMapping
-    ResponseEntity<MessageResponse> sendMessage(
-            @RequestBody SendMessageRequest request,
-            @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId
-    );
+    @GetMapping("/api/v1/messages/{channelId}")
+    List<Object> getChannelMessages(@PathVariable UUID channelId);
 
-    @PostMapping("/save-only")
-    ResponseEntity<MessageResponse> saveMessageOnly(
-            @RequestBody SendMessageRequest request,
-            @RequestHeader("X-Authenticated-User-Id") String authenticatedUserId
-    );
-
+    @GetMapping("/api/v1/messages/user/{userId}/all")
+    Map<UUID, List<ChannelMessageDto>> getAllMessagesByUserId(@PathVariable UUID userId);
 }

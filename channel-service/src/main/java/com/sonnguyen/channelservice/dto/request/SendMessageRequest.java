@@ -1,6 +1,6 @@
 package com.sonnguyen.channelservice.dto.request;
 
-import com.sonnguyen.channelservice.model.message.ChannelMessageType;
+import com.sonnguyen.channelservice.dto.message.ChannelMessageType;
 import lombok.Builder;
 import lombok.Data;
 

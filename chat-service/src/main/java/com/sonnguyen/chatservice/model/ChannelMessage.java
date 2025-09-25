@@ -3,7 +3,7 @@ package com.sonnguyen.chatservice.model;
 import lombok.*;
 import org.springframework.data.cassandra.core.mapping.*;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 
 @ToString
@@ -23,6 +23,6 @@ public class ChannelMessage {
     @Column("type")
     private ChannelMessageType type;
     @Column("timestamp")
-    private Date timestamp;
-}
+    private Instant timestamp;
+} 
 

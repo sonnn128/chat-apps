@@ -73,14 +73,28 @@ const Sidebar = () => {
 
   const handleChannelSubmit = async () => {
     const name = newChannelName.trim();
-    if (!name) return;
+    if (!name) {
+      console.warn("⚠️ Sidebar: Channel name is empty");
+      return;
+    }
+    
+    console.log("📝 Sidebar: Creating channel:", name);
     const form = {
       channelName: name,
-      memberIds: [],
     };
-    await dispatch(fetchCreateChannel(form));
-    setNewChannelName("");
-    setIsAddingChannel(false);
+    
+    try {
+      const result = await dispatch(fetchCreateChannel(form));
+      if (result.type.endsWith('fulfilled')) {
+        console.log("✅ Sidebar: Channel created successfully");
+        setNewChannelName("");
+        setIsAddingChannel(false);
+      } else {
+        console.error("❌ Sidebar: Failed to create channel");
+      }
+    } catch (error) {
+      console.error("❌ Sidebar: Error creating channel:", error);
+    }
   };
 
   /**

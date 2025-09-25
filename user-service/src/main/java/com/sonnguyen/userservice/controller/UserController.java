@@ -23,12 +23,6 @@ public class UserController {
     private final UserService userService;
     private final UserRepository userRepository;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
-        UserResponse createdUser = userService.registerUser(request);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
-    }
-
     @GetMapping("/by-email")
     public ResponseEntity<User> getUserByEmailForAuth(@RequestParam("email") String email) {
         User user = userService.findUserByEmailForAuth(email);
@@ -52,8 +46,13 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getUserProfile(@RequestHeader("X-Authenticated-User-Id") String userId) {
-        return ResponseEntity.ok(userService.getUserProfile(userId));
+    public ResponseEntity<?> getUserProfile(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+        log.info("Fetching user with id: {}", userId);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                        .message("User profile")
+                        .success(true)
+                        .data(userService.getUserProfile(UUID.fromString(userId)))
+                .build());
     }
 
     @DeleteMapping("/{id}")

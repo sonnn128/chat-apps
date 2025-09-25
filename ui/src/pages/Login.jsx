@@ -15,6 +15,7 @@ import {
 // so direct import might not be needed unless you customize iconRender heavily.
 // For default behavior, they are not needed.
 import { loginUser } from "@/stores/middlewares/authMiddleware";
+import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
 import { successToast } from "@/utils/toast";
 
 const { Title, Text, Link } = Typography;
@@ -26,13 +27,24 @@ function Login() {
   const [form] = Form.useForm(); // Optional: if you need to interact with form instance
 
   const handleSubmit = async (values) => {
-    const result = await dispatch(
-      loginUser({ email: values.email.trim(), password: values.password })
-    ).unwrap();
+    try {
+      console.log("🔐 Login: Attempting to login...");
+      const result = await dispatch(
+        loginUser({ email: values.email.trim(), password: values.password })
+      ).unwrap();
 
-    if (result) {
-      successToast("Log in successfully");
-      navigate("/");
+      if (result) {
+        console.log("✅ Login: Login successful, loading channels...");
+        successToast("Log in successfully");
+        
+        // Load channels after successful login
+        await dispatch(fetchAllChannels());
+        console.log("✅ Login: Channels loaded successfully");
+        
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("❌ Login: Login failed:", error);
     }
   };
 

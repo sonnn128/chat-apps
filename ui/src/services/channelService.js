@@ -6,7 +6,17 @@ const CHANNEL_API = "/channels";
 const createChannel = async (form) =>
   post(CHANNEL_API, form , { headers: getAuthHeaders() });
 
-const getChannels = async () => get(CHANNEL_API, { headers: getAuthHeaders() });
+const getChannels = async () => {
+  console.log("📋 ChannelService: Making API call to get channels...");
+  const response = await get(CHANNEL_API, { headers: getAuthHeaders() });
+  console.log("📋 ChannelService: Full API response:", response);
+  console.log("📋 ChannelService: Response type:", typeof response);
+  console.log("📋 ChannelService: Response keys:", Object.keys(response || {}));
+  console.log("📋 ChannelService: Response.success:", response?.success);
+  console.log("📋 ChannelService: Response.data:", response?.data);
+  console.log("📋 ChannelService: Response.data length:", response?.data?.length);
+  return response;
+};
 
 const deleteChannel = async (channelId) => del(`${CHANNEL_API}/${channelId}`, { headers: getAuthHeaders() });
 

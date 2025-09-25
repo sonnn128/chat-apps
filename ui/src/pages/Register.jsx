@@ -16,6 +16,8 @@ function Register() {
   const handleSubmit = async (values) => {
     setIsLoading(true);
     try {
+      console.log("values: ", values);
+      
       await dispatch(registerUser({ ...values })).unwrap();
       successToast("Registration successful! Please log in.");
       navigate("/login");
@@ -101,6 +103,22 @@ function Register() {
             <Input placeholder="Enter your phone number" disabled={isLoading} autoComplete="tel" />
           </Form.Item>
 
+          {/* Phone field */}
+          <Form.Item
+            label="Username"
+            name="username"
+            rules={[
+              { required: true, message: "Please input your username number!" },
+              {
+                message:
+                  "username must be a valid Vietnamese number (e.g. 0799199916 or +84815216193)",
+              },
+            ]}
+          >
+            <Input placeholder="Enter your username number" disabled={isLoading} autoComplete="tel" />
+          </Form.Item>
+
+          {/* Password field */}
           <Form.Item
             label="Password"
             name="password"

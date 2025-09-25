@@ -2,8 +2,8 @@ package com.sonnguyen.notificationservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonnguyen.notificationservice.events.EventWrapper;
-import com.sonnguyen.notificationservice.events.NewChannelCreatedEvent;
-import com.sonnguyen.notificationservice.events.NewMessageSentEvent;
+import com.sonnguyen.notificationservice.events.ChannelCreatedEvent;
+import com.sonnguyen.notificationservice.events.MessageSentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -24,25 +24,25 @@ public class NotificationService {
 
     @KafkaListener(topics = "notifications-topic", groupId = "notification-group")
     public void handleNotification(EventWrapper<?> wrapper) {
-        log.info("Received event type: {}", wrapper.getEventType());
+        log.info("📨 NotificationService: Received event type: {}", wrapper.getEventType());
 
         switch (wrapper.getEventType()) {
-            case "NEW_MESSAGE" -> {
-                NewMessageSentEvent messageEvent =
-                        objectMapper.convertValue(wrapper.getPayload(), NewMessageSentEvent.class);
+            case MessageSentEvent.EVENT_TYPE -> {
+                MessageSentEvent messageEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), MessageSentEvent.class);
                 handleNewMessage(messageEvent);
             }
-            case "NEW_CHANNEL" -> {
-                NewChannelCreatedEvent channelEvent =
-                        objectMapper.convertValue(wrapper.getPayload(), NewChannelCreatedEvent.class);
+            case ChannelCreatedEvent.EVENT_TYPE -> {
+                ChannelCreatedEvent channelEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), ChannelCreatedEvent.class);
                 handleNewChannel(channelEvent);
             }
             default -> log.warn("Unknown event type: {}", wrapper.getEventType());
         }
     }
 
-    private void handleNewChannel(NewChannelCreatedEvent event) {
-        log.info("Event Received: NEW_CHANNEL {}. Notifying {} members, getCreatorId: {}",
+    private void handleNewChannel(ChannelCreatedEvent event) {
+        log.info("✅ NotificationService: CHANNEL_CREATED {}. Notifying {} members, getCreatorId: {}",
                 event.getChannelId(), event.getMemberIds().size(), event.getCreatorId());
 
         List<UUID> actualRecipients = event.getMemberIds().stream()
@@ -51,8 +51,8 @@ public class NotificationService {
         pushToUsers(actualRecipients, event);
     }
 
-    private void handleNewMessage(NewMessageSentEvent event) {
-        log.info("Event Received: NEW_MESSAGE in channel {}. Notifying {} recipients.",
+    private void handleNewMessage(MessageSentEvent event) {
+        log.info("✅ NotificationService: MESSAGE_SENT in channel {}. Notifying {} recipients.",
                 event.getKey().getChannelId(), event.getRecipientIds().size());
 
         List<UUID> actualRecipients = event.getRecipientIds().stream()
@@ -63,19 +63,21 @@ public class NotificationService {
     }
 
     private void pushToUsers(List<UUID> userIds, Object payload) {
-//        if (userIds == null || userIds.isEmpty()) {
-//            return;
-//        }
+        if (userIds == null || userIds.isEmpty()) {
+            log.warn("⚠️ NotificationService: No users to notify");
+            return;
+        }
 
-        log.info("Pushing payload of type {} to {} users.", payload.getClass().getSimpleName(), userIds.size());
+        log.info("📤 NotificationService: Pushing payload of type {} to {} users.", payload.getClass().getSimpleName(), userIds.size());
         final String destination = "/queue/notifications";
 
         userIds.forEach(userId -> {
             try {
-                log.info("Sending message to userId: {}", userId);
+                log.info("📨 NotificationService: Sending message to userId: {}", userId);
                 messagingTemplate.convertAndSendToUser(userId.toString(), destination, payload);
+                log.info("✅ NotificationService: Message sent successfully to user: {}", userId);
             } catch (Exception e) {
-                log.error("Failed to push payload to user {}. Error: {}", userId, e.getMessage());
+                log.error("❌ NotificationService: Failed to push payload to user {}. Error: {}", userId, e.getMessage());
             }
         });
     }

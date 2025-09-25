@@ -1,22 +1,27 @@
 package com.sonnguyen.chatservice.config;
 
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.client.RestTemplate;
 
 @Configuration
 public class WebConfig {
 
     @Bean
-    @LoadBalanced // Quan trọng: Giúp RestTemplate phân giải tên service (user-service) qua Eureka
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
 
     public AuthenticationManager authenticationManager() {
         return authentication -> null;

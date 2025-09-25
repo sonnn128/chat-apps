@@ -10,7 +10,7 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password }) => {
     const res = await authServices.login({ email, password })
-    return res.data
+    return res.data;
   }
 );
 

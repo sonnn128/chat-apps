@@ -1,6 +1,5 @@
 package com.sonnguyen.chatservice.dto.response;
 
-import com.sonnguyen.chatservice.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +16,7 @@ public class UserResponse {
     private String email;
     private String firstname;
     private String lastname;
-    private Role role;
+    private String phone;
 
     public static UserResponse fromUser(UserResponse user) {
         return UserResponse.builder()
@@ -25,7 +24,7 @@ public class UserResponse {
                 .email(user.getEmail())
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
-                .role(user.getRole())
+                .phone(user.getPhone())
                 .build();
     }
 }

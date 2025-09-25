@@ -3,6 +3,7 @@ import {
   fetchUserProfile,
   loginUser,
 } from "@/stores/middlewares/authMiddleware";
+import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
 
 const initialState = {
   user: null,
@@ -27,13 +28,17 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload;
         state.isLogin = true;
+        console.log("✅ Auth: User profile loaded, triggering channel fetch...");
+        // Note: We can't dispatch here directly, so we'll handle this in App.jsx
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.user = action.payload;
-        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.token = action.payload.accessToken;
         state.isLogin = true;
-        localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("token", action.payload.accessToken);
+        console.log("✅ Auth: Login successful, triggering channel fetch...");
+        // Note: We can't dispatch here directly, so we'll handle this in App.jsx
       });
   },
 });

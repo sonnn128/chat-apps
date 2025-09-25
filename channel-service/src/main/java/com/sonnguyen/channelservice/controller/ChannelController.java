@@ -1,14 +1,8 @@
 package com.sonnguyen.channelservice.controller;
 
-import com.sonnguyen.channelservice.client.ChatServiceClient;
-import com.sonnguyen.channelservice.dto.request.AddMembersRequest;
 import com.sonnguyen.channelservice.dto.request.CreateChannelRequest;
 import com.sonnguyen.channelservice.dto.response.ApiResponse;
 import com.sonnguyen.channelservice.dto.response.ChannelResponse;
-import com.sonnguyen.channelservice.dto.response.CreateChannelResponse;
-import com.sonnguyen.channelservice.dto.response.MessageResponse;
-import com.sonnguyen.channelservice.model.ChannelParticipant;
-import com.sonnguyen.channelservice.repository.ChannelParticipantRepository;
 import com.sonnguyen.channelservice.service.ChannelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,113 +20,86 @@ import java.util.UUID;
 public class ChannelController {
 
     private final ChannelService channelService;
-    private final ChatServiceClient chatServiceClient;
-    private final ChannelParticipantRepository channelParticipantRepository;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CreateChannelResponse>> createChannel(
-            @RequestBody CreateChannelRequest request,
-            @RequestHeader("X-Authenticated-User-Id") String creatorIdStr) {
-
-        UUID creatorId = UUID.fromString(creatorIdStr);
-        CreateChannelResponse newChannel = channelService.createChannel(request, creatorId);
-
-        ApiResponse<CreateChannelResponse> response = ApiResponse.<CreateChannelResponse>builder()
+    public ResponseEntity<?> createChannel(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestBody CreateChannelRequest request) {
+        return ResponseEntity.ok().body(ApiResponse.builder()
                 .success(true)
                 .message("Channel created successfully")
-                .data(newChannel)
-                .build();
+                .data(channelService.createChannel(request, UUID.fromString(userId)))
+                .build());
+    }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @GetMapping(value = {"", "/"})
+    public ResponseEntity<?> getMyChannels(
+            @RequestHeader("X-User-Id") String userId) {
+        log.info("📋 ChannelController: GET /api/v1/channels called for user: {}", userId);
+        
+        List<ChannelResponse> channels = channelService.getChannelsWithMessagesForUser(UUID.fromString(userId));
+        
+        ApiResponse<List<ChannelResponse>> response = ApiResponse.<List<ChannelResponse>>builder()
+                .success(true)
+                .message("Get all channels with messages successfully")
+                .data(channels)
+                .build();
+        
+        log.info("✅ ChannelController: Successfully returned {} channels with messages for user: {}", channels.size(), userId);
+        return ResponseEntity.ok(response);
     }
 
 
     @GetMapping("/{channelId}/participants/{userId}/check")
-    public ResponseEntity<Void> checkUserIsParticipant(
+    public ResponseEntity<ApiResponse<Boolean>> checkUserIsParticipant(
             @PathVariable UUID channelId,
             @PathVariable UUID userId) {
-
+        
+        log.info("🔍 ChannelController: Checking if user {} is participant in channel {}", userId, channelId);
+        
         boolean isParticipant = channelService.isUserParticipant(channelId, userId);
-        log.warn("User {} has been checked for participant", isParticipant);
-        return isParticipant
-                ? ResponseEntity.ok().build()
-                : ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<ChannelResponse>>> getMyChannels(
-            @RequestHeader("X-Authenticated-User-Id") String userId) {
-
-        List<ChannelResponse> channels = channelService.getChannelsForUser(UUID.fromString(userId));
-
-        List<ChannelResponse> updatedChannels = channels.stream()
-                .map(channel -> {
-                    List<MessageResponse> messages = chatServiceClient.getMessagesByChannel(channel.getId()).getBody();
-                    List<ChannelParticipant> participants = channelParticipantRepository.findByChannelId(channel.getId());
-                    return ChannelResponse.fromChannelAndMessage(channel, messages, participants);
-                })
-                .toList();
-
-        ApiResponse<List<ChannelResponse>> response = ApiResponse.<List<ChannelResponse>>builder()
-                .success(true)
-                .message("Get All channels successfully")
-                .data(updatedChannels)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-
-
-    @GetMapping("/{channelId}/participants/ids")
-    public ResponseEntity<List<UUID>> getParticipantIdsByChannelId(@PathVariable UUID channelId) {
-        List<UUID> participantIds = channelService.getParticipantIdsByChannelId(channelId);
-        return ResponseEntity.ok(participantIds);
-    }
-
-
-    @DeleteMapping("/{channelId}")
-    public ResponseEntity<?> deleteChannel(@PathVariable UUID channelId) {
-        return ResponseEntity.ok(ApiResponse.builder()
-                .message("Channel has been deleted successfully")
-                .success(true)
-                .data(channelService.deleteChannel(channelId))
-                .build());
-    }
-
-    @PostMapping("/{channelId}/participants")
-    public ResponseEntity<ApiResponse<List<ChannelParticipant>>> addMembersToChannel(
-            @PathVariable UUID channelId,
-            @RequestBody AddMembersRequest request,
-            @RequestHeader("X-Authenticated-User-Id") String addedByStr) {
-
-        UUID addByUserId = UUID.fromString(addedByStr);
-
-        List<ChannelParticipant> memberships = channelService.addMemberToChannel(channelId, request.getUserIds(), addByUserId);
-
-        ApiResponse<List<ChannelParticipant>> response = ApiResponse.<List<ChannelParticipant>>builder()
-                .success(true)
-                .message("Users added to channel successfully")
-                .data(memberships)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{channelId}/participants/leave")
-    public ResponseEntity<ApiResponse<Boolean>> leaveChannel(
-            @PathVariable UUID channelId,
-            @RequestHeader("X-Authenticated-User-Id") String userIdStr) {
-        UUID userId = UUID.fromString(userIdStr);
-        boolean result = channelService.leaveChannel(channelId, userId);
-
+        log.info("✅ ChannelController: User {} is participant in channel {}: {}", userId, channelId, isParticipant);
+        
         ApiResponse<Boolean> response = ApiResponse.<Boolean>builder()
-                .success(result)
-                .message(result ? "User has left the channel successfully" : "User is not a participant in this channel")
-                .data(result)
+                .success(true)
+                .message("User participant check completed")
+                .data(isParticipant)
                 .build();
-
+        
+        return ResponseEntity.ok(response);
+    }
+//
+//
+    @GetMapping("/{channelId}/participants/ids")
+    public ResponseEntity<ApiResponse<List<UUID>>> getParticipantIdsByChannelId(@PathVariable UUID channelId) {
+        log.info("🔍 ChannelController: Getting participant IDs for channel {}", channelId);
+        
+        List<UUID> participantIds = channelService.getParticipantIdsByChannelId(channelId);
+        log.info("✅ ChannelController: Found {} participants in channel {}", participantIds.size(), channelId);
+        
+        ApiResponse<List<UUID>> response = ApiResponse.<List<UUID>>builder()
+                .success(true)
+                .message("Participant IDs retrieved successfully")
+                .data(participantIds)
+                .build();
+        
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/user/{userId}/ids")
+    public ResponseEntity<ApiResponse<List<UUID>>> getChannelIdsByUserId(@PathVariable UUID userId) {
+        log.info("🔍 ChannelController: Getting channel IDs for user: {}", userId);
+        
+        List<UUID> channelIds = channelService.getChannelIdsByUserId(userId);
+        log.info("✅ ChannelController: Found {} channels for user: {}", channelIds.size(), userId);
+        
+        ApiResponse<List<UUID>> response = ApiResponse.<List<UUID>>builder()
+                .success(true)
+                .message("Channel IDs retrieved successfully")
+                .data(channelIds)
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
 }
 

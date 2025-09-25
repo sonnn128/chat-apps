@@ -1,7 +1,6 @@
 package com.sonnguyen.channelservice.dto.response;
 
-import com.sonnguyen.channelservice.model.Channel;
-import com.sonnguyen.channelservice.model.ChannelParticipant;
+import com.sonnguyen.channelservice.model.channel.Channel;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,36 +15,27 @@ public class ChannelResponse {
     private String channelName;
     private UUID createdBy;
     private LocalDateTime createdAt;
-    private List<MessageResponse> messages;
-    private List<ChannelParticipant> participants;
+    private List<MessageResponse> messages; // Messages from chat-service
+    private List<UUID> memberIds; // Member IDs
 
-    public static ChannelResponse fromChannelAndMessage(ChannelResponse channelResponse, List<MessageResponse> messages) {
-        return ChannelResponse.builder()
-                .id(channelResponse.getId())
-                .channelName(channelResponse.getChannelName())
-                .createdBy(channelResponse.getCreatedBy())
-                .createdAt(channelResponse.getCreatedAt())
-                .messages(messages)
-                .build();
-    }
-    public static ChannelResponse from(Channel channel){
+    public static ChannelResponse from(Channel channel) {
         return ChannelResponse.builder()
                 .id(channel.getId())
                 .channelName(channel.getChannelName())
-                .createdBy(channel.getCreatedBy())
                 .createdAt(channel.getCreatedAt())
+                .messages(List.<MessageResponse>of()) // Initialize empty messages list
+                .memberIds(List.of()) // Initialize empty memberIds list
                 .build();
     }
-    public static ChannelResponse fromChannelAndMessage(ChannelResponse channelResponse,
-                                                        List<MessageResponse> messages,
-                                                        List<ChannelParticipant> participants) {
+
+    public static ChannelResponse fromChannelAndMessage(ChannelResponse channelResponse) {
         return ChannelResponse.builder()
                 .id(channelResponse.getId())
                 .channelName(channelResponse.getChannelName())
                 .createdBy(channelResponse.getCreatedBy())
                 .createdAt(channelResponse.getCreatedAt())
-                .messages(messages)
-                .participants(participants)
+                .messages(channelResponse.getMessages())
+                .memberIds(channelResponse.getMemberIds())
                 .build();
     }
 

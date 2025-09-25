@@ -9,7 +9,7 @@ const httpRequest = axios.create({
 const handleRequest = async (callback) => {
   try {
     const response = await callback();
-    return response.data;
+    return response.data; // Return the full response data (ApiResponse format)
   } catch (error) {
     console.error("API Error:", error);
     errorToast(error.response?.data?.message || "Something went wrong");
