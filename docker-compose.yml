@@ -21,6 +21,52 @@ services:
     container_name: notification-service
     depends_on: [discovery-server]
     networks: [microservice-net]
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports: ["8081:8081"]
+    depends_on: [discovery-server, postgres]
+    networks: [microservice-net]
+  friendship-service:
+    build: ./friendship-service
+    container_name: friendship-service
+    ports: ["9009:9009"]
+    depends_on: [discovery-server, postgres]
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/friendship_db
+      - SPRING_DATASOURCE_USERNAME=dbuser
+      - SPRING_DATASOURCE_PASSWORD=dbpassword
+    networks: [microservice-net]
+
+  # PostgreSQL for User Service
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: chat_apps
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks: [microservice-net]
+
+  # PostgreSQL for Friendship Service
+  postgres-friendship:
+    image: postgres:15
+    container_name: postgres-friendship
+    restart: always
+    environment:
+      POSTGRES_DB: friendship_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data/postgres-friendship:/var/lib/postgresql/data
+    networks: [microservice-net]
 
   keycloak-mysql:
     image: mysql:8.0

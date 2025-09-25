@@ -4,10 +4,9 @@ import { UserPlus } from "lucide-react";
 import { useSelector } from "react-redux";
 
 const ChannelMembers = () => {
-  const { currentChannel, channels } = useSelector((state) => state.channel);
+  const { currentChannel } = useSelector((state) => state.channel);
   
-  const channelParticipants = currentChannel.participants;
-
+  const channelParticipants = currentChannel?.participants || [];
 
   return (
     <div className="pl-4 pr-2 pb-2">
@@ -22,9 +21,9 @@ const ChannelMembers = () => {
             key={member.userId}
             className="flex items-center gap-3 py-2 hover:bg-gray-50 rounded-lg px-2"
           >
-            <Avatar src={member.avatar}>member.name[0]</Avatar>
+            <Avatar src={member.avatar}>{member.name?.[0] || '?'}</Avatar>
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-gray-900">{member.name}</h3>
+              <h3 className="text-sm font-medium text-gray-900">{member.name || 'Unknown User'}</h3>
               {/* Hàng thông tin */}
               {member.role || member.addedBy ? (
                 <p className="text-xs text-gray-500">

@@ -1,9 +1,12 @@
 package com.sonnguyen.notificationservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sonnguyen.notificationservice.dto.SenderInfo;
 import com.sonnguyen.notificationservice.events.EventWrapper;
 import com.sonnguyen.notificationservice.events.ChannelCreatedEvent;
 import com.sonnguyen.notificationservice.events.MessageSentEvent;
+import com.sonnguyen.notificationservice.events.FriendRequestSentEvent;
+import com.sonnguyen.notificationservice.events.FriendRequestAcceptedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -37,6 +40,16 @@ public class NotificationService {
                         objectMapper.convertValue(wrapper.getPayload(), ChannelCreatedEvent.class);
                 handleNewChannel(channelEvent);
             }
+            case FriendRequestSentEvent.EVENT_TYPE -> {
+                FriendRequestSentEvent friendRequestEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), FriendRequestSentEvent.class);
+                handleFriendRequestSent(friendRequestEvent);
+            }
+            case FriendRequestAcceptedEvent.EVENT_TYPE -> {
+                FriendRequestAcceptedEvent friendAcceptedEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), FriendRequestAcceptedEvent.class);
+                handleFriendRequestAccepted(friendAcceptedEvent);
+            }
             default -> log.warn("Unknown event type: {}", wrapper.getEventType());
         }
     }
@@ -45,9 +58,8 @@ public class NotificationService {
         log.info("✅ NotificationService: CHANNEL_CREATED {}. Notifying {} members, getCreatorId: {}",
                 event.getChannelId(), event.getMemberIds().size(), event.getCreatorId());
 
-        List<UUID> actualRecipients = event.getMemberIds().stream()
-                .filter(recipientId -> !recipientId.equals(event.getCreatorId()))
-                .collect(Collectors.toList());
+        // For channel creation, notify all members including creator
+        List<UUID> actualRecipients = event.getMemberIds();
         pushToUsers(actualRecipients, event);
     }
 
@@ -55,11 +67,29 @@ public class NotificationService {
         log.info("✅ NotificationService: MESSAGE_SENT in channel {}. Notifying {} recipients.",
                 event.getKey().getChannelId(), event.getRecipientIds().size());
 
-        List<UUID> actualRecipients = event.getRecipientIds().stream()
-                .filter(recipientId -> !recipientId.equals(event.getUserId()))
-                .collect(Collectors.toList());
+        // For all messages (including regular chat), notify all recipients including sender
+        // This ensures real-time updates for all users in the channel
+        List<UUID> actualRecipients = event.getRecipientIds();
 
         pushToUsers(actualRecipients, event);
+    }
+
+    private void handleFriendRequestSent(FriendRequestSentEvent event) {
+        log.info("✅ NotificationService: FRIEND_REQUEST_SENT from {} to {}", 
+                event.getRequesterId(), event.getFriendId());
+
+        // Notify the friend who received the request
+        List<UUID> recipients = List.of(event.getFriendId());
+        pushToUsers(recipients, event);
+    }
+
+    private void handleFriendRequestAccepted(FriendRequestAcceptedEvent event) {
+        log.info("✅ NotificationService: FRIEND_REQUEST_ACCEPTED by {} for {}", 
+                event.getAccepterId(), event.getRequesterId());
+
+        // Notify both users about the accepted friendship
+        List<UUID> recipients = List.of(event.getRequesterId(), event.getAccepterId());
+        pushToUsers(recipients, event);
     }
 
     private void pushToUsers(List<UUID> userIds, Object payload) {

@@ -45,6 +45,28 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, user));
     }
 
+    @GetMapping("/search/phone")
+    public ResponseEntity<ApiResponse<UserResponse>> searchUserByPhone(@RequestParam("phone") String phone) {
+        log.info("Searching user by phone: {}", phone);
+        try {
+            UserResponse user = userService.searchUserByPhone(phone);
+            ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                    .success(true)
+                    .message("User found successfully")
+                    .data(user)
+                    .build();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error searching user by phone {}: {}", phone, e.getMessage());
+            ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                    .success(false)
+                    .message("User not found with phone: " + phone)
+                    .data(null)
+                    .build();
+            return ResponseEntity.status(404).body(response);
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> getUserProfile(@RequestHeader(value = "X-User-Id", required = false) String userId) {
         log.info("Fetching user with id: {}", userId);

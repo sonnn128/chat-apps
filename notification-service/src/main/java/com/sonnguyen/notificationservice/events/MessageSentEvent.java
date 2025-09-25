@@ -21,6 +21,8 @@ public class MessageSentEvent {
     private String content;
     private ChannelMessageType type;
     private Instant timestamp;
+    private String senderName;
+    private String senderAvatar;
 
     private List<UUID> recipientIds;
 }

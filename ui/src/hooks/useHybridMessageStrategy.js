@@ -41,12 +41,19 @@ export const useHybridMessageStrategy = (channelId) => {
         const currentMessages = messageCache[channelId] || [];
         const newMessages = [...response.data, ...currentMessages];
         
+        // Sort messages by timestamp (oldest first)
+        const sortedMessages = newMessages.sort((a, b) => {
+          const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+          const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+          return timestampA - timestampB;
+        });
+        
         dispatch(cacheChannelMessages({ 
           channelId, 
-          messages: newMessages 
+          messages: sortedMessages 
         }));
         
-        console.log(`✅ Loaded ${response.data.length} more messages for channel ${channelId}`);
+        console.log(`✅ Loaded ${response.data.length} more messages for channel ${channelId} (sorted by timestamp)`);
         return response.data;
       }
       
@@ -67,12 +74,19 @@ export const useHybridMessageStrategy = (channelId) => {
     const currentMessages = messageCache[channelId] || [];
     const newMessages = [...currentMessages, message];
     
+    // Sort messages by timestamp (oldest first)
+    const sortedMessages = newMessages.sort((a, b) => {
+      const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+      const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+      return timestampA - timestampB;
+    });
+    
     dispatch(cacheChannelMessages({ 
       channelId, 
-      messages: newMessages 
+      messages: sortedMessages 
     }));
     
-    console.log(`📨 Added real-time message to channel ${channelId}, total: ${newMessages.length}`);
+    console.log(`📨 Added real-time message to channel ${channelId}, total: ${sortedMessages.length} (sorted by timestamp)`);
   }, [channelId, messageCache, dispatch]);
 
   /**

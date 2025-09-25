@@ -37,8 +37,6 @@ const friendshipService = {
   getPendingRequests: async () =>
     get(`${FRIENDSHIP_API}/pending`, { headers: getAuthHeaders() }),
 
-  getFriendSuggestions: async () =>
-    get(`${FRIENDSHIP_API}/suggestions`, { headers: getAuthHeaders() }),
 };
 
 export default friendshipService;

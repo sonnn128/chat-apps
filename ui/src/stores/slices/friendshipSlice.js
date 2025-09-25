@@ -2,7 +2,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   fetchFriendList,
-  fetchFriendSuggestions,
   fetchPendingRequests,
   sendFriendRequest,
   acceptFriendRequest,
@@ -12,7 +11,6 @@ import {
 const initialState = {
   currentFriend: null,
   friends: [],
-  friendSuggestions: [],
   pendingRequests: [],
   loading: false,
   error: null,
@@ -38,8 +36,50 @@ const friendshipSlice = createSlice({
     removeCurrentFriend: (state) => {
       state.currentFriend = null;
     },
-    clearFriendSuggestions: (state) => {
-      state.friendSuggestions = [];
+    receiveFriendRequest: (state, action) => {
+      const event = action.payload;
+      console.log("📨 FriendshipSlice: Received friend request event:", event);
+      
+      // Add to pending requests if not already there
+      const existingRequest = state.pendingRequests.find(
+        req => req.friendshipKey?.requesterId === event.requesterId && 
+               req.friendshipKey?.friendId === event.friendId
+      );
+      
+      if (!existingRequest) {
+        const newRequest = {
+          friendshipKey: {
+            requesterId: event.requesterId,
+            friendId: event.friendId
+          },
+          status: "PENDING",
+          createdAt: event.createdAt
+        };
+        state.pendingRequests.push(newRequest);
+        console.log("✅ FriendshipSlice: Added friend request to pending requests");
+      }
+    },
+    receiveFriendRequestAccepted: (state, action) => {
+      const event = action.payload;
+      console.log("📨 FriendshipSlice: Received friend request accepted event:", event);
+      
+      // Remove from pending requests
+      state.pendingRequests = state.pendingRequests.filter(
+        req => !(req.friendshipKey?.requesterId === event.requesterId && 
+                 req.friendshipKey?.friendId === event.accepterId)
+      );
+      
+      // Add to friends list
+      const newFriend = {
+        friendshipKey: {
+          requesterId: event.requesterId,
+          friendId: event.accepterId
+        },
+        status: "ACCEPTED",
+        acceptedAt: event.acceptedAt
+      };
+      state.friends.push(newFriend);
+      console.log("✅ FriendshipSlice: Added friend to friends list");
     },
   },
   extraReducers: (builder) => {
@@ -52,13 +92,6 @@ const friendshipSlice = createSlice({
       })
       .addCase(fetchFriendList.rejected, handleRejected)
 
-      // Fetch Friend Suggestions
-      .addCase(fetchFriendSuggestions.pending, handlePending)
-      .addCase(fetchFriendSuggestions.fulfilled, (state, action) => {
-        state.loading = false;
-        state.friendSuggestions = action.payload;
-      })
-      .addCase(fetchFriendSuggestions.rejected, handleRejected)
 
       // Fetch Pending Requests
       .addCase(fetchPendingRequests.pending, handlePending)
@@ -72,10 +105,6 @@ const friendshipSlice = createSlice({
       .addCase(sendFriendRequest.pending, handlePending)
       .addCase(sendFriendRequest.fulfilled, (state, action) => {
         state.loading = false;
-        // Remove the user from suggestions if they were there
-        state.friendSuggestions = state.friendSuggestions.filter(
-          (suggestion) => suggestion.id !== action.payload.friendId
-        );
         state.pendingRequests.push(action.payload);
       })
       .addCase(sendFriendRequest.rejected, handleRejected)
@@ -111,6 +140,7 @@ const friendshipSlice = createSlice({
 export const { 
   setCurrentFriend, 
   removeCurrentFriend,
-  clearFriendSuggestions 
+  receiveFriendRequest,
+  receiveFriendRequestAccepted
 } = friendshipSlice.actions;
 export default friendshipSlice.reducer;

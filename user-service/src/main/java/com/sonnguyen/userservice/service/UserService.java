@@ -44,4 +44,10 @@ public class UserService {
         return getUserById(userId);
     }
 
+    public UserResponse searchUserByPhone(String phone) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new CommonException("User not found with phone: " + phone, HttpStatus.NOT_FOUND));
+        return UserResponse.fromUser(user);
+    }
+
 }

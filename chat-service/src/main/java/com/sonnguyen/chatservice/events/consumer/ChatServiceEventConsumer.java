@@ -1,10 +1,10 @@
-package com.sonnguyen.chatservice.events.consumer;
+package com.sonnguyen.friendshipservice.events.consumer;
 
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonnguyen.chatservice.client.ChannelServiceClient;
+import com.sonnguyen.chatservice.dto.SenderInfo;
 import com.sonnguyen.chatservice.dto.response.ApiResponse;
-import com.sonnguyen.chatservice.exception.ExternalServiceException;
 import com.sonnguyen.chatservice.events.dto.ChannelCreatedEvent;
 import com.sonnguyen.chatservice.events.dto.EventWrapper;
 import com.sonnguyen.chatservice.events.dto.MessageSentEvent;
@@ -64,7 +64,6 @@ public class ChatServiceEventConsumer {
     }
 
     private void handleChannelCreated(ChannelCreatedEvent event) {
-        log.info("Received ChannelCreatedEvent: {}", event);
         createChannelNoticeMessage(event);
     }
 
@@ -75,66 +74,62 @@ public class ChatServiceEventConsumer {
     }
 
     private void createChannelNoticeMessage(ChannelCreatedEvent event) {
-        try {
-            log.info("Creating notice message for new channel: {}", event.getChannelId());
-            
-            ChannelMessageKey key = new ChannelMessageKey();
-            key.setChannelId(event.getChannelId());
-            key.setMessageId(Uuids.timeBased());
+        log.info("🔔 ChatService: Creating notice message for channel: {}", event.getChannelId());
 
-            String channelName = event.getChannelName() != null ? event.getChannelName() : "kênh";
-            String content = "Kênh " + channelName + " đã được tạo thành công";
+        ChannelMessageKey key = new ChannelMessageKey();
+        key.setChannelId(event.getChannelId());
+        key.setMessageId(Uuids.timeBased());
 
-            ChannelMessage noticeMessage = ChannelMessage.builder()
-                    .key(key)
-                    .userId(event.getCreatorId())
-                    .content(content)
-                    .type(ChannelMessageType.NOTICE)
-                    .timestamp(Instant.now())
-                    .build();
+        String channelName = event.getChannelName() != null ? event.getChannelName() : "kênh";
+        String content = "Kênh " + channelName + " đã được tạo thành công";
+        log.info("🔔 ChatService: Notice message content: {}", content);
 
-            channelMessageRepository.save(noticeMessage);
-            log.info("Notice message created for new channel: {}", event.getChannelId());
-            
-            // Also save to user_message table for efficient user-based queries
-            saveToUserMessageTable(noticeMessage);
-            
-            // Publish notification event for notification-service
-            produceNewMessageEvent(noticeMessage);
-            
-            log.info("✅ Channel creation process completed for channel: {}", event.getChannelId());
-            
-        } catch (Exception e) {
-            log.error("Error creating notice message: {}", e.getMessage(), e);
-            // Don't rethrow to avoid infinite retry loops in Kafka
-        }
+//      1. create a message TYPE notice
+        ChannelMessage noticeMessage = ChannelMessage.builder()
+                .key(key)
+                .userId(event.getCreatorId())
+                .content(content)
+                .type(ChannelMessageType.NOTICE)
+                .timestamp(Instant.now())
+                .build();
+
+//      2. save to channel message
+        channelMessageRepository.save(noticeMessage);
+        log.info("✅ ChatService: Notice message saved to database for channel: {}", event.getChannelId());
+
+//      3. save to user_message
+        saveToUserMessageTable(noticeMessage);
+
+//      4. push event
+        produceNewMessageEvent(noticeMessage);
+        log.info("✅ ChatService: Notice message event produced for channel: {}", event.getChannelId());
     }
 
     private void produceNewMessageEvent(ChannelMessage message) {
-        try {
-            ApiResponse<List<UUID>> response = channelServiceClient.getParticipantIdsByChannelId(message.getKey().getChannelId());
-            List<UUID> recipientIds = response.getData();
+        ApiResponse<List<UUID>> response = channelServiceClient.getParticipantIdsByChannelId(message.getKey().getChannelId());
+        List<UUID> recipientIds = response.getData();
 
-            MessageSentEvent event = MessageSentEvent.builder()
-                    .key(MessageSentEventKey.builder()
-                            .channelId(message.getKey().getChannelId())
-                            .messageId(message.getKey().getMessageId())
-                            .build())
-                    .type(message.getType())
-                    .userId(message.getUserId())
-                    .content(message.getContent())
-                    .timestamp(message.getTimestamp())
-                    .recipientIds(recipientIds)
-                    .build();
+        // Get sender information for real-time display
+        SenderInfo senderInfo = getSenderInfoForNotice();
 
-            EventWrapper<MessageSentEvent> wrapper = new EventWrapper<>(MessageSentEvent.EVENT_TYPE, event);
-            kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);
-            log.info("Produced MessageSentEvent for notice message {}", message.getKey().getMessageId());
-            
-        } catch (Exception e) {
-            log.error("Error producing MessageSentEvent: {}", e.getMessage(), e);
-            // Don't rethrow to avoid infinite retry loops in Kafka
-        }
+        MessageSentEvent event = MessageSentEvent.builder()
+                .key(MessageSentEventKey.builder()
+                        .channelId(message.getKey().getChannelId())
+                        .messageId(message.getKey().getMessageId())
+                        .build())
+                .type(message.getType())
+                .userId(message.getUserId())
+                .content(message.getContent())
+                .timestamp(message.getTimestamp())
+                .senderName(senderInfo.name())
+                .senderAvatar(senderInfo.avatar())
+                .recipientIds(recipientIds)
+                .build();
+
+        EventWrapper<MessageSentEvent> wrapper = new EventWrapper<>(MessageSentEvent.EVENT_TYPE, event);
+        kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);
+        log.info("Produced MessageSentEvent for notice message {}", message.getKey().getMessageId());
+
     }
 
     /**
@@ -148,20 +143,27 @@ public class ChatServiceEventConsumer {
                     .messageId(message.getKey().getMessageId())
                     .channelId(message.getKey().getChannelId())
                     .build();
-            
+
             UserMessage userMessage = UserMessage.builder()
                     .key(userKey)
                     .content(message.getContent())
                     .type(message.getType())
                     .build();
-            
+
             userMessageRepository.save(userMessage);
             log.info("✅ ChatServiceEventConsumer: Saved notice message to user_message table for user: {}", message.getUserId());
-            log.info("🔍 Debug - Saved UserMessage: key={}, content={}, type={}", 
+            log.info("🔍 Debug - Saved UserMessage: key={}, content={}, type={}",
                     userMessage.getKey(), userMessage.getContent(), userMessage.getType());
         } catch (Exception e) {
             log.error("❌ ChatServiceEventConsumer: Error saving notice message to user_message table: {}", e.getMessage(), e);
             // Don't rethrow to avoid infinite retry loops in Kafka
         }
+    }
+
+    /**
+     * Get sender information for notice messages
+     */
+    private SenderInfo getSenderInfoForNotice() {
+        return new SenderInfo("System", null);
     }
 }

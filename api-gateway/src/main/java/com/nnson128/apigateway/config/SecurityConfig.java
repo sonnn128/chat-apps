@@ -29,6 +29,7 @@ public class SecurityConfig {
                                 .pathMatchers("/v3/api-docs/**").permitAll()
                                 .pathMatchers("/api/v1/auth/register").permitAll()
                                 .pathMatchers("/api/v1/auth/login").permitAll()
+                                .pathMatchers("/api/v1/users/search/phone").permitAll() // Temporarily allow phone search for testing
                                 .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> {

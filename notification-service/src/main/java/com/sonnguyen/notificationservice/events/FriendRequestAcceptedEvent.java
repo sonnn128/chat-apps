@@ -1,0 +1,21 @@
+package com.sonnguyen.notificationservice.events;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class FriendRequestAcceptedEvent {
+    public static final String EVENT_TYPE = "FRIEND_REQUEST_ACCEPTED";
+
+    private UUID requesterId;
+    private UUID accepterId;
+    private LocalDateTime acceptedAt;
+}

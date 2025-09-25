@@ -2,6 +2,7 @@ package com.sonnguyen.chatservice.service;
 
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.sonnguyen.chatservice.client.ChannelServiceClient;
+import com.sonnguyen.chatservice.dto.SenderInfo;
 import com.sonnguyen.chatservice.dto.request.SendMessageRequest;
 import com.sonnguyen.chatservice.dto.response.ApiResponse;
 import com.sonnguyen.chatservice.exception.ChannelAccessException;
@@ -132,6 +133,9 @@ public class ChannelMessageService {
             
             List<UUID> recipientIds = response.getData();
 
+            // Get sender information for real-time display
+            SenderInfo senderInfo = getSenderInfo(message.getUserId());
+
             MessageSentEvent event = MessageSentEvent.builder()
                     .key(MessageSentEventKey.builder()
                             .channelId(message.getKey().getChannelId())
@@ -141,6 +145,8 @@ public class ChannelMessageService {
                     .userId(message.getUserId())
                     .content(message.getContent())
                     .timestamp(message.getTimestamp())
+                    .senderName(senderInfo.name())
+                    .senderAvatar(senderInfo.avatar())
                     .recipientIds(recipientIds)
                     .build();
             log.info("event: " + event);
@@ -281,6 +287,21 @@ public class ChannelMessageService {
         } catch (Exception e) {
             log.error("❌ ChannelMessageService: Error processing batch channel messages: {}", e.getMessage(), e);
             throw new ExternalServiceException("Failed to retrieve batch channel messages", e);
+        }
+    }
+
+    /**
+     * Get sender information for real-time display
+     */
+    private SenderInfo getSenderInfo(UUID userId) {
+        try {
+            // For now, we'll use a placeholder
+            // In the future, this should call user service to get actual user information
+            String name = "User " + userId.toString().substring(0, 8);
+            return new SenderInfo(name, null);
+        } catch (Exception e) {
+            log.warn("Could not get sender information for user {}: {}", userId, e.getMessage());
+            return new SenderInfo("Unknown User", null);
         }
     }
 }

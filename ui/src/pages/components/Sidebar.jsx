@@ -17,8 +17,8 @@ import ChannelList from "@/components/channels/ChannelList";
 import FriendList from "@/components/friends/FriendList";
 import FriendsModal from "@/components/modals/FriendsModal";
 import FriendRequestsModal from "@/components/modals/FriendRequestsModal";
-import FriendSuggestionsModal from "@/components/modals/FriendSuggestionsModal";
 import { successToast } from "@/utils/toast";
+import userService from "@/services/userService";
 
 import {
   sendFriendRequest,
@@ -30,17 +30,8 @@ import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
 const { Title } = Typography;
 
 const Sidebar = () => {
-  const dataFakeForSearch = {
-    firstname: "Dương",
-    lastname: "Hoàng",
-    email: "sonvipkl0423@gmail.com",
-    password: "sonvipkl042@gmail.com",
-    phone: "0799199917",
-    avatar: "https://static.vecteezy.com/system/resources/previews/024/183/535/original/male-avatar-portrait-of-a-young-man-with-glasses-illustration-of-male-character-in-modern-color-style-vector.jpg",
-  };
-
   const dispatch = useDispatch();
-  const { friendSuggestions, friends, pendingRequests } = useSelector(
+  const { friends, pendingRequests } = useSelector(
     (state) => state.friendship
   );
   const { channels } = useSelector((state) => state.channel);
@@ -50,10 +41,11 @@ const Sidebar = () => {
   const [openModal, setOpenModal] = useState({
     friends: false,
     requests: false,
-    suggestions: false,
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [displayedSearchTerm, setDisplayedSearchTerm] = useState(""); // State để lưu giá trị hiển thị trên Input
+  const [searchResult, setSearchResult] = useState(null); // State để lưu kết quả tìm kiếm
+  const [isSearching, setIsSearching] = useState(false); // State để hiển thị loading
 
   const handleAddFriend = async (userId) => {
     const res = await dispatch(sendFriendRequest(userId)).unwrap();
@@ -102,9 +94,30 @@ const Sidebar = () => {
    * - debounce để tránh spam filter/API call
    */
   const debouncedSearch = useCallback(
-    debounce((value) => {
-      setSearchTerm(value.trim()); // Cập nhật searchTerm cho logic hiển thị
-    }, 200),
+    debounce(async (value) => {
+      const trimmedValue = value.trim();
+      setSearchTerm(trimmedValue);
+      
+      // Nếu là số điện thoại (chỉ chứa số và có độ dài hợp lý)
+      if (trimmedValue && /^\d{10,11}$/.test(trimmedValue)) {
+        setIsSearching(true);
+        try {
+          const response = await userService.searchUserByPhone(trimmedValue);
+          if (response.success) {
+            setSearchResult(response.data);
+          } else {
+            setSearchResult(null);
+          }
+        } catch (error) {
+          console.error("Error searching user by phone:", error);
+          setSearchResult(null);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResult(null);
+      }
+    }, 500),
     []
   );
 
@@ -139,10 +152,10 @@ const Sidebar = () => {
     return displayedSearchTerm.trim() !== "";
   }, [displayedSearchTerm]);
 
-  // Kiểm tra nếu số điện thoại trùng khớp với dataFakeForSearch
-  const isMatchingFakePhone = useMemo(() => {
-    return hasSearchInput && searchTerm === dataFakeForSearch.phone;
-  }, [hasSearchInput, searchTerm, dataFakeForSearch.phone]);
+  // Kiểm tra nếu có kết quả tìm kiếm số điện thoại
+  const hasPhoneSearchResult = useMemo(() => {
+    return hasSearchInput && searchResult && /^\d{10,11}$/.test(searchTerm);
+  }, [hasSearchInput, searchResult, searchTerm]);
 
   const headerActions = [
     {
@@ -156,12 +169,6 @@ const Sidebar = () => {
       icon: <UserOutlined />,
       count: friends.length,
       onClick: () => toggleModal("friends"),
-    },
-    {
-      title: "Friend Suggestions",
-      icon: <UserAddOutlined />,
-      count: friendSuggestions.length,
-      onClick: () => toggleModal("suggestions"),
     },
     { title: "Settings", icon: <SettingOutlined />, to: "/settings" },
   ];
@@ -223,7 +230,7 @@ const Sidebar = () => {
 
       {/* MAIN LIST */}
       <div className="flex-1 overflow-y-auto p-3">
-        {hasSearchInput && !isMatchingFakePhone && (
+        {hasSearchInput && !hasPhoneSearchResult && !isSearching && (
           // Hiển thị như ảnh nếu có input search và không trùng SĐT fake
           <div className="flex flex-col items-center justify-center p-4">
             <PhoneOutlined
@@ -235,22 +242,41 @@ const Sidebar = () => {
           </div>
         )}
 
-        {isMatchingFakePhone && (
-          // Hiển thị dataFakeForSearch nếu trùng SĐT fake
+        {isSearching && (
+          <div className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
+            <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+            <div>
+              <p className="font-semibold m-0 text-gray-500">Đang tìm kiếm...</p>
+            </div>
+          </div>
+        )}
+
+        {hasPhoneSearchResult && (
+          // Hiển thị kết quả tìm kiếm thực từ API
           <div className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
             <img
-              src={dataFakeForSearch.avatar} // Sử dụng avatar của dataFakeForSearch
+              src={searchResult.avatar || "https://via.placeholder.com/40x40?text=U"}
               alt="Avatar"
               className="w-10 h-10 rounded-full object-cover"
             />
-            <div>
+            <div className="flex-1">
               <p className="font-semibold m-0">
-                {dataFakeForSearch.firstname} {dataFakeForSearch.lastname}
+                {searchResult.firstname} {searchResult.lastname}
               </p>
               <p className="text-sm text-gray-600 m-0">
-                {dataFakeForSearch.phone}
+                {searchResult.phone}
+              </p>
+              <p className="text-xs text-gray-500 m-0">
+                {searchResult.email}
               </p>
             </div>
+            <Button 
+              type="primary" 
+              size="small"
+              onClick={() => handleAddFriend(searchResult.id)}
+            >
+              Kết bạn
+            </Button>
           </div>
         )}
 
@@ -315,12 +341,6 @@ const Sidebar = () => {
         onClose={() => toggleModal("requests")}
         requests={pendingRequests}
         onAccept={handleAcceptRequest}
-      />
-      <FriendSuggestionsModal
-        open={openModal.suggestions}
-        onClose={() => toggleModal("suggestions")}
-        suggestions={friendSuggestions}
-        onAddFriend={handleAddFriend}
       />
     </motion.div>
   );

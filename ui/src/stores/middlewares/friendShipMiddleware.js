@@ -6,13 +6,6 @@ export const fetchFriendList = createAsyncThunk(
   async () => await friendshipService.getFriendList()
 );
 
-export const fetchFriendSuggestions = createAsyncThunk(
-  "friendship/fetchFriendSuggestions",
-  async () => {
-    const res = await friendshipService.getFriendSuggestions();
-    return res.data;
-  }
-);
 
 export const fetchPendingRequests = createAsyncThunk(
   "friendship/fetchPendingRequests",

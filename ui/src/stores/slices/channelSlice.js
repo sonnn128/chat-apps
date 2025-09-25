@@ -56,15 +56,29 @@ const channelSlice = createSlice({
       const channelId = action.payload.key.channelId;
       const channelFind = state.channels.find((item) => item.id == channelId);
       
+      // Add senderName for real-time messages
+      const messageWithSender = {
+        ...action.payload,
+        senderName: action.payload.senderName || "Unknown User",
+        senderAvatar: action.payload.senderAvatar || null
+      };
+      
       if (channelFind) {
         if (!channelFind.messages) {
           channelFind.messages = [];
         }
-        channelFind.messages.push(action.payload);
+        channelFind.messages.push(messageWithSender);
         console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
       } else {
         console.warn("⚠️ Channel: Channel not found for message:", channelId);
       }
+      
+      // Also update messageCache for real-time UI updates
+      if (!state.messageCache[channelId]) {
+        state.messageCache[channelId] = [];
+      }
+      state.messageCache[channelId].push(messageWithSender);
+      console.log("✅ Channel: Message added to messageCache", channelId, "Total cached messages:", state.messageCache[channelId].length);
     },
     
     // Message cache actions
@@ -110,9 +124,16 @@ const channelSlice = createSlice({
         // Cache messages for each channel if they exist
         channels.forEach(channel => {
           if (channel.messages && channel.messages.length > 0) {
-            state.messageCache[channel.id] = channel.messages;
+            // Sort messages by timestamp (oldest first)
+            const sortedMessages = [...channel.messages].sort((a, b) => {
+              const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+              const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+              return timestampA - timestampB;
+            });
+            
+            state.messageCache[channel.id] = sortedMessages;
             state.preloadedChannels[channel.id] = true;
-            console.log(`✅ Channel: Cached ${channel.messages.length} messages for channel ${channel.id}`);
+            console.log(`✅ Channel: Cached ${sortedMessages.length} messages for channel ${channel.id} (sorted by timestamp)`);
           } else {
             // Initialize empty message cache for channels without messages
             if (!state.messageCache[channel.id]) {
