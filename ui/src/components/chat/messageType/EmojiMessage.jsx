@@ -1,43 +1,48 @@
 import React from "react";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, Avatar } from "antd";
 import { MoreOutlined, RollbackOutlined, SmileOutlined } from "@ant-design/icons";
+import PropTypes from "prop-types";
 
 function EmojiMessage({ content, isCurrentUser, senderName = "User", senderAvatar }) {
   return (
-    <div className={`flex items-start gap-2 ${isCurrentUser ? "justify-end" : ""}`}>
+    <div className={`flex items-start ${isCurrentUser ? "justify-end" : ""}`}>
       {!isCurrentUser && (
-        <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-            {senderName[0] || "U"}
-          </div>
-        </div>
+        <Avatar
+          size={32}
+          style={{ marginRight: 8 }}
+          src={senderAvatar}
+        >
+          {senderName[0] || "U"}
+        </Avatar>
       )}
-      <div className="flex flex-col max-w-xs">
+      <div className={isCurrentUser ? "flex flex-col items-end" : ""}>
         {!isCurrentUser && (
-          <div className="text-xs font-medium text-gray-500 mb-1 ml-1">{senderName}</div>
+          <div className="text-xs font-semibold text-white mb-1" style={{ marginLeft: 4 }}>
+            {senderName}
+          </div>
         )}
-        <div className="flex items-end gap-2 group">
+        <div className={`flex items-end gap-2 group ${isCurrentUser ? "flex-row-reverse" : ""}`}>
           <div
-            className={`
-              emoji-message-container
-              ${isCurrentUser ? "emoji-current-user" : "emoji-other-user"}
-              flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200
-              cursor-pointer transform hover:scale-105
-            `}
+            className="p-3 rounded-2xl flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer transform hover:scale-105"
+            style={{
+              borderTopLeftRadius: isCurrentUser ? 16 : 4,
+              borderTopRightRadius: isCurrentUser ? 4 : 16,
+              marginLeft: !isCurrentUser ? 4 : 0,
+            }}
           >
-            <span className="text-3xl filter drop-shadow-sm" role="img" aria-label="emoji" style={{ textShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
+            <span className="text-2xl" aria-label="emoji">
               {content}
             </span>
           </div>
 
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 items-center">
-            <Tooltip title="More options" overlayClassName="custom-tooltip">
+            <Tooltip title="More options">
               <Button type="text" shape="circle" size="small" icon={<MoreOutlined />} />
             </Tooltip>
-            <Tooltip title="Reply" overlayClassName="custom-tooltip">
+            <Tooltip title="Reply">
               <Button type="text" shape="circle" size="small" icon={<RollbackOutlined />} />
             </Tooltip>
-            <Tooltip title="Choose an emoji" overlayClassName="custom-tooltip">
+            <Tooltip title="Choose an emoji">
               <Button type="text" shape="circle" size="small" icon={<SmileOutlined />} />
             </Tooltip>
           </div>
@@ -46,5 +51,12 @@ function EmojiMessage({ content, isCurrentUser, senderName = "User", senderAvata
     </div>
   );
 }
+
+EmojiMessage.propTypes = {
+  content: PropTypes.string.isRequired,
+  isCurrentUser: PropTypes.bool.isRequired,
+  senderName: PropTypes.string,
+  senderAvatar: PropTypes.string,
+};
 
 export default EmojiMessage;

@@ -16,6 +16,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"), // Phải trỏ đến thư mục gốc của source
     },
   },
+  optimizeDeps: {
+    include: ["emoji-mart", "emoji-picker-react"],
+  },
   server: {
     proxy: {
       "/ws": {

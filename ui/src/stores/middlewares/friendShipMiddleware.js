@@ -25,10 +25,18 @@ export const acceptFriendRequest = createAsyncThunk(
   async (friendId) => await friendshipService.acceptFriendRequest(friendId)
 );
 
-export const removeFriend = createAsyncThunk(
-  "friendship/removeFriend",
-  async (friendId) => {
-    await friendshipService.unfriendUser(friendId);
-    return { friendId };
-  }
+export const rejectFriendRequest = createAsyncThunk(
+  "friendship/rejectFriendRequest",
+  async (friendId) => await friendshipService.rejectFriendRequest(friendId)
 );
+
+export const cancelFriendRequest = createAsyncThunk(
+  "friendship/cancelFriendRequest",
+  async (friendId) => await friendshipService.cancelFriendRequest(friendId)
+);
+
+export const unfriendUser = createAsyncThunk(
+  "friendship/unfriendUser",
+  async (friendId) => await friendshipService.unfriendUser(friendId)
+);
+

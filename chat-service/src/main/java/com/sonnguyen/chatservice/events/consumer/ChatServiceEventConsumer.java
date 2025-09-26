@@ -1,4 +1,4 @@
-package com.sonnguyen.friendshipservice.events.consumer;
+package com.sonnguyen.chatservice.events.consumer;
 
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,7 +55,12 @@ public class ChatServiceEventConsumer {
                             objectMapper.convertValue(wrapper.getPayload(), MessageSentEvent.class);
                     handleMessageSent(messageEvent);
                 }
-                default -> log.warn("Unknown event type: {}", wrapper.getEventType());
+                default -> {
+                    // Only log unknown event types that are not friend-related
+                    if (!wrapper.getEventType().contains("FRIEND")) {
+                        log.warn("Unknown event type: {}", wrapper.getEventType());
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("Error processing event: {}", e.getMessage(), e);

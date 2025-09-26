@@ -1,6 +1,7 @@
 package com.sonnguyen.channelservice.controller;
 
 import com.sonnguyen.channelservice.dto.request.CreateChannelRequest;
+import com.sonnguyen.channelservice.dto.request.AddPeopleToChannelRequest;
 import com.sonnguyen.channelservice.dto.response.ApiResponse;
 import com.sonnguyen.channelservice.dto.response.ChannelResponse;
 import com.sonnguyen.channelservice.service.ChannelService;
@@ -99,6 +100,26 @@ public class ChannelController {
                 .data(channelIds)
                 .build();
         
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{channelId}/add-people")
+    public ResponseEntity<ApiResponse<String>> addPeopleToChannel(
+            @PathVariable UUID channelId,
+            @RequestHeader("X-User-Id") String userId,
+            @RequestBody AddPeopleToChannelRequest request) {
+        
+        log.info("👥 ChannelController: Adding people to channel {} by user {}", channelId, userId);
+        
+        channelService.addPeopleToChannel(channelId, UUID.fromString(userId), request.getMemberIds());
+        
+        ApiResponse<String> response = ApiResponse.<String>builder()
+                .success(true)
+                .message("People added to channel successfully")
+                .data("People have been added to the channel")
+                .build();
+        
+        log.info("✅ ChannelController: Successfully added {} people to channel {}", request.getMemberIds().size(), channelId);
         return ResponseEntity.ok(response);
     }
 }

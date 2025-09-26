@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, Typography, Button, Avatar, List } from "antd";
-import { setCurrentFriend } from "@/stores/slices/friendshipSlice";
+import { Modal, Typography, Button, Avatar, List, Popconfirm } from "antd";
+import { setCurrentFriend, unfriendUser } from "@/stores/slices/friendshipSlice";
 import { removeCurrentChannel } from "@/stores/slices/channelSlice";
 
 const { Title, Text } = Typography;
@@ -14,6 +14,11 @@ const FriendsModal = ({ open, onClose }) => {
     dispatch(setCurrentFriend(friend));
     dispatch(removeCurrentChannel());
     onClose();
+  };
+
+  const handleUnfriend = (friendId, e) => {
+    e.stopPropagation(); // Prevent triggering handleSelectFriend
+    dispatch(unfriendUser(friendId));
   };
 
   return (
@@ -34,18 +39,38 @@ const FriendsModal = ({ open, onClose }) => {
           dataSource={friends}
           renderItem={(friend) => (
             <List.Item
-              key={friend.id}
+              key={friend.friendId}
               onClick={() => handleSelectFriend(friend)}
               className="cursor-pointer hover:bg-gray-100 rounded-lg px-2"
+              actions={[
+                <Popconfirm
+                  key="unfriend"
+                  title="Xóa bạn bè"
+                  description="Bạn có chắc chắn muốn xóa bạn bè này không?"
+                  onConfirm={(e) => handleUnfriend(friend.friendId, e)}
+                  okText="Xóa"
+                  cancelText="Hủy"
+                  okButtonProps={{ danger: true }}
+                >
+                  <Button
+                    type="text"
+                    danger
+                    size="small"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Xóa bạn
+                  </Button>
+                </Popconfirm>
+              ]}
             >
               <List.Item.Meta
-                avatar={<Avatar src={friend.avatar || ""} />}
+                avatar={<Avatar src={friend.friendAvatar || ""} />}
                 title={
                   <Text strong>
-                    {friend.firstname + " " + friend.lastname}
+                    {`${friend.friendFirstname || ""} ${friend.friendLastname || ""}`}
                   </Text>
                 }
-                description={friend.email || "email"}
+                description={friend.friendEmail || "No email"}
               />
             </List.Item>
           )}

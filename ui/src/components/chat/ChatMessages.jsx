@@ -40,7 +40,15 @@ const ChatMessages = () => {
   }, [isLoading, loadMoreMessages]);
 
   const renderMessage = (message) => {
-    const isCurrentUser = user.id === message.userId;
+    // Debug: Log message structure and user info
+    console.log("🔍 ChatMessages: Rendering message:", message);
+    console.log("🔍 ChatMessages: Message keys:", Object.keys(message || {}));
+    console.log("🔍 ChatMessages: Message userId:", message.userId);
+    console.log("🔍 ChatMessages: User data:", user);
+    console.log("🔍 ChatMessages: User data.id:", user?.data?.id);
+    
+    const isCurrentUser = user?.data?.id === message.userId;
+    console.log("🔍 ChatMessages: isCurrentUser:", isCurrentUser);
 
     switch (message.type) {
       case "CHAT":

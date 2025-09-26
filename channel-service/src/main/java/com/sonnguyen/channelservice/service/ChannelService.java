@@ -89,8 +89,14 @@ public class ChannelService {
         log.info("🔔 ChannelService: ChannelCreatedEvent created: {}", event);
         
 //        3. push event
-        kafkaTemplate.send(NOTIFICATION_TOPIC, new EventWrapper<>(ChannelCreatedEvent.EVENT_TYPE, event));
-        log.info("✅ ChannelService: ChannelCreatedEvent sent to topic: {}", NOTIFICATION_TOPIC);
+        EventWrapper<ChannelCreatedEvent> wrapper = new EventWrapper<>(ChannelCreatedEvent.EVENT_TYPE, event);
+        log.info("🔔 ChannelService: Sending EventWrapper: {}", wrapper);
+        try {
+            kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);
+            log.info("✅ ChannelService: ChannelCreatedEvent sent to topic: {}", NOTIFICATION_TOPIC);
+        } catch (Exception e) {
+            log.error("❌ ChannelService: Error sending ChannelCreatedEvent: {}", e.getMessage(), e);
+        }
     }
 
 
@@ -129,7 +135,7 @@ public class ChannelService {
         List<Channel> channels = channelRepository.findAllById(channelIds);
 
         // Get all messages for all channels in one API call
-        Map<UUID, List<ChannelMessageDto>> rawMessagesMap = chatServiceClient.getAllMessagesByUserId(userId);
+        Map<UUID, List<ChannelMessageDto>> rawMessagesMap = chatServiceClient.getBatchChannelMessages(channelIds);
         log.info("📨 ChannelService: Received {} message groups from chat-service", rawMessagesMap.size());
 
         // Convert ChannelMessageDto objects to MessageResponse objects
@@ -261,6 +267,107 @@ public class ChannelService {
 
         log.info("🔍 ChannelService: Converted to MessageResponse: {}", response);
         return response;
+    }
+
+    public void addPeopleToChannel(UUID channelId, UUID addedByUserId, List<UUID> memberIds) {
+        log.info("👥 ChannelService: Adding {} people to channel {} by user {}", memberIds.size(), channelId, addedByUserId);
+
+        // Check if channel exists
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+
+        // Check if user is a member of the channel
+        if (!isUserParticipant(channelId, addedByUserId)) {
+            throw new RuntimeException("User is not a member of this channel");
+        }
+
+        // Get current members to avoid duplicates
+        List<UUID> currentMemberIds = getParticipantIdsByChannelId(channelId);
+        
+        // Filter out users who are already members
+        List<UUID> newMemberIds = memberIds.stream()
+                .filter(memberId -> !currentMemberIds.contains(memberId))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (newMemberIds.isEmpty()) {
+            log.info("⚠️ ChannelService: All users are already members of the channel");
+            return;
+        }
+
+        // Add new memberships
+        List<Membership> newMemberships = newMemberIds.stream()
+                .map(memberId -> {
+                    MembershipKey key = MembershipKey.builder()
+                            .channelId(channelId)
+                            .userId(memberId)
+                            .build();
+                    
+                    return Membership.builder()
+                            .membershipKey(key)
+                            .role(MembershipRole.MEMBER) // Set default role
+                            .joinedAt(java.time.LocalDateTime.now())
+                            .build();
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        membershipRepository.saveAll(newMemberships);
+        log.info("✅ ChannelService: Added {} new members to channel {}", newMemberIds.size(), channelId);
+
+        // Send notification message
+        sendMembersAddedNotification(channelId, addedByUserId, newMemberIds, channel.getChannelName());
+    }
+
+    private void sendMembersAddedNotification(UUID channelId, UUID addedByUserId, List<UUID> newMemberIds, String channelName) {
+        try {
+            // Get user info for the person who added members
+            UserResponse addedByUser = userServiceClient.getUserById(addedByUserId);
+            String addedByUserName = addedByUser.getFirstname() + " " + addedByUser.getLastname();
+
+            // Get user info for the new members
+            List<String> newMemberNames = newMemberIds.stream()
+                    .map(memberId -> {
+                        try {
+                            UserResponse user = userServiceClient.getUserById(memberId);
+                            return user.getFirstname() + " " + user.getLastname();
+                        } catch (Exception e) {
+                            log.warn("⚠️ ChannelService: Could not fetch user info for member {}", memberId);
+                            return "Unknown User";
+                        }
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            // Create notification message
+            String notificationMessage = String.format("%s đã thêm %s vào kênh", 
+                    addedByUserName, 
+                    String.join(", ", newMemberNames));
+
+            // Send message to chat service
+            SendMessageRequest messageRequest = SendMessageRequest.builder()
+                    .content(notificationMessage)
+                    .type(ChannelMessageType.NOTICE)
+                    .build();
+
+            chatServiceClient.sendMessage(channelId, addedByUserId, messageRequest);
+            log.info("✅ ChannelService: Sent members added notification: {}", notificationMessage);
+
+            // Send real-time event
+            MembersAddedToChannelEvent event = MembersAddedToChannelEvent.builder()
+                    .channelId(channelId)
+                    .channelName(channelName)
+                    .addedByUserId(addedByUserId)
+                    .addedByUserName(addedByUserName)
+                    .newMemberIds(newMemberIds)
+                    .newMemberNames(newMemberNames)
+                    .addedAt(java.time.LocalDateTime.now())
+                    .build();
+
+            EventWrapper<MembersAddedToChannelEvent> wrapper = new EventWrapper<>(MembersAddedToChannelEvent.EVENT_TYPE, event);
+            kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);
+            log.info("✅ ChannelService: MembersAddedToChannelEvent sent to topic: {}", NOTIFICATION_TOPIC);
+
+        } catch (Exception e) {
+            log.error("❌ ChannelService: Error sending members added notification", e);
+        }
     }
 
 }

@@ -42,7 +42,7 @@ export const useHybridMessageStrategy = (channelId) => {
         const newMessages = [...response.data, ...currentMessages];
         
         // Sort messages by timestamp (oldest first)
-        const sortedMessages = newMessages.sort((a, b) => {
+        const sortedMessages = newMessages.toSorted((a, b) => {
           const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
           const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
           return timestampA - timestampB;
@@ -75,7 +75,7 @@ export const useHybridMessageStrategy = (channelId) => {
     const newMessages = [...currentMessages, message];
     
     // Sort messages by timestamp (oldest first)
-    const sortedMessages = newMessages.sort((a, b) => {
+    const sortedMessages = newMessages.toSorted((a, b) => {
       const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
       const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
       return timestampA - timestampB;
@@ -108,6 +108,7 @@ export const useHybridMessageStrategy = (channelId) => {
   return {
     messages: cachedMessages,
     isPreloaded,
+    isLoading: false, // Add isLoading for compatibility
     messagePreview: getMessagePreview(),
     addRealtimeMessage,
     loadMoreMessages

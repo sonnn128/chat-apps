@@ -31,14 +31,16 @@ export const fetchAllChannels = createAsyncThunk(
   }
 );
 
-export const fetchAllMembersOfChannel = createAsyncThunk(
-  "channels/getAllMembersOfChannel",
-  async (channelId) => await channelService.getAllMembersOfChannel(channelId)
-);
 export const addMembersToChannel = createAsyncThunk(
   "channels/addMembersToChannel",
   async ({ channelId, userIds }) =>
     await channelService.addMembersToChannel(channelId, userIds)
+);
+
+export const addPeopleToChannel = createAsyncThunk(
+  "channels/addPeopleToChannel",
+  async ({ channelId, memberIds }) =>
+    await channelService.addPeopleToChannel(channelId, memberIds)
 );
 
 export const sendChannelMessage = createAsyncThunk(

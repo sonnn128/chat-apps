@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchUserProfile } from "@/stores/middlewares/authMiddleware";
 import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
+import { fetchPendingRequests, fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
 import Loading from "@/components/Loading";
 import Login from "@/pages/Login";
 import Main from "@/pages/Main";
@@ -22,19 +23,23 @@ function App() {
         setIsLoading(true);
         console.log("🔄 App: Fetching user profile after reload...");
         await dispatch(fetchUserProfile());
-        console.log("✅ App: User profile loaded, now fetching channels...");
+        console.log("✅ App: User profile loaded, now fetching channels and friends...");
         dispatch(fetchAllChannels());
+        dispatch(fetchFriendList());
+        dispatch(fetchPendingRequests());
         setIsLoading(false);
       }
     };
     fetchProfile();
   }, [token, dispatch]);
 
-  // Auto-fetch channels when user is loaded (for both login and reload)
+  // Auto-fetch channels and friends when user is loaded (for both login and reload)
   useEffect(() => {
     if (user && token) {
-      console.log("🔄 App: User is authenticated, fetching channels...");
+      console.log("🔄 App: User is authenticated, fetching channels and friends...");
       dispatch(fetchAllChannels());
+      dispatch(fetchFriendList());
+      dispatch(fetchPendingRequests());
     }
   }, [user, token, dispatch]);
 
@@ -43,23 +48,21 @@ function App() {
   }
 
   return (
-    <>
-      <Routes>
-        <Route path="/" element={user ? <Main /> : <Navigate to="/login" />} />
-        <Route
-          path="/login"
-          element={!user ? <Login /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/register"
-          element={!user ? <Register /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/settings"
-          element={user ? <Settings /> : <Navigate to="/login" />}
-        />
-      </Routes>
-    </>
+    <Routes>
+      <Route path="/" element={user ? <Main /> : <Navigate to="/login" />} />
+      <Route
+        path="/login"
+        element={!user ? <Login /> : <Navigate to="/" />}
+      />
+      <Route
+        path="/register"
+        element={!user ? <Register /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/settings"
+        element={user ? <Settings /> : <Navigate to="/login" />}
+      />
+    </Routes>
   );
 }
 

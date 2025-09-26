@@ -5,13 +5,16 @@ import {
   fetchPendingRequests,
   sendFriendRequest,
   acceptFriendRequest,
-  removeFriend,
+  rejectFriendRequest,
+  cancelFriendRequest,
+  unfriendUser,
 } from "@/stores/middlewares/friendShipMiddleware";
 
 const initialState = {
   currentFriend: null,
   friends: [],
   pendingRequests: [],
+  sentRequests: [], // Track requests sent by current user
   loading: false,
   error: null,
 };
@@ -42,16 +45,18 @@ const friendshipSlice = createSlice({
       
       // Add to pending requests if not already there
       const existingRequest = state.pendingRequests.find(
-        req => req.friendshipKey?.requesterId === event.requesterId && 
-               req.friendshipKey?.friendId === event.friendId
+        req => req.requesterId === event.requesterId && 
+               req.friendId === event.friendId
       );
       
       if (!existingRequest) {
         const newRequest = {
-          friendshipKey: {
-            requesterId: event.requesterId,
-            friendId: event.friendId
-          },
+          requesterId: event.requesterId,
+          friendId: event.friendId,
+          requesterFirstname: "Unknown", // Will be populated by API call
+          requesterLastname: "User",
+          requesterEmail: "unknown@example.com",
+          requesterAvatar: null,
           status: "PENDING",
           createdAt: event.createdAt
         };
@@ -63,23 +68,44 @@ const friendshipSlice = createSlice({
       const event = action.payload;
       console.log("📨 FriendshipSlice: Received friend request accepted event:", event);
       
-      // Remove from pending requests
+      // Remove from pending requests (for the person who accepted)
       state.pendingRequests = state.pendingRequests.filter(
-        req => !(req.friendshipKey?.requesterId === event.requesterId && 
-                 req.friendshipKey?.friendId === event.accepterId)
+        req => !(req.requesterId === event.requesterId && req.friendId === event.accepterId)
+      );
+      
+      // Remove from sent requests (for the person who sent the request)
+      state.sentRequests = state.sentRequests.filter(
+        req => req.friendId !== event.accepterId
       );
       
       // Add to friends list
       const newFriend = {
-        friendshipKey: {
-          requesterId: event.requesterId,
-          friendId: event.accepterId
-        },
+        friendId: event.accepterId,
+        friendFirstname: "Unknown", // Will be populated by API call
+        friendLastname: "User",
+        friendEmail: "unknown@example.com",
+        friendAvatar: null,
         status: "ACCEPTED",
         acceptedAt: event.acceptedAt
       };
       state.friends.push(newFriend);
-      console.log("✅ FriendshipSlice: Added friend to friends list");
+      console.log("✅ FriendshipSlice: Added friend to friends list and removed from pending/sent requests");
+    },
+    receiveFriendRequestRejected: (state, action) => {
+      const event = action.payload;
+      console.log("📨 FriendshipSlice: Received friend request rejected event:", event);
+      
+      // Remove from pending requests - the requesterId is who sent the request
+      state.pendingRequests = state.pendingRequests.filter(
+        req => req.requesterId !== event.requesterId
+      );
+      
+      // Remove from sent requests (for the person who sent the request)
+      state.sentRequests = state.sentRequests.filter(
+        req => req.friendId !== event.rejecterId
+      );
+      
+      console.log("✅ FriendshipSlice: Removed rejected friend request from pending and sent requests");
     },
   },
   extraReducers: (builder) => {
@@ -105,7 +131,14 @@ const friendshipSlice = createSlice({
       .addCase(sendFriendRequest.pending, handlePending)
       .addCase(sendFriendRequest.fulfilled, (state, action) => {
         state.loading = false;
-        state.pendingRequests.push(action.payload);
+        // Add to sentRequests to track what we've sent
+        const friendId = action.meta.arg;
+        const sentRequest = {
+          friendId: friendId,
+          status: "PENDING",
+          sentAt: new Date().toISOString()
+        };
+        state.sentRequests.push(sentRequest);
       })
       .addCase(sendFriendRequest.rejected, handleRejected)
 
@@ -113,27 +146,53 @@ const friendshipSlice = createSlice({
       .addCase(acceptFriendRequest.pending, handlePending)
       .addCase(acceptFriendRequest.fulfilled, (state, action) => {
         state.loading = false;
-        const acceptedRequest = state.pendingRequests.find(
-          (req) => req.id.friendId === action.payload.id.friendId
-        );
+        // Remove from pending requests using requesterId from action meta
+        const requesterId = action.meta.arg;
         state.pendingRequests = state.pendingRequests.filter(
-          (req) => req.id.friendId !== action.payload.id.friendId
+          (req) => req.requesterId !== requesterId
         );
-        if (acceptedRequest) {
-          state.friends.push(action.payload);
-        }
+        // Add to friends list
+        state.friends.push(action.payload);
+        console.log("✅ FriendshipSlice: Accepted friend request and updated UI");
       })
       .addCase(acceptFriendRequest.rejected, handleRejected)
 
-      // Remove Friend
-      .addCase(removeFriend.pending, handlePending)
-      .addCase(removeFriend.fulfilled, (state, action) => {
+      // Reject Friend Request
+      .addCase(rejectFriendRequest.pending, handlePending)
+      .addCase(rejectFriendRequest.fulfilled, (state, action) => {
         state.loading = false;
-        state.friends = state.friends.filter(
-          (friend) => friend.id.friendId !== action.payload.friendId
+        // Remove from pending requests using requesterId from action meta
+        const requesterId = action.meta.arg;
+        state.pendingRequests = state.pendingRequests.filter(
+          (req) => req.requesterId !== requesterId
+        );
+        console.log("✅ FriendshipSlice: Rejected friend request and updated UI");
+      })
+      .addCase(rejectFriendRequest.rejected, handleRejected)
+
+      // Cancel Friend Request
+      .addCase(cancelFriendRequest.pending, handlePending)
+      .addCase(cancelFriendRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        // Remove from sent requests - use the friendId from the action meta
+        const friendId = action.meta.arg;
+        state.sentRequests = state.sentRequests.filter(
+          (req) => req.friendId !== friendId
         );
       })
-      .addCase(removeFriend.rejected, handleRejected);
+      .addCase(cancelFriendRequest.rejected, handleRejected)
+
+      // Unfriend User
+      .addCase(unfriendUser.pending, handlePending)
+      .addCase(unfriendUser.fulfilled, (state, action) => {
+        state.loading = false;
+        // Remove from friends list - use the friendId from the action meta
+        const friendId = action.meta.arg;
+        state.friends = state.friends.filter(
+          (friend) => friend.friendId !== friendId
+        );
+      })
+      .addCase(unfriendUser.rejected, handleRejected);
   },
 });
 
@@ -141,6 +200,9 @@ export const {
   setCurrentFriend, 
   removeCurrentFriend,
   receiveFriendRequest,
-  receiveFriendRequestAccepted
+  receiveFriendRequestAccepted,
+  receiveFriendRequestRejected
 } = friendshipSlice.actions;
+
+export { rejectFriendRequest, cancelFriendRequest, unfriendUser };
 export default friendshipSlice.reducer;

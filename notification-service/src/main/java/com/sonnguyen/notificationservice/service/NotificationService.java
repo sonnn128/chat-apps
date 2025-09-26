@@ -7,6 +7,7 @@ import com.sonnguyen.notificationservice.events.ChannelCreatedEvent;
 import com.sonnguyen.notificationservice.events.MessageSentEvent;
 import com.sonnguyen.notificationservice.events.FriendRequestSentEvent;
 import com.sonnguyen.notificationservice.events.FriendRequestAcceptedEvent;
+import com.sonnguyen.notificationservice.events.FriendRequestRejectedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -50,6 +51,11 @@ public class NotificationService {
                         objectMapper.convertValue(wrapper.getPayload(), FriendRequestAcceptedEvent.class);
                 handleFriendRequestAccepted(friendAcceptedEvent);
             }
+            case FriendRequestRejectedEvent.EVENT_TYPE -> {
+                FriendRequestRejectedEvent friendRejectedEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), FriendRequestRejectedEvent.class);
+                handleFriendRequestRejected(friendRejectedEvent);
+            }
             default -> log.warn("Unknown event type: {}", wrapper.getEventType());
         }
     }
@@ -89,6 +95,15 @@ public class NotificationService {
 
         // Notify both users about the accepted friendship
         List<UUID> recipients = List.of(event.getRequesterId(), event.getAccepterId());
+        pushToUsers(recipients, event);
+    }
+
+    private void handleFriendRequestRejected(FriendRequestRejectedEvent event) {
+        log.info("✅ NotificationService: FRIEND_REQUEST_REJECTED by {} for {}", 
+                event.getRejecterId(), event.getRequesterId());
+
+        // Notify the requester who was rejected
+        List<UUID> recipients = List.of(event.getRequesterId());
         pushToUsers(recipients, event);
     }
 

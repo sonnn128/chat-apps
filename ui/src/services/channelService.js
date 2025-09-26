@@ -26,11 +26,15 @@ const getChannelById = async (channelId) =>
 const addMembersToChannel = async (channelId, userIds) =>
   post(`${CHANNEL_API}/${channelId}/members`, {userIds}, { headers: getAuthHeaders() });
 
+const addPeopleToChannel = async (channelId, memberIds) =>
+  post(`${CHANNEL_API}/${channelId}/add-people`, {memberIds}, { headers: getAuthHeaders() });
+
 const channelService = {
   createChannel,
   getChannels,
   getChannelById,
   addMembersToChannel,
+  addPeopleToChannel,
   deleteChannel
 };
 

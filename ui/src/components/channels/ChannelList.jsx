@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Avatar, List, Dropdown, Menu } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
@@ -8,23 +8,21 @@ import {
   MailOutlined,
   BellOutlined,
   UserOutlined,
-  PhoneOutlined,
-  VideoCameraOutlined,
   StopOutlined,
   FolderOutlined,
   DeleteOutlined,
-  WarningOutlined,
   RightOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
 
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { removeCurrentFriend } from "@/stores/slices/friendshipSlice";
-import { fetchAllMembersOfChannel, fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
+import { fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
 
 // Import các modal mới
 import DeleteChannelModal from "../modals/channeloptions/DeleteChannelModal";
 import LeaveGroupModal from "../modals/channeloptions/LeaveGroupModal";
+import AddPeopleModal from "../modals/AddPeopleModal";
 
 const StyledListItem = styled(List.Item)`
   cursor: pointer;
@@ -62,11 +60,10 @@ function ChannelList({ channels }) {
     useState(false);
   const [selectedChannelToLeave, setSelectedChannelToLeave] = useState(null);
 
-  useEffect(() => {
-    if (currentChannelId) {
-      dispatch(fetchAllMembersOfChannel(currentChannelId));
-    }
-  }, [currentChannelId, dispatch]);
+  const [isAddPeopleModalVisible, setIsAddPeopleModalVisible] =
+    useState(false);
+  const [selectedChannelToAddPeople, setSelectedChannelToAddPeople] = useState(null);
+
 
   const onSelectChannel = (channel) => {
     dispatch(setCurrentChannel(channel));
@@ -80,6 +77,9 @@ function ChannelList({ channels }) {
     } else if (e.key === "leave_group") {
       setSelectedChannelToLeave(channel);
       setIsLeaveGroupModalVisible(true);
+    } else if (e.key === "add_people") {
+      setSelectedChannelToAddPeople(channel);
+      setIsAddPeopleModalVisible(true);
     } else {
       console.log(`Clicked ${e.key} for channel ${channel.channelName}`);
     }
@@ -129,12 +129,6 @@ function ChannelList({ channels }) {
       <Menu.Item key="view_profile" icon={<UserOutlined />}>
         View profile
       </Menu.Item>
-      <Menu.Item key="audio_call" icon={<PhoneOutlined />}>
-        Audio call
-      </Menu.Item>
-      <Menu.Item key="video_chat" icon={<VideoCameraOutlined />}>
-        Video chat
-      </Menu.Item>
       <Menu.Item key="block" icon={<StopOutlined />}>
         Block
       </Menu.Item>
@@ -143,9 +137,6 @@ function ChannelList({ channels }) {
       </Menu.Item>
       <Menu.Item key="delete_chat" icon={<DeleteOutlined />}>
         Delete chat
-      </Menu.Item>
-      <Menu.Item key="report" icon={<WarningOutlined />}>
-        Report
       </Menu.Item>
       <Menu.Item key="leave_group" icon={<LogoutOutlined />}>
         Leave Group
@@ -243,6 +234,15 @@ function ChannelList({ channels }) {
         onConfirm={handleLeaveGroupConfirm}
         onCancel={handleLeaveGroupCancel}
         groupName={selectedChannelToLeave?.channelName}
+      />
+
+      {/* Sử dụng AddPeopleModal */}
+      <AddPeopleModal
+        open={isAddPeopleModalVisible}
+        onClose={() => setIsAddPeopleModalVisible(false)}
+        channelId={selectedChannelToAddPeople?.id}
+        channelName={selectedChannelToAddPeople?.channelName}
+        currentMembers={selectedChannelToAddPeople?.participants?.map(member => member.userId) || []}
       />
     </div>
   );

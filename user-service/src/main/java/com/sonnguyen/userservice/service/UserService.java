@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.sonnguyen.userservice.model.User;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -42,6 +43,31 @@ public class UserService {
 
     public UserResponse getUserProfile(UUID userId){
         return getUserById(userId);
+    }
+
+    public UserResponse updateUserProfile(UUID userId, User updateRequest) {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new CommonException("User not found with id: " + userId, HttpStatus.NOT_FOUND));
+        
+        // Only update firstname and lastname
+        if (updateRequest.getFirstname() != null) {
+            existingUser.setFirstname(updateRequest.getFirstname());
+        }
+        if (updateRequest.getLastname() != null) {
+            existingUser.setLastname(updateRequest.getLastname());
+        }
+        
+        User savedUser = userRepository.save(existingUser);
+        return UserResponse.fromUser(savedUser);
+    }
+
+    public UserResponse updateUserAvatar(UUID userId, MultipartFile avatar) {
+        User existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new CommonException("User not found with id: " + userId, HttpStatus.NOT_FOUND));
+        
+        // For now, just return the existing user without actually processing the avatar
+        // In a real implementation, you would save the file and update the avatar URL
+        return UserResponse.fromUser(existingUser);
     }
 
     public UserResponse searchUserByPhone(String phone) {

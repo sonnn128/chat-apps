@@ -7,7 +7,6 @@ import {
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
-  UserAddOutlined,
   PlusOutlined,
   PhoneOutlined, // Import icon PhoneOutlined cho trường hợp tìm kiếm SĐT
 } from "@ant-design/icons";
@@ -23,6 +22,8 @@ import userService from "@/services/userService";
 import {
   sendFriendRequest,
   acceptFriendRequest,
+  rejectFriendRequest,
+  cancelFriendRequest,
 } from "@/stores/middlewares/friendShipMiddleware";
 import { removeCurrentChannel } from "@/stores/slices/channelSlice";
 import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
@@ -31,10 +32,11 @@ const { Title } = Typography;
 
 const Sidebar = () => {
   const dispatch = useDispatch();
-  const { friends, pendingRequests } = useSelector(
+  const { friends, pendingRequests, sentRequests } = useSelector(
     (state) => state.friendship
   );
   const { channels } = useSelector((state) => state.channel);
+  const { user } = useSelector((state) => state.auth); // eslint-disable-line no-unused-vars
 
   const [isAddingChannel, setIsAddingChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
@@ -52,8 +54,16 @@ const Sidebar = () => {
     if (res) successToast("Friend request sent");
   };
 
-  const handleAcceptRequest = (requestId) => {
-    dispatch(acceptFriendRequest(requestId));
+  const handleAcceptRequest = (requesterId) => {
+    dispatch(acceptFriendRequest(requesterId));
+  };
+
+  const handleRejectRequest = (requesterId) => {
+    dispatch(rejectFriendRequest(requesterId));
+  };
+
+  const handleCancelRequest = (friendId) => {
+    dispatch(cancelFriendRequest(friendId));
   };
 
   const toggleModal = (type) =>
@@ -136,15 +146,18 @@ const Sidebar = () => {
   const filteredChannels = useMemo(() => {
     if (!searchTerm) return channels;
     return channels.filter((channel) =>
-      channel.channelName.toLowerCase().includes(searchTerm.toLowerCase())
+      (channel.channelName || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [channels, searchTerm]);
 
   const filteredFriends = useMemo(() => {
     if (!searchTerm) return friends;
-    return friends.filter((friend) =>
-      friend.userName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return friends.filter((friend) => {
+      const fullName = `${friend.friendFirstname || ""} ${friend.friendLastname || ""}`.toLowerCase();
+      const email = (friend.friendEmail || "").toLowerCase();
+      const searchLower = searchTerm.toLowerCase();
+      return fullName.includes(searchLower) || email.includes(searchLower);
+    });
   }, [friends, searchTerm]);
 
   // Kiểm tra nếu có dữ liệu tìm kiếm để quyết định hiển thị
@@ -161,13 +174,13 @@ const Sidebar = () => {
     {
       title: "Friend Requests",
       icon: <TeamOutlined />,
-      count: pendingRequests.length,
+      count: pendingRequests?.length || 0,
       onClick: () => toggleModal("requests"),
     },
     {
       title: "Friends",
       icon: <UserOutlined />,
-      count: friends.length,
+      count: friends?.length || 0,
       onClick: () => toggleModal("friends"),
     },
     { title: "Settings", icon: <SettingOutlined />, to: "/settings" },
@@ -251,8 +264,8 @@ const Sidebar = () => {
           </div>
         )}
 
-        {hasPhoneSearchResult && (
-          // Hiển thị kết quả tìm kiếm thực từ API
+        {hasPhoneSearchResult && searchResult.id !== user?.data?.id && (
+          // Hiển thị kết quả tìm kiếm thực từ API (loại bỏ chính mình)
           <div className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
             <img
               src={searchResult.avatar || "https://via.placeholder.com/40x40?text=U"}
@@ -270,13 +283,70 @@ const Sidebar = () => {
                 {searchResult.email}
               </p>
             </div>
-            <Button 
-              type="primary" 
-              size="small"
-              onClick={() => handleAddFriend(searchResult.id)}
-            >
-              Kết bạn
-            </Button>
+            {(() => {
+              const isFriend = friends.some(friend => friend.friendId === searchResult.id);
+              const hasSentRequest = sentRequests.some(req => req.friendId === searchResult.id);
+              
+              if (isFriend) {
+                return (
+                  <Button
+                    type="default"
+                    size="small"
+                    disabled
+                    style={{
+                      backgroundColor: '#4a4a4a',
+                      borderColor: '#4a4a4a',
+                      color: '#ffffff',
+                      cursor: 'not-allowed',
+                      opacity: 1
+                    }}
+                    icon={<UserOutlined style={{ color: '#ffffff' }} />}
+                  >
+                    Bạn bè
+                  </Button>
+                );
+              }
+              
+              if (hasSentRequest) {
+                return (
+                  <Button
+                    type="default"
+                    size="small"
+                    danger
+                    onClick={() => handleCancelRequest(searchResult.id)}
+                  >
+                    Hủy yêu cầu
+                  </Button>
+                );
+              }
+              
+              return (
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleAddFriend(searchResult.id)}
+                >
+                  Thêm bạn bè
+                </Button>
+              );
+            })()}
+          </div>
+        )}
+
+        {hasPhoneSearchResult && searchResult.id === user?.data?.id && (
+          // Hiển thị thông báo khi tìm thấy chính mình
+          <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+              <UserOutlined className="text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold m-0 text-blue-700">
+                Đây là số điện thoại của bạn
+              </p>
+              <p className="text-sm text-blue-600 m-0">
+                {searchResult.phone}
+              </p>
+            </div>
           </div>
         )}
 
@@ -341,6 +411,7 @@ const Sidebar = () => {
         onClose={() => toggleModal("requests")}
         requests={pendingRequests}
         onAccept={handleAcceptRequest}
+        onReject={handleRejectRequest}
       />
     </motion.div>
   );

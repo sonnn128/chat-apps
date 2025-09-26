@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -74,6 +75,32 @@ public class UserController {
                         .message("User profile")
                         .success(true)
                         .data(userService.getUserProfile(UUID.fromString(userId)))
+                .build());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateUserProfile(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestBody User updateRequest) {
+        log.info("Updating user profile with id: {}", userId);
+        UserResponse updatedUser = userService.updateUserProfile(UUID.fromString(userId), updateRequest);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                        .message("User profile updated successfully")
+                        .success(true)
+                        .data(updatedUser)
+                .build());
+    }
+
+    @PutMapping("/me/avatar")
+    public ResponseEntity<?> updateUserAvatar(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestParam("avatar") MultipartFile avatar) {
+        log.info("Updating user avatar with id: {}", userId);
+        UserResponse updatedUser = userService.updateUserAvatar(UUID.fromString(userId), avatar);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                        .message("User avatar updated successfully")
+                        .success(true)
+                        .data(updatedUser)
                 .build());
     }
 

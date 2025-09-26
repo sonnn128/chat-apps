@@ -3,7 +3,7 @@ import { Modal, Button, Typography, List, Avatar } from "antd";
 
 const { Title, Text } = Typography;
 
-const FriendRequestsModal = ({ open, onClose, requests, onAccept }) => {
+const FriendRequestsModal = ({ open, onClose, requests, onAccept, onReject }) => {
   return (
     <Modal
       open={open}
@@ -22,25 +22,35 @@ const FriendRequestsModal = ({ open, onClose, requests, onAccept }) => {
           dataSource={requests}
           renderItem={(request) => (
             <List.Item
-              key={request.id}
+              key={request.requesterId}
               actions={[
                 <Button
-                  type="default"
+                  key="accept"
+                  type="primary"
                   size="small"
-                  onClick={() => onAccept(request.id)}
+                  onClick={() => onAccept(request.requesterId)}
                 >
                   Accept
+                </Button>,
+                <Button
+                  key="reject"
+                  type="default"
+                  size="small"
+                  danger
+                  onClick={() => onReject(request.requesterId)}
+                >
+                  Reject
                 </Button>,
               ]}
             >
               <List.Item.Meta
                 avatar={
-                  <Avatar>
-                    {request.firstname?.charAt(0).toUpperCase() || "U"}
+                  <Avatar src={request.requesterAvatar}>
+                    {request.requesterFirstname?.charAt(0).toUpperCase() || "U"}
                   </Avatar>
                 }
-                title={`${request.firstname} ${request.lastname}`}
-                description={request.email}
+                title={`${request.requesterFirstname} ${request.requesterLastname}`}
+                description={request.requesterEmail}
               />
             </List.Item>
           )}

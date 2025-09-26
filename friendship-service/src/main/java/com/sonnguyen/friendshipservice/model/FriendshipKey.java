@@ -12,7 +12,6 @@ import java.util.UUID;
 @Builder
 @Data
 public class FriendshipKey implements Serializable {
-
     private UUID requesterId;
     private UUID friendId;
 }

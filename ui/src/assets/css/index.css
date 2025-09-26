@@ -40,3 +40,114 @@ body {
   background-color: white !important;
   border: 1px solid #e5e7eb !important;
 }
+
+/* Emoji Mart Custom Styles */
+.emoji-mart {
+  border: none !important;
+  box-shadow: none !important;
+  background: white !important;
+  border-radius: 12px !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.emoji-mart-bar {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 8px !important;
+}
+
+.emoji-mart-bar button {
+  border-radius: 8px !important;
+  margin: 2px !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.emoji-mart-bar button:hover {
+  background-color: #e2e8f0 !important;
+  transform: scale(1.05) !important;
+}
+
+.emoji-mart-bar button.active {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.emoji-mart-search {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  background: #f8fafc !important;
+  margin: 8px !important;
+  width: calc(100% - 16px) !important;
+}
+
+.emoji-mart-search:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
+}
+
+.emoji-mart-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+  max-height: 300px !important;
+}
+
+.emoji-mart-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.emoji-mart-scroll::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.emoji-mart-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.emoji-mart-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.emoji-mart-category-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: 8px !important;
+  padding: 0 8px !important;
+}
+
+.emoji-mart-emoji {
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  padding: 4px !important;
+  margin: 2px !important;
+}
+
+.emoji-mart-emoji:hover {
+  background-color: #e2e8f0 !important;
+  transform: scale(1.1) !important;
+}
+
+.emoji-mart-emoji:active {
+  transform: scale(0.95) !important;
+}
+
+/* Override emoji-mart default styles */
+.emoji-mart * {
+  box-sizing: border-box !important;
+}
+
+.emoji-mart .emoji-mart-emoji {
+  font-size: 20px !important;
+  line-height: 1 !important;
+}
