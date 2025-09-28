@@ -43,7 +43,7 @@ const UserMessage = ({ content, isCurrentUser, userId }) => {
       )}
       <div className={isCurrentUser ? "flex flex-col items-end" : ""}>
         {!isCurrentUser && (
-          <div className="text-xs font-semibold text-white mb-1" style={{ marginLeft: 4 }}>
+          <div className="text-xs font-semibold text-gray-700 mb-1" style={{ marginLeft: 4 }}>
             {senderName}
           </div>
         )}
