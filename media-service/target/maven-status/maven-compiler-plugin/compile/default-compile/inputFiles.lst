@@ -1,8 +1,0 @@
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\config\CloudinaryConfig.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\controller\MediaController.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\dto\ApiResponse.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\dto\UploadResponse.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\exception\FileValidationException.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\exception\GlobalExceptionHandler.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\MediaServiceApplication.java
-D:\spring\chat-apps\media-service\src\main\java\com\sonnguyen\mediaservice\service\MediaService.java
