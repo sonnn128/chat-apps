@@ -8,29 +8,34 @@ import com.sonnguyen.notificationservice.events.MessageSentEvent;
 import com.sonnguyen.notificationservice.events.FriendRequestSentEvent;
 import com.sonnguyen.notificationservice.events.FriendRequestAcceptedEvent;
 import com.sonnguyen.notificationservice.events.FriendRequestRejectedEvent;
+import com.sonnguyen.notificationservice.events.MembersAddedToChannelEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@KafkaListener(topics = "notifications-topic", groupId = "notification-group")
 public class NotificationService {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "notifications-topic", groupId = "notification-group")
-    public void handleNotification(EventWrapper<?> wrapper) {
-        log.info("📨 NotificationService: Received event type: {}", wrapper.getEventType());
+    @KafkaHandler
+    public void handleNotification(EventWrapper wrapper) {
+        String eventType = wrapper.getEventType();
 
-        switch (wrapper.getEventType()) {
+        switch (eventType) {
+
             case MessageSentEvent.EVENT_TYPE -> {
                 MessageSentEvent messageEvent =
                         objectMapper.convertValue(wrapper.getPayload(), MessageSentEvent.class);
@@ -55,6 +60,11 @@ public class NotificationService {
                 FriendRequestRejectedEvent friendRejectedEvent =
                         objectMapper.convertValue(wrapper.getPayload(), FriendRequestRejectedEvent.class);
                 handleFriendRequestRejected(friendRejectedEvent);
+            }
+            case MembersAddedToChannelEvent.EVENT_TYPE -> {
+                MembersAddedToChannelEvent membersAddedEvent =
+                        objectMapper.convertValue(wrapper.getPayload(), MembersAddedToChannelEvent.class);
+                handleMembersAddedToChannel(membersAddedEvent);
             }
             default -> log.warn("Unknown event type: {}", wrapper.getEventType());
         }
@@ -107,6 +117,15 @@ public class NotificationService {
         pushToUsers(recipients, event);
     }
 
+    private void handleMembersAddedToChannel(MembersAddedToChannelEvent event) {
+        log.info("✅ NotificationService: MEMBERS_ADDED_TO_CHANNEL {}. Notifying {} new members.", 
+                event.getChannelId(), event.getNewMemberIds().size());
+
+        // Notify only the newly added members (not the person who added them)
+        List<UUID> recipients = event.getNewMemberIds();
+        pushToUsers(recipients, event);
+    }
+
     private void pushToUsers(List<UUID> userIds, Object payload) {
         if (userIds == null || userIds.isEmpty()) {
             log.warn("⚠️ NotificationService: No users to notify");
@@ -116,14 +135,44 @@ public class NotificationService {
         log.info("📤 NotificationService: Pushing payload of type {} to {} users.", payload.getClass().getSimpleName(), userIds.size());
         final String destination = "/queue/notifications";
 
+        // Create a wrapper with eventType for client processing
+        Object messagePayload = createMessageWithEventType(payload);
+
         userIds.forEach(userId -> {
             try {
                 log.info("📨 NotificationService: Sending message to userId: {}", userId);
-                messagingTemplate.convertAndSendToUser(userId.toString(), destination, payload);
+                messagingTemplate.convertAndSendToUser(userId.toString(), destination, messagePayload);
                 log.info("✅ NotificationService: Message sent successfully to user: {}", userId);
             } catch (Exception e) {
                 log.error("❌ NotificationService: Failed to push payload to user {}. Error: {}", userId, e.getMessage());
             }
         });
+    }
+
+    private Object createMessageWithEventType(Object payload) {
+        try {
+            // Convert payload to Map and add eventType
+            Map<String, Object> messageMap = objectMapper.convertValue(payload, Map.class);
+            
+            // Add eventType based on payload class
+            if (payload instanceof ChannelCreatedEvent) {
+                messageMap.put("eventType", "CHANNEL_CREATED");
+            } else if (payload instanceof MessageSentEvent) {
+                messageMap.put("eventType", "MESSAGE_SENT");
+            } else if (payload instanceof FriendRequestSentEvent) {
+                messageMap.put("eventType", "FRIEND_REQUEST_SENT");
+            } else if (payload instanceof FriendRequestAcceptedEvent) {
+                messageMap.put("eventType", "FRIEND_REQUEST_ACCEPTED");
+            } else if (payload instanceof FriendRequestRejectedEvent) {
+                messageMap.put("eventType", "FRIEND_REQUEST_REJECTED");
+            } else if (payload instanceof MembersAddedToChannelEvent) {
+                messageMap.put("eventType", "MEMBERS_ADDED_TO_CHANNEL");
+            }
+            
+            return messageMap;
+        } catch (Exception e) {
+            log.error("❌ NotificationService: Failed to add eventType to payload: {}", e.getMessage());
+            return payload; // Return original payload if conversion fails
+        }
     }
 }

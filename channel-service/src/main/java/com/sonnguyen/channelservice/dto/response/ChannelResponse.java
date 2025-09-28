@@ -1,5 +1,6 @@
 package com.sonnguyen.channelservice.dto.response;
 
+import com.sonnguyen.channelservice.dto.message.ChannelMessageDto;
 import com.sonnguyen.channelservice.model.channel.Channel;
 import lombok.Builder;
 import lombok.Data;
@@ -15,15 +16,17 @@ public class ChannelResponse {
     private String channelName;
     private UUID createdBy;
     private LocalDateTime createdAt;
-    private List<MessageResponse> messages; // Messages from chat-service
+    private List<ChannelMessageDto> messages; // Messages from chat-service
     private List<UUID> memberIds; // Member IDs
+    private List<UserResponse> participants; // Detailed participant info
+    private ChannelMessageDto message; // Notice message for channel creation
 
     public static ChannelResponse from(Channel channel) {
         return ChannelResponse.builder()
                 .id(channel.getId())
                 .channelName(channel.getChannelName())
                 .createdAt(channel.getCreatedAt())
-                .messages(List.<MessageResponse>of()) // Initialize empty messages list
+                .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list
                 .memberIds(List.of()) // Initialize empty memberIds list
                 .build();
     }

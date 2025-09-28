@@ -3,8 +3,8 @@ package com.sonnguyen.channelservice.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-@Builder
 @Data
+@Builder
 public class ApiResponse<T> {
     private boolean success;
     private String message;

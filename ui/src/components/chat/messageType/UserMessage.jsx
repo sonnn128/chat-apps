@@ -4,10 +4,16 @@ import { MoreOutlined, RollbackOutlined, SmileOutlined } from "@ant-design/icons
 import Avatar from "antd/es/avatar/Avatar";
 import ReactionPicker from "../ReactionPicker";
 import PropTypes from "prop-types";
+import { useUserInfo } from "@/hooks/useUserInfo";
 
-const UserMessage = ({ content, isCurrentUser, senderName = "Default", senderAvatar }) => {
+const UserMessage = ({ content, isCurrentUser, userId }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
+  
+  // Get real-time user info
+  const { userInfo, loading } = useUserInfo(userId);
+  const senderName = userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...';
+  const senderAvatar = userInfo?.avatarUrl || null;
 
   const handleReactionClick = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -91,8 +97,7 @@ const UserMessage = ({ content, isCurrentUser, senderName = "Default", senderAva
 UserMessage.propTypes = {
   content: PropTypes.string.isRequired,
   isCurrentUser: PropTypes.bool.isRequired,
-  senderName: PropTypes.string,
-  senderAvatar: PropTypes.string,
+  userId: PropTypes.string.isRequired,
 };
 
 export default UserMessage;

@@ -25,14 +25,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/register",
                                 "/api/v1/auth/login",
                                 "/api/v1/users/search/phone",
-                                "/api/v1/users/*").permitAll()
+                                "/api/v1/users/*",
+                                "/api/v1/users/internal/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new GatewayAuthFilter(), UsernamePasswordAuthenticationFilter.class);

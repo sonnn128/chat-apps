@@ -31,11 +31,20 @@ const ChannelMembers = () => {
 
         // Get role display with email
         const getRoleDisplay = (member) => {
-          if (member.email && member.role) {
+          // Only show email if it's a real email (not generated)
+          const isRealEmail = member.email && 
+                             member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
+                             member.email.includes('@') &&
+                             !member.email.includes('example.com');
+          
+          if (isRealEmail && member.role) {
             return `${member.email} · Role: ${member.role}`;
           }
           if (member.role) {
             return `Role: ${member.role}`;
+          }
+          if (isRealEmail) {
+            return member.email;
           }
           return '';
         };
@@ -48,7 +57,7 @@ const ChannelMembers = () => {
             key={member.userId}
             className="flex items-center gap-3 py-2 hover:bg-gray-50 rounded-lg px-2"
           >
-            <Avatar src={member.avatar}>{displayName?.[0] || '?'}</Avatar>
+            <Avatar src={member.avatarUrl || member.avatar}>{displayName?.[0] || '?'}</Avatar>
             <div className="flex-1">
               <h3 className="text-sm font-medium text-gray-900">{displayName}</h3>
               {/* Hàng thông tin */}

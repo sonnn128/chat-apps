@@ -6,7 +6,7 @@ import ChatInput from "@/components/chat/ChatInput";
 import AddMemberModal from "@/components/modals/AddMemberModal";
 import ChatInfoSidebar from "@/components/chat/ChatInfoSidebar";
 import { websocketService } from "@/utils/ws";
-import { receiveMessage, addChannel } from "@/stores/slices/channelSlice";
+import { receiveMessage, addChannel, receiveChannelAddedNotification } from "@/stores/slices/channelSlice";
 import { receiveFriendRequest, receiveFriendRequestAccepted, receiveFriendRequestRejected } from "@/stores/slices/friendshipSlice";
 import { fetchPendingRequests, fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
 import { successToast } from "@/utils/toast";
@@ -91,11 +91,29 @@ const ChatSection = () => {
             console.log("📨 ChatSection: Friend request rejected event received but not for current user");
           }
         } else if (message.eventType === "MESSAGE_SENT") {
-          dispatch(receiveMessage(message));
+          // Check if this is a notice message about adding people to channel
+          if (message.type === "NOTICE" && message.content && message.content.includes("đã thêm")) {
+            console.log("📨 ChatSection: Notice message about adding people to channel:", message.content);
+            // This is a notice message, we need to create the channel for the user
+            // The channel should already exist, but let's make sure it's in the state
+            dispatch(receiveMessage(message));
+          } else {
+            dispatch(receiveMessage(message));
+          }
           console.log("✅ ChatSection: Real-time message dispatched to Redux store");
         } else if (message.eventType === "CHANNEL_CREATED") {
           dispatch(addChannel(message));
           console.log("✅ ChatSection: Channel created event dispatched to Redux store");
+        } else if (message.eventType === "MEMBERS_ADDED_TO_CHANNEL") {
+          // Check if current user is one of the newly added members
+          const isNewMember = message.newMemberIds && message.newMemberIds.includes(user?.data?.id);
+          if (isNewMember) {
+            dispatch(receiveChannelAddedNotification(message));
+            successToast(`You've been added to channel "${message.channelName}"! 🎉`);
+            console.log("✅ ChatSection: Channel added notification dispatched to Redux store");
+          } else {
+            console.log("📨 ChatSection: Members added event received but not for current user");
+          }
         } else if (message.key && message.key.channelId) {
           // Handle direct message objects (without eventType wrapper)
           dispatch(receiveMessage(message));

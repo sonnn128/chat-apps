@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @FeignClient(name = "user-service", path = "/api/v1/users", configuration = com.sonnguyen.chatservice.config.FeignConfig.class)
 public interface UserServiceClient {
-    @GetMapping("/{id}")
+    @GetMapping("/internal/{id}")
     UserResponse getUserById(@PathVariable UUID id);
 }

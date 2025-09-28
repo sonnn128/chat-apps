@@ -17,6 +17,7 @@ public class UserResponse {
     private String firstname;
     private String lastname;
     private String phone;
+    private String avatarUrl;
 
     public static UserResponse fromUser(UserResponse user) {
         return UserResponse.builder()
@@ -25,6 +26,7 @@ public class UserResponse {
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .phone(user.getPhone())
+                .avatarUrl(user.getAvatarUrl())
                 .build();
     }
 }

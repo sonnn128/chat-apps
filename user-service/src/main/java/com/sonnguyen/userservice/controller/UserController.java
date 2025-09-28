@@ -35,10 +35,6 @@ public class UserController {
         return ResponseEntity.ok(userRepository.findAll());
     }
 
-    @GetMapping("/{id}")
-    public UserResponse getUserById(@PathVariable UUID id) {
-        return userService.getUserById(id);
-    }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(@PathVariable UUID id, @RequestBody User user) {
@@ -78,6 +74,24 @@ public class UserController {
                 .build());
     }
 
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserById(@PathVariable UUID userId) {
+        log.info("Fetching user with id: {}", userId);
+        return ResponseEntity.ok().body(ApiResponse.builder()
+                        .message("User profile")
+                        .success(true)
+                        .data(userService.getUserProfile(userId))
+                .build());
+    }
+
+    // Internal API for microservice communication (no ApiResponse wrapper)
+    @GetMapping("/internal/{userId}")
+    public ResponseEntity<UserResponse> getUserByIdInternal(@PathVariable UUID userId) {
+        log.info("Internal API: Fetching user with id: {}", userId);
+        UserResponse user = userService.getUserProfile(userId);
+        return ResponseEntity.ok(user);
+    }
+
     @PutMapping("/me")
     public ResponseEntity<?> updateUserProfile(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
@@ -96,11 +110,10 @@ public class UserController {
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestParam("avatar") MultipartFile avatar) {
         log.info("Updating user avatar with id: {}", userId);
-        UserResponse updatedUser = userService.updateUserAvatar(UUID.fromString(userId), avatar);
-        return ResponseEntity.ok().body(ApiResponse.builder()
-                        .message("User avatar updated successfully")
-                        .success(true)
-                        .data(updatedUser)
+        // This method should use AvatarController instead
+        return ResponseEntity.badRequest().body(ApiResponse.builder()
+                .success(false)
+                .message("Please use /api/v1/users/{userId}/avatar endpoint for avatar upload")
                 .build());
     }
 

@@ -14,7 +14,6 @@ public class SendMessageRequest {
     private UUID channelId;
     
     @NotBlank(message = "Message content cannot be blank")
-    @Size(min = 1, max = 1000, message = "Message content must be between 1 and 1000 characters")
     private String content;
     
     private ChannelMessageType type;

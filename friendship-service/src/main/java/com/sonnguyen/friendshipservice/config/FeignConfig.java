@@ -9,6 +9,6 @@ public class FeignConfig {
     
     @Bean
     public Logger.Level feignLoggerLevel() {
-        return Logger.Level.BASIC; // Basic logging since API is now public
+        return Logger.Level.FULL; // Full logging to debug user service calls
     }
 }

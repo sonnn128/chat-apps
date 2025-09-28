@@ -153,8 +153,8 @@ const Sidebar = () => {
   const filteredFriends = useMemo(() => {
     if (!searchTerm) return friends;
     return friends.filter((friend) => {
-      const fullName = `${friend.friendFirstname || ""} ${friend.friendLastname || ""}`.toLowerCase();
-      const email = (friend.friendEmail || "").toLowerCase();
+      const fullName = `${friend.firstname || ""} ${friend.lastname || ""}`.toLowerCase();
+      const email = (friend.email || "").toLowerCase();
       const searchLower = searchTerm.toLowerCase();
       return fullName.includes(searchLower) || email.includes(searchLower);
     });

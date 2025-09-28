@@ -37,18 +37,18 @@ const FriendList = () => {
               >
                 <List.Item.Meta
                   avatar={
-                    <Avatar size={36} src={friend.friendAvatar}>
-                      {friend.friendFirstname?.charAt(0)?.toUpperCase() || "U"}
+                    <Avatar size={36} src={friend.avatar}>
+                      {friend.firstname?.charAt(0)?.toUpperCase() || "U"}
                     </Avatar>
                   }
                   title={
                     <Text style={{ fontWeight: 500, color: "#050505" }}>
-                      {`${friend.friendFirstname || ""} ${friend.friendLastname || ""}`}
+                      {`${friend.firstname || ""} ${friend.lastname || ""}`}
                     </Text>
                   }
                   description={
                     <Text type="secondary" ellipsis>
-                      {friend.friendEmail || "No email"}
+                      {friend.email || "No email"}
                     </Text>
                   }
                 />

@@ -2,11 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Typography, 
-  Avatar, 
   Button, 
   Input, 
   Form, 
-  Upload, 
   Card, 
   Row, 
   Col, 
@@ -19,7 +17,6 @@ import {
   SaveOutlined, 
   CloseOutlined, 
   EditOutlined, 
-  CameraOutlined,
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
@@ -28,7 +25,9 @@ import {
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/stores/slices/authSlice";
-import { updateProfile, uploadAvatar } from "@/stores/middlewares/profileMiddleware";
+import { updateProfile } from "@/stores/middlewares/profileMiddleware";
+import { fetchUserProfile } from "@/stores/middlewares/authMiddleware";
+import AvatarUpload from "@/components/AvatarUpload";
 
 const { Title, Text } = Typography;
 
@@ -38,7 +37,9 @@ const Account = () => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [isEditing, setIsEditing] = useState(false);
-  const [avatarLoading, setAvatarLoading] = useState(false);
+  
+  // Get avatar from user data instead of separate API call
+  const avatarUrl = user?.data?.avatarUrl;
 
   useEffect(() => {
     if (user) {
@@ -61,7 +62,15 @@ const Account = () => {
 
   const handleCancel = () => {
     setIsEditing(false);
-    form.resetFields();
+    // Reset form to original user data instead of empty values
+    if (user) {
+      form.setFieldsValue({
+        firstname: user.data?.firstname || "",
+        lastname: user.data?.lastname || "",
+        email: user.data?.email || "",
+        phone: user.data?.phone || "",
+      });
+    }
   };
 
   const handleSave = async (values) => {
@@ -80,38 +89,17 @@ const Account = () => {
     }
   };
 
-  const handleAvatarChange = async (info) => {
-    if (info.file.status === 'uploading') {
-      setAvatarLoading(true);
-      return;
-    }
+  const handleAvatarChange = async (newAvatarUrl) => {
+    // Avatar has been updated successfully
+    console.log('Avatar updated:', newAvatarUrl);
     
-    if (info.file.status === 'done') {
-      try {
-        await dispatch(uploadAvatar(info.file.originFileObj)).unwrap();
-        message.success('Avatar updated successfully');
-      } catch (error) {
-        message.error('Failed to update avatar');
-        console.error("Error uploading avatar:", error);
-      } finally {
-        setAvatarLoading(false);
-      }
-    } else if (info.file.status === 'error') {
-      message.error('Failed to update avatar');
-      setAvatarLoading(false);
+    // Refresh user data to get updated avatar URL
+    try {
+      await dispatch(fetchUserProfile()).unwrap();
+      console.log('✅ User profile refreshed with new avatar');
+    } catch (error) {
+      console.error('❌ Failed to refresh user profile:', error);
     }
-  };
-
-  const beforeUpload = (file) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
-    if (!isJpgOrPng) {
-      message.error('You can only upload JPG/PNG file!');
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error('Image must smaller than 2MB!');
-    }
-    return isJpgOrPng && isLt2M;
   };
 
   return (
@@ -229,39 +217,17 @@ const Account = () => {
           <Col xs={24} lg={8}>
             <Card title="Profile Picture" style={{ marginBottom: 24 }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                  <Avatar
-                    size={120}
-                    src={user?.data?.avatar}
-                    icon={<UserOutlined />}
-                    style={{ 
-                      backgroundColor: "#1890ff",
-                      border: "4px solid #f0f0f0"
-                    }}
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <AvatarUpload
+                    userId={user?.data?.id}
+                    currentAvatarUrl={avatarUrl}
+                    onAvatarChange={handleAvatarChange}
+                    size="large"
+                    showDeleteButton={true}
+                    disabled={!isEditing}
                   />
-                  {isEditing && (
-                    <Upload
-                      name="avatar"
-                      showUploadList={false}
-                      beforeUpload={beforeUpload}
-                      onChange={handleAvatarChange}
-                      style={{ position: 'absolute', bottom: 0, right: 0 }}
-                    >
-                      <Button
-                        type="primary"
-                        shape="circle"
-                        icon={<CameraOutlined />}
-                        size="small"
-                        loading={avatarLoading}
-                        style={{ 
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                          border: "2px solid white"
-                        }}
-                      />
-                    </Upload>
-                  )}
                 </div>
-                <div style={{ marginTop: 16 }}>
+                <div>
                   <Title level={4} style={{ margin: 0 }}>
                     {user?.data?.firstname} {user?.data?.lastname}
                   </Title>

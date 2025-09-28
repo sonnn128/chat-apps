@@ -11,7 +11,7 @@ import java.util.UUID;
 @FeignClient(name = "user-service", path = "/api/v1/users")
 public interface UserServiceClient {
     
-    @GetMapping("/{userId}")
+    @GetMapping("/internal/{userId}")
     UserResponse getUserById(@PathVariable("userId") UUID userId);
     
     @GetMapping("/batch")

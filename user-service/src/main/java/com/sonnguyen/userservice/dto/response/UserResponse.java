@@ -18,6 +18,8 @@ public class UserResponse {
     private String firstname;
     private String lastname;
     private String phone;
+    private String avatarUrl;
+    private String avatarPublicId;
 
     public static UserResponse fromUser(User user) {
         return UserResponse.builder()
@@ -26,6 +28,8 @@ public class UserResponse {
                 .firstname(user.getFirstname())
                 .lastname(user.getLastname())
                 .phone(user.getPhone())
+                .avatarUrl(user.getAvatarUrl())
+                .avatarPublicId(user.getAvatarPublicId())
                 .build();
     }
 }

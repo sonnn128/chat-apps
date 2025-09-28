@@ -104,6 +104,7 @@ services:
       - "8080:8080"
     volumes:
       - ./keycloak-realms/:/opt/keycloak/data/import/
+      - ./keycloak-realms:/opt/keycloak/data/export
       # - ./keycloak-realms:/opt/keycloak/data/export
       # everything in keycloaks is storage in keycloak-mysql
       # how to export json file in keycloak

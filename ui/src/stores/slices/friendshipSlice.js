@@ -81,10 +81,10 @@ const friendshipSlice = createSlice({
       // Add to friends list
       const newFriend = {
         friendId: event.accepterId,
-        friendFirstname: "Unknown", // Will be populated by API call
-        friendLastname: "User",
-        friendEmail: "unknown@example.com",
-        friendAvatar: null,
+        firstname: "Unknown", // Will be populated by API call
+        lastname: "User",
+        email: "unknown@example.com",
+        avatar: null,
         status: "ACCEPTED",
         acceptedAt: event.acceptedAt
       };

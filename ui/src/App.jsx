@@ -10,6 +10,7 @@ import Login from "@/pages/Login";
 import Main from "@/pages/Main";
 import Register from "@/pages/Register";
 import Settings from "@/pages/Settings";
+import AvatarDebug from "@/components/AvatarDebug";
 
 function App() {
   const dispatch = useDispatch();
@@ -61,6 +62,10 @@ function App() {
       <Route
         path="/settings"
         element={user ? <Settings /> : <Navigate to="/login" />}
+      />
+      <Route
+        path="/debug/avatar"
+        element={<AvatarDebug />}
       />
     </Routes>
   );

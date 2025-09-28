@@ -16,13 +16,6 @@ public class WebConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
-
     public AuthenticationManager authenticationManager() {
         return authentication -> null;
     }

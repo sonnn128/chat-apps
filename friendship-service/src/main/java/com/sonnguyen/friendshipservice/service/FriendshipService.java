@@ -172,13 +172,15 @@ public class FriendshipService {
                         UserResponse user = userServiceClient.getUserById(friendId);
                         log.info("✅ FriendshipService: Successfully fetched friend info: {} {}", 
                                 user.getFirstname(), user.getLastname());
+                        log.info("🔍 FriendshipService: Full user data: id={}, email={}, firstname={}, lastname={}, avatarUrl={}", 
+                                user.getId(), user.getEmail(), user.getFirstname(), user.getLastname(), user.getAvatarUrl());
                         
                         return FriendResponse.builder()
                                 .friendId(friendId)
-                                .friendFirstname(user.getFirstname())
-                                .friendLastname(user.getLastname())
-                                .friendEmail(user.getEmail())
-                                .friendAvatar(user.getAvatar())
+                                .firstname(user.getFirstname())
+                                .lastname(user.getLastname())
+                                .email(user.getEmail())
+                                .avatar(user.getAvatarUrl())
                                 .createdAt(friendship.getCreatedAt())
                                 .acceptedAt(friendship.getAcceptedAt())
                                 .status(friendship.getStatus().toString())
@@ -189,10 +191,10 @@ public class FriendshipService {
                         log.error("❌ FriendshipService: Exception details: ", e);
                         return FriendResponse.builder()
                                 .friendId(friendId)
-                                .friendFirstname("Unknown")
-                                .friendLastname("User")
-                                .friendEmail("unknown@example.com")
-                                .friendAvatar(null)
+                                .firstname("Unknown")
+                                .lastname("User")
+                                .email("unknown@example.com")
+                                .avatar(null)
                                 .createdAt(friendship.getCreatedAt())
                                 .acceptedAt(friendship.getAcceptedAt())
                                 .status(friendship.getStatus().toString())
@@ -227,7 +229,7 @@ public class FriendshipService {
                                 .requesterFirstname(user.getFirstname())
                                 .requesterLastname(user.getLastname())
                                 .requesterEmail(user.getEmail())
-                                .requesterAvatar(user.getAvatar())
+                                .requesterAvatar(user.getAvatarUrl())
                                 .createdAt(friendship.getCreatedAt())
                                 .status(friendship.getStatus().toString())
                                 .build();

@@ -34,8 +34,12 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String phone;
 
-//    @Enumerated(EnumType.STRING)
-//    private Role role;
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(name = "avatar_public_id")
+    private String avatarPublicId;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

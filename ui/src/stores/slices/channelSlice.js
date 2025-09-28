@@ -3,6 +3,7 @@ import {
   fetchCreateChannel,
   fetchAllChannels,
   addMembersToChannel,
+  addPeopleToChannel,
   sendChannelMessage,
   fetchDeleteChannel,
 } from "@/stores/middlewares/channelMiddleware";
@@ -23,7 +24,16 @@ const channelSlice = createSlice({
   initialState,
   reducers: {
     createChannel: (state, action) => {
-      state.channels.push(action.payload);
+      const channelData = action.payload;
+      const newChannel = {
+        id: channelData.id,
+        channelName: channelData.channelName,
+        createdAt: channelData.createdAt,
+        messages: channelData.message ? [channelData.message] : [],
+        memberIds: channelData.memberIds || [],
+        participants: channelData.participants || []
+      };
+      state.channels.push(newChannel);
     },
     addChannel: (state, action) => {
       const channelData = action.payload;
@@ -81,7 +91,7 @@ const channelSlice = createSlice({
     },
     receiveMessage: (state, action) => {
       const channelId = action.payload.key.channelId;
-      const channelFind = state.channels.find((item) => item.id == channelId);
+      let channelFind = state.channels.find((item) => item.id == channelId);
       
       // Add senderName for real-time messages
       const messageWithSender = {
@@ -98,6 +108,22 @@ const channelSlice = createSlice({
         console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
       } else {
         console.warn("⚠️ Channel: Channel not found for message:", channelId);
+        
+        // If this is a notice message about adding people, create a basic channel
+        if (action.payload.type === "NOTICE" && action.payload.content && action.payload.content.includes("đã thêm")) {
+          console.log("📨 Channel: Creating basic channel for notice message:", channelId);
+          const newChannel = {
+            id: channelId,
+            channelName: "New Channel", // Will be updated when user clicks on it
+            createdAt: new Date().toISOString(),
+            messages: [messageWithSender],
+            memberIds: [],
+            participants: [],
+            isNewChannel: true
+          };
+          state.channels.push(newChannel);
+          console.log("✅ Channel: Basic channel created for notice message:", channelId);
+        }
       }
       
       // Also update messageCache for real-time UI updates
@@ -116,6 +142,41 @@ const channelSlice = createSlice({
       console.log("✅ Channel: Message added to messageCache", channelId, "Total cached messages:", state.messageCache[channelId].length);
     },
     
+    // Handle notification when user is added to a channel
+    receiveChannelAddedNotification: (state, action) => {
+      const event = action.payload;
+      console.log("📨 ChannelSlice: Received channel added notification:", event);
+      
+      // Create new channel object for the added user
+      const newChannel = {
+        id: event.channelId,
+        channelName: event.channelName,
+        createdAt: event.addedAt,
+        messages: [],
+        memberIds: event.newMemberIds,
+        participants: event.newMemberNames?.map((name, index) => ({
+          userId: event.newMemberIds[index],
+          name: name,
+          firstname: name.split(' ')[0] || 'User',
+          lastname: name.split(' ').slice(1).join(' ') || 'Unknown',
+          email: `${event.newMemberIds[index]?.substring(0, 8) || 'unknown'}@example.com`,
+          avatar: null,
+          avatarUrl: null,
+          role: 'MEMBER'
+        })) || [],
+        isNewChannel: true // Flag to show notification
+      };
+      
+      // Add to channels list if not already there
+      const existingChannel = state.channels.find(ch => ch.id === event.channelId);
+      if (!existingChannel) {
+        state.channels.push(newChannel);
+        console.log("✅ ChannelSlice: Added new channel from notification:", event.channelId);
+      } else {
+        console.log("ℹ️ ChannelSlice: Channel already exists, skipping:", event.channelId);
+      }
+    },
+    
     // Message cache actions
     cacheChannelMessages: (state, action) => {
       const { channelId, messages } = action.payload;
@@ -132,14 +193,22 @@ const channelSlice = createSlice({
 
         const channelCreate = {
           ...action.payload,
-          participants: [],
-          messages: [],
+          participants: action.payload.participants || [],
+          messages: action.payload.message ? [action.payload.message] : [],
         };
-        console.log("✅ Channel: Channel data prepared:", channelCreate);
+        console.log("✅ Channel: Channel data prepared with notice message:", channelCreate);
 
         state.channels.push(channelCreate);
         state.currentChannel = channelCreate;
         state.currentChannelId = channelCreate?.id || null;
+        
+        // Cache notice message for the new channel
+        if (action.payload.message) {
+          state.messageCache[action.payload.id] = [action.payload.message];
+          state.preloadedChannels[action.payload.id] = true;
+          console.log("✅ Channel: Notice message cached for new channel:", action.payload.id);
+        }
+        
         console.log("✅ Channel: Channel added to state and set as current");
       })
       .addCase(fetchCreateChannel.rejected, (state, action) => {
@@ -220,20 +289,118 @@ const channelSlice = createSlice({
         state.loading = false;
         state.joinedChannels = action.payload;
       })
+      .addCase(addPeopleToChannel.fulfilled, (state, action) => {
+        state.loading = false;
+        console.log("✅ Channel: People added to channel successfully:", action.payload);
+        
+        const responseData = action.payload.data;
+        
+        // Update participants in current channel if it matches
+        if (state.currentChannel && responseData.channelId === state.currentChannel.id) {
+          // Add new members to participants
+          if (responseData.newMembers && responseData.newMembers.length > 0) {
+            const newParticipants = responseData.newMembers.map(member => ({
+              userId: member.id,
+              firstname: member.firstname || 'User',
+              lastname: member.lastname || 'Unknown',
+              name: `${member.firstname || 'User'} ${member.lastname || 'Unknown'}`,
+              email: member.email || `${member.id?.substring(0, 8) || 'unknown'}@example.com`,
+              avatar: member.avatarUrl || null,
+              avatarUrl: member.avatarUrl || null,
+              role: 'MEMBER'
+            }));
+            
+            state.currentChannel.participants = [...(state.currentChannel.participants || []), ...newParticipants];
+            console.log("✅ Channel: Updated current channel participants:", state.currentChannel.participants.length);
+          }
+          
+          // Add notice message to current channel messages
+          if (responseData.message) {
+            if (!state.currentChannel.messages) {
+              state.currentChannel.messages = [];
+            }
+            state.currentChannel.messages.push(responseData.message);
+            console.log("✅ Channel: Added notice message to current channel");
+            
+            // Also cache notice message for real-time UI updates
+            if (!state.messageCache[responseData.channelId]) {
+              state.messageCache[responseData.channelId] = [];
+            }
+            state.messageCache[responseData.channelId].push(responseData.message);
+            
+            // Sort messages by timestamp (oldest first)
+            state.messageCache[responseData.channelId].sort((a, b) => {
+              const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+              const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+              return timestampA - timestampB;
+            });
+            
+            console.log("✅ Channel: Notice message cached for real-time UI:", responseData.channelId, "Total cached messages:", state.messageCache[responseData.channelId].length);
+          }
+        }
+        
+        // Also update in channels list
+        const channelIndex = state.channels.findIndex(ch => ch.id === responseData.channelId);
+        if (channelIndex !== -1) {
+          if (responseData.newMembers && responseData.newMembers.length > 0) {
+            const newParticipants = responseData.newMembers.map(member => ({
+              userId: member.id,
+              firstname: member.firstname || 'User',
+              lastname: member.lastname || 'Unknown',
+              name: `${member.firstname || 'User'} ${member.lastname || 'Unknown'}`,
+              email: member.email || `${member.id?.substring(0, 8) || 'unknown'}@example.com`,
+              avatar: member.avatarUrl || null,
+              avatarUrl: member.avatarUrl || null,
+              role: 'MEMBER'
+            }));
+            
+            state.channels[channelIndex].participants = [...(state.channels[channelIndex].participants || []), ...newParticipants];
+            console.log("✅ Channel: Updated channel in list participants:", state.channels[channelIndex].participants.length);
+          }
+          
+          // Add notice message to channel messages
+          if (responseData.message) {
+            if (!state.channels[channelIndex].messages) {
+              state.channels[channelIndex].messages = [];
+            }
+            state.channels[channelIndex].messages.push(responseData.message);
+            console.log("✅ Channel: Added notice message to channel in list");
+          }
+        }
+      })
       .addCase(sendChannelMessage.fulfilled, (state, action) => {
+        const message = action.payload;
+        const channelId = message.key.channelId;
+        
+        // Add message to channel messages
         const channelFind = state.channels.find(
-          (item) => item.id == action.payload.key.channelId
+          (item) => item.id == channelId
         );
         
         if (channelFind) {
           if (!channelFind.messages) {
             channelFind.messages = [];
           }
-          channelFind.messages.push(action.payload);
-          console.log("✅ Channel: Message sent and added to channel:", action.payload.key.channelId);
+          channelFind.messages.push(message);
+          console.log("✅ Channel: Message sent and added to channel:", channelId);
         } else {
-          console.warn("⚠️ Channel: Channel not found for sent message:", action.payload.key.channelId);
+          console.warn("⚠️ Channel: Channel not found for sent message:", channelId);
         }
+        
+        // Also cache message for real-time UI updates
+        if (!state.messageCache[channelId]) {
+          state.messageCache[channelId] = [];
+        }
+        state.messageCache[channelId].push(message);
+        
+        // Sort messages by timestamp (oldest first)
+        state.messageCache[channelId].sort((a, b) => {
+          const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+          const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+          return timestampA - timestampB;
+        });
+        
+        console.log("✅ Channel: Message cached for real-time UI:", channelId, "Total cached messages:", state.messageCache[channelId].length);
       })
       .addCase(sendChannelMessage.rejected, (state, action) => {
         console.error("❌ Channel: Failed to send message:", action.error);
@@ -263,6 +430,7 @@ export const {
   removeCurrentChannel,
   setCurrentChannel,
   receiveMessage,
+  receiveChannelAddedNotification,
   cacheChannelMessages,
 } = channelSlice.actions;
 export default channelSlice.reducer;

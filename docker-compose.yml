@@ -37,6 +37,16 @@ services:
       - SPRING_DATASOURCE_USERNAME=dbuser
       - SPRING_DATASOURCE_PASSWORD=dbpassword
     networks: [microservice-net]
+  media-service:
+    build: ./media-service
+    container_name: media-service
+    ports: ["9006:9006"]
+    depends_on: [discovery-server]
+    environment:
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+    networks: [microservice-net]
 
   # PostgreSQL for User Service
   postgres:
@@ -67,6 +77,7 @@ services:
     volumes:
       - ./data/postgres-friendship:/var/lib/postgresql/data
     networks: [microservice-net]
+
 
   keycloak-mysql:
     image: mysql:8.0

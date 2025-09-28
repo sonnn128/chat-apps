@@ -9,7 +9,7 @@ FROM eclipse-temurin:17.0.8.1_1-jre-ubi9-minimal
 RUN unlink /etc/localtime;ln -s  /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
 COPY --from=build app/target/notification-service-0.0.1-SNAPSHOT.jar /run/notification-service-0.0.1-SNAPSHOT.jar
 
-EXPOSE 8080
+EXPOSE 8889
 
 ENV JAVA_OPTIONS="-Xmx2048m -Xms256m"
 ENTRYPOINT ["java", "-jar", "/run/notification-service-0.0.1-SNAPSHOT.jar"]

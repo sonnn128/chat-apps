@@ -14,10 +14,10 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FriendResponse {
     private UUID friendId;
-    private String friendFirstname;
-    private String friendLastname;
-    private String friendEmail;
-    private String friendAvatar;
+    private String firstname;
+    private String lastname;
+    private String email;
+    private String avatar;
     private LocalDateTime createdAt;
     private LocalDateTime acceptedAt;
     private String status;

@@ -1,9 +1,7 @@
 package com.sonnguyen.channelservice.client;
 
 import com.sonnguyen.channelservice.dto.request.SendMessageRequest;
-import com.sonnguyen.channelservice.dto.response.ApiResponse;
-import com.sonnguyen.channelservice.dto.response.ChannelMessageDto;
-import com.sonnguyen.channelservice.dto.response.MessageResponse;
+import com.sonnguyen.channelservice.dto.message.ChannelMessageDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +17,7 @@ import java.util.UUID;
 public interface ChatServiceClient {
 
     @GetMapping("/api/v1/messages/{channelId}")
-    List<Object> getChannelMessages(@PathVariable UUID channelId);
+    List<ChannelMessageDto> getChannelMessages(@PathVariable UUID channelId);
 
     @GetMapping("/api/v1/messages/user/{userId}/all")
     Map<UUID, List<ChannelMessageDto>> getAllMessagesByUserId(@PathVariable UUID userId);
@@ -28,7 +26,7 @@ public interface ChatServiceClient {
     Map<UUID, List<ChannelMessageDto>> getBatchChannelMessages(@RequestBody List<UUID> channelIds);
 
     @PostMapping("/api/v1/messages/{channelId}")
-    ApiResponse<MessageResponse> sendMessage(
+    ChannelMessageDto sendMessage(
             @PathVariable UUID channelId,
             @RequestParam("userId") UUID userId,
             @RequestBody SendMessageRequest request

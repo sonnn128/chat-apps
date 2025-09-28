@@ -2,8 +2,13 @@ import React from "react";
 import { Button, Tooltip, Avatar } from "antd";
 import { MoreOutlined, RollbackOutlined, SmileOutlined } from "@ant-design/icons";
 import PropTypes from "prop-types";
+import { useUserInfo } from "@/hooks/useUserInfo";
 
-function EmojiMessage({ content, isCurrentUser, senderName = "User", senderAvatar }) {
+function EmojiMessage({ content, isCurrentUser, userId }) {
+  // Get real-time user info
+  const { userInfo } = useUserInfo(userId);
+  const senderName = userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...';
+  const senderAvatar = userInfo?.avatarUrl || null;
   return (
     <div className={`flex items-start ${isCurrentUser ? "justify-end" : ""}`}>
       {!isCurrentUser && (
@@ -55,8 +60,7 @@ function EmojiMessage({ content, isCurrentUser, senderName = "User", senderAvata
 EmojiMessage.propTypes = {
   content: PropTypes.string.isRequired,
   isCurrentUser: PropTypes.bool.isRequired,
-  senderName: PropTypes.string,
-  senderAvatar: PropTypes.string,
+  userId: PropTypes.string.isRequired,
 };
 
 export default EmojiMessage;

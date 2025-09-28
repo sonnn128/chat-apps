@@ -81,11 +81,20 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
 
   // Get member role display
   const getMemberRoleDisplay = (member) => {
-    if (member.email && member.role) {
+    // Only show email if it's a real email (not generated)
+    const isRealEmail = member.email && 
+                       member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
+                       member.email.includes('@') &&
+                       !member.email.includes('example.com');
+    
+    if (isRealEmail && member.role) {
       return `${member.email} · Role: ${member.role}`;
     }
     if (member.role) {
       return `Role: ${member.role}`;
+    }
+    if (isRealEmail) {
+      return member.email;
     }
     return '';
   };
@@ -115,19 +124,19 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
               >
                 <div className="flex items-center w-full">
                   <Avatar 
-                    src={friend.friendAvatar} 
+                    src={friend.avatar} 
                     className="mr-3"
                   >
-                    {friend.friendFirstname?.charAt(0)?.toUpperCase() || "U"}
+                    {friend.firstname?.charAt(0)?.toUpperCase() || "U"}
                   </Avatar>
                   
                   <div className="flex-1">
                     <Text strong className={isMember ? 'text-gray-500' : ''}>
-                      {friend.friendFirstname} {friend.friendLastname}
+                      {friend.firstname} {friend.lastname}
                     </Text>
                     <br />
                     <Text type="secondary" className="text-sm">
-                      {friend.friendEmail}
+                      {friend.email}
                     </Text>
                     {isMember && (
                       <Text type="secondary" className="text-xs block">

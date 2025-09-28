@@ -64,13 +64,13 @@ const FriendsModal = ({ open, onClose }) => {
               ]}
             >
               <List.Item.Meta
-                avatar={<Avatar src={friend.friendAvatar || ""} />}
+                avatar={<Avatar src={friend.avatar || ""} />}
                 title={
                   <Text strong>
-                    {`${friend.friendFirstname || ""} ${friend.friendLastname || ""}`}
+                    {`${friend.firstname || ""} ${friend.lastname || ""}`}
                   </Text>
                 }
-                description={friend.friendEmail || "No email"}
+                description={friend.email || "No email"}
               />
             </List.Item>
           )}

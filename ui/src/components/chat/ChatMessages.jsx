@@ -57,8 +57,7 @@ const ChatMessages = () => {
             key={message.key.messageId}
             content={message.content}
             isCurrentUser={isCurrentUser}
-            senderName={message.senderName}
-            senderAvatar={message.senderAvatar}
+            userId={message.userId}
           />
         );
       case "EMOJI":
@@ -67,8 +66,7 @@ const ChatMessages = () => {
             key={message.key.messageId}
             content={message.content}
             isCurrentUser={isCurrentUser}
-            senderName={message.senderName}
-            senderAvatar={message.senderAvatar}
+            userId={message.userId}
           />
         );
       case "NOTICE":
@@ -84,8 +82,7 @@ const ChatMessages = () => {
             key={message.key.messageId}
             content={message.content}
             isCurrentUser={isCurrentUser}
-            senderName={message.senderName}
-            senderAvatar={message.senderAvatar}
+            userId={message.userId}
           />
         );
     }

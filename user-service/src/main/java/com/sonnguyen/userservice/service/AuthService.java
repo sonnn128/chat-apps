@@ -12,6 +12,7 @@ import com.sonnguyen.userservice.exception.CommonException;
 import com.sonnguyen.userservice.model.User;
 import com.sonnguyen.userservice.repository.IdentityClient;
 import com.sonnguyen.userservice.repository.UserRepository;
+import com.sonnguyen.userservice.util.PhoneNumberUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,13 +66,21 @@ public class AuthService {
     }
 
     public UserResponse register(UserRegistrationRequest request) {
-        // 1. Check if user already exists
+        // 1. Normalize phone number
+        String normalizedPhone = PhoneNumberUtils.normalizeVietnamesePhone(request.getPhone());
+        
+        // 2. Validate phone number
+        if (!PhoneNumberUtils.isValidVietnamesePhone(normalizedPhone)) {
+            throw new CommonException("Invalid phone number format: " + request.getPhone(), HttpStatus.BAD_REQUEST);
+        }
+        
+        // 3. Check if user already exists
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.BAD_REQUEST);
         });
 
-        userRepository.findByPhone(request.getPhone()).ifPresent(user -> {
-            throw new CommonException("Phone " + request.getPhone() + " is already in use.", HttpStatus.BAD_REQUEST);
+        userRepository.findByPhone(normalizedPhone).ifPresent(user -> {
+            throw new CommonException("Phone " + normalizedPhone + " is already in use.", HttpStatus.BAD_REQUEST);
         });
 
         String token = identityClient.getClientToken(TokenExchangeParam.builder()
@@ -102,14 +111,14 @@ public class AuthService {
 //        get userid from keycloak response
         UUID userId = extractUserId(creationResponse);
 
-        // 2. Create user in local database
+        // 4. Create user in local database
         User newUser = User.builder()
                 .id(userId)
                 .firstname(request.getFirstname())
                 .lastname(request.getLastname())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone())
+                .phone(normalizedPhone) // Use normalized phone number
                 .build();
 
         User savedUser = userRepository.save(newUser);
