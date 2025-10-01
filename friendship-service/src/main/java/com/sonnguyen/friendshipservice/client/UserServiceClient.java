@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "user-service", path = "/api/v1/users")
+@FeignClient(name = "user-service", url = "${user-service.url}")
 public interface UserServiceClient {
     
-    @GetMapping("/internal/{userId}")
+    @GetMapping("/api/v1/users/internal/{userId}")
     UserResponse getUserById(@PathVariable("userId") UUID userId);
     
-    @GetMapping("/batch")
+    @GetMapping("/api/v1/users/batch")
     List<UserResponse> getUsersByIds(@PathVariable("userIds") List<UUID> userIds);
 }

@@ -31,7 +31,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/register",
-                                "/api/v1/auth/login").permitAll() // public endpoint
+                                "/api/v1/auth/login",
+                                "/actuator/health",
+                                "/actuator/info"
+                                ).permitAll() // public endpoint
                         .requestMatchers("/api/v1/channels/**").permitAll() // Allow all channel endpoints
                         .anyRequest().authenticated()
                 )

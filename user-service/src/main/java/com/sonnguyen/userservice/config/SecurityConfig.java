@@ -32,13 +32,16 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/users/search/phone",
                                 "/api/v1/users/*",
-                                "/api/v1/users/internal/*").permitAll()
-                        .anyRequest().authenticated()
-                )
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/api/v1/users/internal/*")
+                        .permitAll()
+                        .anyRequest().authenticated())
                 .addFilterBefore(new GatewayAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> null;

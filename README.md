@@ -2,6 +2,7 @@
 ## 1. For production
 ## 2. For docker
 ```
+cd <project_folder>
 docker compose up -d
 ```
 Then visit: [http://localhost:5173](http://localhost:5173) to access this app
@@ -35,30 +36,42 @@ java -jar -Xmx2048m -Xms256m /target/api-gateway-0.0.1-SNAPSHOT.jar
 ```
 ### 3.4 Run services
 ```
-cd <project folder/services/auth-service>
+cd <project folder/auth-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/auth-service-0.0.1-SNAPSHOT.jar
 ```
 ```
-cd <project folder/services/user-service>
+cd <project folder/user-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/user-service-0.0.1-SNAPSHOT.jar
 ```
 ```
-cd <project folder/services/chat-service>
+cd <project folder/chat-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/chat-service-0.0.1-SNAPSHOT.jar
 ```
 ```
-cd <project folder/services/channel-service>
+cd <project folder/channel-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/channel-service-0.0.1-SNAPSHOT.jar
 ```
 ```
-cd <project folder/services/notification-service>
+cd <project folder/notification-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/notification-service-0.0.1-SNAPSHOT.jar
 ```
+```
+cd <project folder/friendshipservice-service>
+mvn install -DskipTests=true
+java -jar -Xmx2048m -Xms256m /target/friendshipservice-service-0.0.1-SNAPSHOT.jar
+```
+```
+cd <project folder/media-service>
+mvn install -DskipTests=true
+java -jar -Xmx2048m -Xms256m /target/media-service-0.0.1-SNAPSHOT.jar
+```
+
+
 ### 3.4 Run ui
 ```
 cd <project folder/ui>
@@ -81,9 +94,10 @@ test(api):
 
 ```
 
-
-
-
 ```
 docker exec -it keycloak /opt/keycloak/bin/kc.sh export --dir /opt/keycloak/data/export --realm chat-apps
+```
+```
+Restart container and apply code or config
+docker compose up --build api-gateway
 ```

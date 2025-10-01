@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
-@FeignClient(name = "user-service", path = "/api/v1/users", configuration = com.sonnguyen.chatservice.config.FeignConfig.class)
+@FeignClient(name = "user-service", url = "${user-service.url}")
 public interface UserServiceClient {
-    @GetMapping("/internal/{id}")
+    @GetMapping("/api/v1/users/internal/{id}")
     UserResponse getUserById(@PathVariable UUID id);
 }

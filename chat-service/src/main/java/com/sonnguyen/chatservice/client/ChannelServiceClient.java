@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "channel-service", path = "/api/v1/channels", configuration = com.sonnguyen.chatservice.config.FeignConfig.class)
+@FeignClient(name = "channel-service", url = "${channel-service.url}")
 public interface ChannelServiceClient {
-    @GetMapping("/{channelId}/participants/ids")
+    @GetMapping("/api/v1/channels/{channelId}/participants/ids")
     ApiResponse<List<UUID>> getParticipantIdsByChannelId(@PathVariable("channelId") UUID channelId);
 
-    @GetMapping("/{channelId}/participants/{userId}/check")
+    @GetMapping("/api/v1/channels/{channelId}/participants/{userId}/check")
     ApiResponse<Boolean> checkUserIsParticipant(
                                  @PathVariable("channelId") UUID channelId,
                                  @PathVariable("userId") UUID userId
