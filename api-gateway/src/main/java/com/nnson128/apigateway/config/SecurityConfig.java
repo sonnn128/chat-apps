@@ -24,6 +24,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(
                         exchange -> exchange.pathMatchers("/eureka/**").permitAll()
+                                .pathMatchers("/actuator/**").permitAll() // Allow health checks
                                 .pathMatchers("/swagger-ui/**").permitAll()
                                 .pathMatchers("/v3/api-docs/**").permitAll()
                                 .pathMatchers("/api/v1/auth/register").permitAll()
