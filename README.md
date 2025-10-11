@@ -115,6 +115,71 @@ npm install
 npm run dev
 ```
 Then visit: [http://localhost:5173](http://localhost:5173) to access this app
+---
+
+## 🚀 Triển khai Production & CI/CD
+
+### 📖 Tài liệu triển khai
+
+Dự án bao gồm tài liệu đầy đủ để triển khai lên production và thiết lập CI/CD:
+
+1. **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Hướng dẫn triển khai production
+   - Mindset và chiến lược triển khai microservices
+   - Thứ tự triển khai từng bước (Infrastructure → Config → Services → UI)
+   - Cấu hình môi trường production
+   - Monitoring và logging (ELK Stack, Prometheus)
+   - Security best practices
+   - Troubleshooting chi tiết
+   - Template mô tả dự án cho CV
+
+2. **[JENKINS_SETUP.md](./JENKINS_SETUP.md)** - Hướng dẫn cài đặt Jenkins CI/CD
+   - Cài đặt Jenkins từ đầu
+   - Cấu hình plugins và credentials
+   - Tạo pipeline tự động
+   - Cấu hình webhook GitHub
+   - Troubleshooting Jenkins
+
+3. **[Jenkinsfile](./Jenkinsfile)** - Pipeline CI/CD hoàn chỉnh
+   - Build tất cả services song song
+   - Chạy tests tự động
+   - Build và push Docker images
+   - Deploy tự động theo branch (dev/staging/prod)
+   - Health checks sau deployment
+
+### 🛠️ Scripts hỗ trợ
+
+Trong thư mục `scripts/`:
+
+- **health-check.sh** - Kiểm tra health của tất cả services
+- **backup-databases.sh** - Backup tự động PostgreSQL, Cassandra, MySQL
+- **restore-databases.sh** - Restore databases từ backup
+
+```bash
+# Kiểm tra health
+./scripts/health-check.sh
+
+# Backup databases
+./scripts/backup-databases.sh
+
+# Restore databases
+./scripts/restore-databases.sh backups/20250111_120000.tar.gz
+```
+
+### 🐳 Docker Compose cho Production
+
+```bash
+# Deploy với cấu hình production
+docker-compose -f docker-compose.prod.yml up -d
+
+# Kiểm tra logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Stop services
+docker-compose -f docker-compose.prod.yml down
+```
+
+---
+
 ## Git commit invention
 ```
 feat: chat 
