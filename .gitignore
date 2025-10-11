@@ -1,6 +1,44 @@
+# IDE
 .idea
+.vscode
+*.iml
+
+# Data directories
 data
+backups
+
+# Notes and temp files
 note.md
-.env
 .delete.md
-*.sh
+
+# Environment files
+.env
+.env.local
+.env.dev
+.env.prod
+.env.*.local
+
+# Exclude shell scripts from root (but keep scripts/ directory)
+/*.sh
+
+# Build artifacts
+target/
+build/
+dist/
+*.jar
+*.war
+*.class
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jenkins
+.jenkins/
+
+# Docker volumes
+volumes/
