@@ -23,20 +23,20 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
-  akhq:
-    image: tchiotludo/akhq:latest
-    container_name: akhq
-    ports:
-      - "9999:8080" # Truy cập UI qua cổng 8080
-    environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          connections:
-            docker-kafka-cluster:
-              properties:
-                bootstrap.servers: "kafka:9092"
-    depends_on:
-      - kafka
+  # akhq:
+  #   image: tchiotludo/akhq:latest
+  #   container_name: akhq
+  #   ports:
+  #     - "9999:8080" # Truy cập UI qua cổng 8080
+  #   environment:
+  #     AKHQ_CONFIGURATION: |
+  #       akhq:
+  #         connections:
+  #           docker-kafka-cluster:
+  #             properties:
+  #               bootstrap.servers: "kafka:9092"
+  #   depends_on:
+  #     - kafka
 # postgres databases
   postgres:
     image: postgres:16-alpine
