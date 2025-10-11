@@ -1,6 +1,42 @@
 # HOW TO RUN THE APP?  
+
 ## 1. For production
-## 2. For docker
+
+### Production Deployment Guide
+For comprehensive production deployment instructions, including:
+- Complete deployment strategy and mindset
+- Step-by-step infrastructure setup
+- CI/CD pipeline with Jenkins
+- Monitoring and logging setup
+- Security best practices
+- Troubleshooting guide
+
+**👉 See [DEPLOYMENT.md](./DEPLOYMENT.md) for full details**
+
+### Quick Production Deployment
+
+```bash
+# 1. Clone repository
+git clone https://github.com/sonnn128/chat-apps.git
+cd chat-apps
+
+# 2. Configure environment variables
+cp .env.prod.example .env.prod
+# Edit .env.prod with your production values
+
+# 3. Deploy with production configuration
+docker-compose -f docker-compose.prod.yml up -d
+
+# 4. Check service health
+./scripts/health-check.sh
+
+# 5. Access the application
+# UI: http://your-domain:5173
+# Keycloak: http://your-domain:8080
+# Eureka Dashboard: http://your-domain:8761
+```
+
+## 2. For docker (Development)
 ```
 cd <project_folder>
 docker compose up -d
