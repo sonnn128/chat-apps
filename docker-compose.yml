@@ -1,8 +1,9 @@
 services:
-  # KAFKA
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
     container_name: zookeeper
+    env_file:
+      - ./.env.dev
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
@@ -10,10 +11,11 @@ services:
     image: confluentinc/cp-kafka:7.3.0
     container_name: kafka
     ports:
-      # port for spring
       - "9092:9092"
     depends_on:
       - zookeeper
+    env_file:
+      - ./.env.dev
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
@@ -23,46 +25,33 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
-  # akhq:
-  #   image: tchiotludo/akhq:latest
-  #   container_name: akhq
-  #   ports:
-  #     - "9999:8080" # Truy cập UI qua cổng 8080
-  #   environment:
-  #     AKHQ_CONFIGURATION: |
-  #       akhq:
-  #         connections:
-  #           docker-kafka-cluster:
-  #             properties:
-  #               bootstrap.servers: "kafka:9092"
-  #   depends_on:
-  #     - kafka
-# postgres databases
+
   postgres:
     image: postgres:16-alpine
     restart: always
+    env_file:
+      - ./.env.dev
     environment:
-      POSTGRES_DB: postgres_db
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      # TZ: Asia/Ho_Chi_Minh
-      # PGTZ: Asia/Ho_Chi_Minh
+      POSTGRES_DB: chatapps
+      POSTGRES_USER: chatapps
+      POSTGRES_PASSWORD: chatapps
     ports:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       # - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres_user"]
+      test: ["CMD-SHELL", "pg_isready -U chatapps"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-# cassandra databases
   cassandra:
     image: cassandra:latest
     ports:
       - "9042:9042"
+    env_file:
+      - ./.env.dev
     healthcheck:
       test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra", "-e describe keyspaces" ]
       interval: 15s
@@ -77,11 +66,13 @@ services:
     restart: always
     volumes:
       - ./data/mysql_keycloak_data:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: keycloak
-      MYSQL_USER: keycloak
-      MYSQL_PASSWORD: password
+    env_file:
+      - ./.env.dev
+    # environment:
+    #   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    #   MYSQL_DATABASE: ${MYSQL_DATABASE}
+    #   MYSQL_USER: ${MYSQL_USER}
+    #   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 10s
@@ -96,14 +87,8 @@ services:
     depends_on:
       keycloak-mysql:
         condition: service_healthy
-    environment:
-      KC_DB: mysql
-      KC_DB_URL_HOST: keycloak-mysql
-      KC_DB_URL_DATABASE: keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: password
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+    env_file:
+      - ./.env.dev
     ports:
       - "8080:8080"
     volumes:
@@ -113,20 +98,11 @@ services:
       # everything in keycloaks is storage in keycloak-mysql
       # how to export json file in keycloak
 
-#  redis:
-#    image: redis:latest
-#    restart: unless-stopped
-#    ports:
-#      - "6380:6379"
-#    #      - host-port:container-port(6379)
-#    volumes:
-#      - ./data/redis:/data
-
   # CONFIGURATION SERVICE
   discovery-server:
     build: ./discovery-server
-    # env_file:
-    #   - ./.env
+    env_file:
+      - ./.env.dev
     ports:
       - 8761:8761
     healthcheck:
@@ -157,10 +133,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9005:9005"
+    env_file:
+      - ./.env.dev
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres_db
-      SPRING_DATASOURCE_USERNAME: postgres_user
-      SPRING_DATASOURCE_PASSWORD: postgres_password
       MEDIA_SERVICE: media-service
     depends_on:
       postgres:
@@ -177,10 +152,8 @@ services:
     build:
       context: ./media-service
       dockerfile: Dockerfile
-    environment:
-      CLOUDINARY_CLOUD_NAME: dswdadh2n
-      CLOUDINARY_API_KEY: 741574128814778
-      CLOUDINARY_API_SECRET: J9XuHektVDcN5CI_3_58RmDjSoE
+    env_file:
+      - ./.env.dev
     ports:
       - "9006:9006"
     depends_on:
@@ -198,6 +171,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8889:8889"
+    env_file:
+      - ./.env.dev
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -215,12 +190,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9007:9007"
+    env_file:
+      - ./.env.dev
     environment:
       # Server Configuration
       user-service.url: http://user-service:9005
       channel-service.url: http://channel-service:9008
-      CASSANDRA_HOST: cassandra
-      CASSANDRA_PORT: 9042
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -240,12 +215,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9008:9008"
+    env_file:
+      - ./.env.dev
     environment:
       
       # Database Configuration
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres_db
-      SPRING_DATASOURCE_USERNAME: postgres_user
-      SPRING_DATASOURCE_PASSWORD: postgres_password
+      # Uses POSTGRES_* from env_file
       
       # External Services
       user-service.url: http://user-service:9005
@@ -270,14 +245,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "9009:9009"
+    env_file:
+      - ./.env.dev
     environment:
-      
-      # Database Configuration
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres_db
-      SPRING_DATASOURCE_USERNAME: postgres_user
-      SPRING_DATASOURCE_PASSWORD: postgres_password
-      
-      # External Services
       user-service.url: http://user-service:9005
       
     depends_on:
@@ -292,36 +262,4 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-  ui:
-    build:
-      context: ./ui
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-      api-gateway:
-        condition: service_healthy
-      media-service:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      chat-service:
-        condition: service_healthy
-      channel-service:
-        condition: service_healthy
-      friendship-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-    environment:
-      VITE_REACT_APP_BASE_URL: http://api-gateway:8888/api/v1
-      VITE_REACT_APP_BASE_WS_URL: http://notification-service:8889/ws
-      VITE_MEDIA_SERVICE_URL: http://media-service:9006
-      VITE_USER_SERVICE_URL: http://user-service:9005
-      VITE_CHAT_SERVICE_URL: http://chat-service:9007
-      VITE_CHANNEL_SERVICE_URL: http://channel-service:9008
-      VITE_FRIENDSHIP_SERVICE_URL: http://friendship-service:9009
-      VITE_NOTIFICATION_SERVICE_URL: http://notification-service:8889
-
+ 

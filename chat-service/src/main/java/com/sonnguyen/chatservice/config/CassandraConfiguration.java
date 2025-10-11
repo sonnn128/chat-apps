@@ -11,8 +11,12 @@ import java.util.List;
 
 @Configuration
 public class CassandraConfiguration extends AbstractCassandraConfiguration implements BeanClassLoaderAware {
-    String host = System.getenv("CASSANDRA_HOST") == null ? "127.0.0.1" : System.getenv("CASSANDRA_HOST");
-    int port = Integer.parseInt(System.getenv("CASSANDRA_PORT") == null ? "9042" : System.getenv("CASSANDRA_PORT"));
+    private static String orDefault(String value, String def) {
+        return (value == null || value.isBlank()) ? def : value;
+    }
+
+    String host = orDefault(System.getenv("CASSANDRA_HOST"), "127.0.0.1");
+    int port = Integer.parseInt(orDefault(System.getenv("CASSANDRA_PORT"), "9042"));
     @Override
     @NonNull
     protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
