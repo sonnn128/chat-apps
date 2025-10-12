@@ -2,8 +2,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { getAuthHeaders } from "./authUtils";
 
-const WEBSOCKET_URL =
-  import.meta.env.VITE_REACT_APP_WEBSOCKET_URL || "http://localhost:8889/ws";
+const WEBSOCKET_URL = `${import.meta.env.VITE_REACT_APP_BASE_WS_URL}/ws`;
 
 let stompClient = null;
 const subscriptions = new Map();
@@ -24,7 +23,7 @@ const connect = (onConnectedCallback) => {
   }
 
   console.log("WebSocket: Attempting to connect to", WEBSOCKET_URL);
-  
+
   stompClient = new Client({
     webSocketFactory: () => new SockJS(WEBSOCKET_URL),
     connectHeaders: headers,
@@ -36,14 +35,18 @@ const connect = (onConnectedCallback) => {
 
   stompClient.onConnect = (frame) => {
     console.log("✅ WebSocket: Connected successfully!", frame);
-    console.log("WebSocket: Processing", pendingSubscriptions.length, "pending subscriptions");
-    
+    console.log(
+      "WebSocket: Processing",
+      pendingSubscriptions.length,
+      "pending subscriptions"
+    );
+
     // Process pending subscriptions
     pendingSubscriptions.forEach(({ destination, callback }) => {
       subscribe(destination, callback);
     });
     pendingSubscriptions.length = 0;
-    
+
     if (onConnectedCallback) {
       console.log("WebSocket: Executing connection callback");
       onConnectedCallback();
@@ -76,7 +79,10 @@ const disconnect = () => {
 
 const subscribe = (destination, callback) => {
   if (!stompClient?.connected) {
-    console.log("WebSocket: Client not connected, adding to pending subscriptions:", destination);
+    console.log(
+      "WebSocket: Client not connected, adding to pending subscriptions:",
+      destination
+    );
     pendingSubscriptions.push({ destination, callback });
     if (!stompClient?.active) {
       connect();
@@ -93,10 +99,20 @@ const subscribe = (destination, callback) => {
   const subscription = stompClient.subscribe(destination, (message) => {
     try {
       const parsedMessage = JSON.parse(message.body);
-      console.log("📨 WebSocket: Message received from", destination, ":", parsedMessage);
+      console.log(
+        "📨 WebSocket: Message received from",
+        destination,
+        ":",
+        parsedMessage
+      );
       callback(parsedMessage);
     } catch (error) {
-      console.error("❌ WebSocket: Error parsing message from", destination, ":", error);
+      console.error(
+        "❌ WebSocket: Error parsing message from",
+        destination,
+        ":",
+        error
+      );
       console.error("Raw message:", message.body);
     }
   });
@@ -107,7 +123,9 @@ const subscribe = (destination, callback) => {
 
 const sendMessage = (destination, body) => {
   if (!stompClient?.connected) {
-    console.error("❌ WebSocket: Cannot send message, STOMP client is not connected.");
+    console.error(
+      "❌ WebSocket: Cannot send message, STOMP client is not connected."
+    );
     return;
   }
 

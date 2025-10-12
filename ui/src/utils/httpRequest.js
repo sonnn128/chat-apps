@@ -2,7 +2,7 @@ import axios from "axios";
 import { errorToast } from "./toast";
 
 const httpRequest = axios.create({
-  baseURL: "http://localhost:8888/api/v1",
+  baseURL: `${import.meta.env.VITE_REACT_APP_BASE_URL}/api/v1`,
   timeout: 5000,
 });
 
