@@ -196,6 +196,9 @@ services:
       # Server Configuration
       user-service.url: http://user-service:9005
       channel-service.url: http://channel-service:9008
+      # Ensure cassandra host/port passed so wait script can use them
+      CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
+      CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
     depends_on:
       discovery-server:
         condition: service_healthy
