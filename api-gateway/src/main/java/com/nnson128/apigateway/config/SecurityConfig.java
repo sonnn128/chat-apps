@@ -41,7 +41,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // Set specific origin instead of wildcard to avoid conflicts
-        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173"));
+        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://localhost"));
         configuration.setAllowedMethods(java.util.Arrays.asList(
                 HttpMethod.GET.name(),
                 HttpMethod.POST.name(),

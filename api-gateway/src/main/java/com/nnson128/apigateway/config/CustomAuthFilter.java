@@ -28,9 +28,8 @@ public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
                     String userId = Optional.ofNullable(jwt.getClaimAsString("sub"))
                             .orElseThrow(() -> new IllegalArgumentException("User ID not found in JWT claims"));
 
-                    // Cách đúng đắn để thêm header mà không làm mất các header khác
                     ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                            .header("X-User-Id", userId) // Chỉ thêm hoặc ghi đè X-User-Id
+                            .header("X-User-Id", userId)
                             .build();
 
                     return chain.filter(exchange.mutate().request(mutatedRequest).build());
