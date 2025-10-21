@@ -12,7 +12,7 @@ pipeline {
         GIT_COMMIT_SHORT = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
         
         // Service names
-        SERVICES = "discovery-server api-gateway user-service media-service chat-service channel-service friendship-service notification-service ui"
+    SERVICES = "discovery-server api-gateway user-service media-service chat-service channel-service friendship-service ui"
     }
     
     options {
@@ -158,7 +158,7 @@ pipeline {
                     steps {
                         script {
                             echo "🔨 Building Notification Service..."
-                            dir('notification-service') {
+                            // dir('notification-service') {
                                 sh '''
                                     mvn clean install -DskipTests=true
                                 '''
@@ -193,7 +193,7 @@ pipeline {
                             echo "🧪 Running tests for Java services..."
                             sh '''
                                 # Run tests for all Java services
-                                for service in discovery-server api-gateway user-service media-service chat-service channel-service friendship-service notification-service; do
+                                for service in discovery-server api-gateway user-service media-service chat-service channel-service friendship-service; do
                                     echo "Testing $service..."
                                     cd $service
                                     mvn test || echo "Tests failed for $service, continuing..."

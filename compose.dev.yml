@@ -23,36 +23,19 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
-  akhq:
-    image: tchiotludo/akhq:latest
-    container_name: akhq
-    ports:
-      - "9999:8080" # Truy cập UI qua cổng 8080
-    environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          connections:
-            docker-kafka-cluster:
-              properties:
-                bootstrap.servers: "kafka:9092"
-    depends_on:
-      - kafka
 # postgres databases
   postgres:
     image: postgres:16-alpine
     restart: always
     environment:
-      POSTGRES_DB: postgres_db
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      # TZ: Asia/Ho_Chi_Minh
-      # PGTZ: Asia/Ho_Chi_Minh
+      POSTGRES_DB: chatapps
+      POSTGRES_USER: chatapps
+      POSTGRES_PASSWORD: chatapps
     ports:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       # - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
-
 
 # cassandra databases
   cassandra:

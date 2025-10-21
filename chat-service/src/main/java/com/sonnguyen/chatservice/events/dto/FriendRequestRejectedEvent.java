@@ -1,4 +1,4 @@
-package com.sonnguyen.notificationservice.events;
+package com.sonnguyen.chatservice.events.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,10 +12,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FriendRequestSentEvent {
-    public static final String EVENT_TYPE = "FRIEND_REQUEST_SENT";
+public class FriendRequestRejectedEvent {
+    public static final String EVENT_TYPE = "FRIEND_REQUEST_REJECTED";
 
     private UUID requesterId;
-    private UUID friendId;
-    private LocalDateTime createdAt;
+    private UUID rejecterId;
+    private LocalDateTime rejectedAt;
 }
