@@ -1,6 +1,7 @@
 package com.sonnguyen.chatservice.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.data.cassandra.config.*;
 import org.springframework.data.cassandra.core.cql.keyspace.CreateKeyspaceSpecification;
@@ -10,6 +11,7 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 @Configuration
+@Profile("!ws-only")
 public class CassandraConfiguration extends AbstractCassandraConfiguration implements BeanClassLoaderAware {
     private static String orDefault(String value, String def) {
         return (value == null || value.isBlank()) ? def : value;

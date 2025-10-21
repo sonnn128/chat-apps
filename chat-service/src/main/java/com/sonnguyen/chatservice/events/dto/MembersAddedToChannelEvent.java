@@ -1,4 +1,4 @@
-package com.sonnguyen.notificationservice.events;
+package com.sonnguyen.chatservice.events.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class MembersAddedToChannelEvent {
     public static final String EVENT_TYPE = "MEMBERS_ADDED_TO_CHANNEL";
-    
+
     private UUID channelId;
     private String channelName;
     private UUID addedByUserId;

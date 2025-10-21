@@ -2,7 +2,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { getAuthHeaders } from "./authUtils";
 
-const WEBSOCKET_URL = `${import.meta.env.VITE_REACT_APP_BASE_WS_URL}/ws`;
+const WEBSOCKET_URL = `${import.meta.env.VITE_REACT_APP_BASE_URL}/ws`;
 
 let stompClient = null;
 const subscriptions = new Map();

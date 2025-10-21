@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeExchange(
                         exchange -> exchange.pathMatchers("/eureka/**").permitAll()
                                 .pathMatchers("/actuator/**").permitAll() // Allow health checks
+                                .pathMatchers("/ws", "/ws/**").permitAll() // Allow WebSocket/SockJS handshake
                                 .pathMatchers("/swagger-ui/**").permitAll()
                                 .pathMatchers("/v3/api-docs/**").permitAll()
                                 .pathMatchers("/api/v1/auth/register").permitAll()
@@ -62,7 +63,11 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+                // Apply CORS to API and docs paths only, exclude /ws to avoid duplicate CORS headers on SockJS handshake
+        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/v3/api-docs/**", configuration);
+        source.registerCorsConfiguration("/swagger-ui/**", configuration);
+        source.registerCorsConfiguration("/eureka/**", configuration);
 
         return source;
     }

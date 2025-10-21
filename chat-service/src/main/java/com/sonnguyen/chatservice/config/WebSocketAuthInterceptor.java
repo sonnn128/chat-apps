@@ -1,4 +1,4 @@
-package com.sonnguyen.notificationservice.config;
+package com.sonnguyen.chatservice.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -16,13 +16,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        
+
         if (accessor != null) {
             StompCommand command = accessor.getCommand();
-            
+
             if (command == StompCommand.CONNECT) {
                 log.info("🔌 WebSocket: Client attempting to connect");
-                // Allow all connections for now - you can add JWT validation here later
                 log.info("✅ WebSocket: Connection allowed");
             } else if (command == StompCommand.SUBSCRIBE) {
                 String destination = accessor.getDestination();
@@ -31,17 +30,17 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 log.info("🔌 WebSocket: Client disconnecting");
             }
         }
-        
+
         return message;
     }
 
     @Override
     public void postSend(Message<?> message, MessageChannel channel, boolean sent) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
-        
+
         if (accessor != null) {
             StompCommand command = accessor.getCommand();
-            
+
             if (command == StompCommand.CONNECT && sent) {
                 log.info("✅ WebSocket: Connection established successfully");
             } else if (command == StompCommand.SUBSCRIBE && sent) {

@@ -165,25 +165,6 @@ services:
       timeout: 5s
       retries: 10
 
-  notification-service:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    ports:
-      - "8889:8889"
-    env_file:
-      - ./.env.dev
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-      kafka:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8889/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   chat-service:
     build:
       context: ./chat-service
