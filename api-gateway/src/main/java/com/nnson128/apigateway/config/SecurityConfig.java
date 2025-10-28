@@ -53,12 +53,10 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(java.util.Arrays.asList(
                 "Authorization",
                 "Content-Type",
-                "X-Requested-With",
-                "X-User-Id"
+                "X-Requested-With"
         ));
         configuration.setExposedHeaders(java.util.Arrays.asList(
-                "Location",
-                "X-User-Id"
+                "Location"
         ));
         configuration.setAllowCredentials(true);
 

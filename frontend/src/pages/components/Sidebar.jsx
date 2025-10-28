@@ -12,8 +12,7 @@ import {
 } from "@ant-design/icons";
 import debounce from "lodash.debounce";
 
-import ChannelList from "@/components/channels/ChannelList";
-import FriendList from "@/components/friends/FriendList";
+import ConversationList from "@/components/conversations/ConversationList";
 import FriendsModal from "@/components/modals/FriendsModal";
 import FriendRequestsModal from "@/components/modals/FriendRequestsModal";
 import { successToast } from "@/utils/toast";
@@ -393,8 +392,7 @@ const Sidebar = () => {
               )}
             </div>
 
-            <ChannelList channels={filteredChannels} />
-            <FriendList friends={filteredFriends} />
+            <ConversationList channels={filteredChannels} friends={filteredFriends} />
           </>
         )}
       </div>

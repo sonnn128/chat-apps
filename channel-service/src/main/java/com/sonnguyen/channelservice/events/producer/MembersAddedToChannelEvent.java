@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.events.producer;
+package com.sonnguyen.channelservice.legacy.events.producer;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

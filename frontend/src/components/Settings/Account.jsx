@@ -254,23 +254,6 @@ const Account = () => {
                     {user?.data?.id}
                   </div>
                 </div>
-
-                <div>
-                  <Text type="secondary" style={{ fontSize: '12px' }}>
-                    <CalendarOutlined /> MEMBER SINCE
-                  </Text>
-                  <div style={{ marginTop: '4px' }}>
-                    {user?.data?.createdAt ? 
-                      new Date(user.data.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : 
-                      'Unknown'
-                    }
-                  </div>
-                </div>
-
                 <div>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     STATUS

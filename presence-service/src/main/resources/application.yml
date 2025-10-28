@@ -1,0 +1,56 @@
+server:
+  port: 9015
+
+spring:
+  application:
+    name: presence-service
+  output:
+    ansi:
+      enabled: always
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: presence-events
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.sonnguyen.presenceservice.events.dto.EventWrapper
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8080/realms/chat-apps
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-server:8761/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    instance-id: ${spring.application.name}
+
+
+app:
+  kafka:
+    topics:
+      user-online: 'chat-service.user-online.v1'
+      user-offline: 'chat-service.user-offline.v1'
+      new-message: 'chat-service.new-message.v1'
+      client-connected: 'chat-service.client-connected.v1'
+      client-disconnected: 'chat-service.client-disconnected.v1'

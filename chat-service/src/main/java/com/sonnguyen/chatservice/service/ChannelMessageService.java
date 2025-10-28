@@ -10,9 +10,9 @@ import com.sonnguyen.chatservice.dto.response.ChannelMessageDto;
 import com.sonnguyen.chatservice.dto.response.ChannelMessageKeyDto;
 import com.sonnguyen.chatservice.exception.ExternalServiceException;
 import com.sonnguyen.chatservice.exception.InvalidMessageException;
-import com.sonnguyen.chatservice.events.dto.EventWrapper;
-import com.sonnguyen.chatservice.events.dto.MessageSentEvent;
-import com.sonnguyen.chatservice.events.dto.MessageSentEventKey;
+import com.sonnguyen.chatservice.kafka.dto.EventWrapper;
+import com.sonnguyen.chatservice.kafka.dto.MessageSentEvent;
+import com.sonnguyen.chatservice.kafka.dto.MessageSentEventKey;
 import com.sonnguyen.chatservice.model.ChannelMessage;
 import com.sonnguyen.chatservice.model.ChannelMessageKey;
 import com.sonnguyen.chatservice.model.ChannelMessageType;
@@ -111,12 +111,12 @@ public class ChannelMessageService {
         // Get sender information for real-time display
         SenderInfo senderInfo = getSenderInfo(message.getUserId());
 
-        MessageSentEvent event = MessageSentEvent.builder()
+    MessageSentEvent event = MessageSentEvent.builder()
                 .key(MessageSentEventKey.builder()
                         .channelId(message.getKey().getChannelId())
                         .messageId(message.getKey().getMessageId())
                         .build())
-                .type(message.getType())
+        .type(message.getType() != null ? message.getType().name() : null)
                 .userId(message.getUserId())
                 .content(message.getContent())
                 .timestamp(message.getTimestamp())

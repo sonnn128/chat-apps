@@ -3,13 +3,14 @@ package com.sonnguyen.chatservice.events.consumer;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonnguyen.chatservice.client.ChannelServiceClient;
+import com.sonnguyen.chatservice.client.UserServiceClient;
 import com.sonnguyen.chatservice.dto.SenderInfo;
 import com.sonnguyen.chatservice.dto.response.ApiResponse;
-import com.sonnguyen.chatservice.events.dto.ChannelCreatedEvent;
-import com.sonnguyen.chatservice.events.dto.EventWrapper;
-import com.sonnguyen.chatservice.events.dto.MessageSentEvent;
-import com.sonnguyen.chatservice.events.dto.MessageSentEventKey;
-import com.sonnguyen.chatservice.events.dto.AddPeopleEvent;
+import com.sonnguyen.chatservice.kafka.dto.ChannelCreatedEvent;
+import com.sonnguyen.chatservice.kafka.dto.EventWrapper;
+import com.sonnguyen.chatservice.kafka.dto.MessageSentEvent;
+import com.sonnguyen.chatservice.kafka.dto.MessageSentEventKey;
+import com.sonnguyen.chatservice.kafka.dto.AddPeopleEvent;
 import com.sonnguyen.chatservice.model.ChannelMessage;
 import com.sonnguyen.chatservice.model.ChannelMessageKey;
 import com.sonnguyen.chatservice.model.ChannelMessageType;
@@ -21,16 +22,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import com.sonnguyen.chatservice.kafka.dto.FriendRequestAcceptedEvent;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
-public class ChatServiceEventConsumer {
+class ChatServiceEventConsumerDisabled {
 
     private static final String NOTIFICATION_TOPIC = "notifications-topic";
 
@@ -60,6 +62,10 @@ public class ChatServiceEventConsumer {
                     MessageSentEvent messageEvent =
                             objectMapper.convertValue(wrapper.getPayload(), MessageSentEvent.class);
                     handleMessageSent(messageEvent);
+                }
+                case FriendRequestAcceptedEvent.EVENT_TYPE -> {
+                    FriendRequestAcceptedEvent event = objectMapper.convertValue(wrapper.getPayload(), FriendRequestAcceptedEvent.class);
+                    handleFriendRequestAccepted(event);
                 }
                 default -> {
                     // Only log unknown event types that are not friend-related
@@ -158,6 +164,73 @@ public class ChatServiceEventConsumer {
         log.info("✅ ChatService: Add people notice message event produced for channel: {} (excluded sender)", event.getChannelId());
     }
 
+    private void handleFriendRequestAccepted(FriendRequestAcceptedEvent event) {
+        try {
+            log.info("🔔 ChatService: Handling FRIEND_REQUEST_ACCEPTED for requester: {} accepter: {}",
+                    event.getRequesterId(), event.getAccepterId());
+
+            // Create a private channel for the two users. Use accepter as creator so they see the immediate notice.
+            Map<String, Object> createRequest = new HashMap<>();
+            createRequest.put("channelName", ""); // empty name for direct chat
+
+            ApiResponse<Map<String, Object>> createResp = channelServiceClient.createChannel(createRequest);
+            if (createResp == null || !createResp.isSuccess() || createResp.getData() == null) {
+                log.warn("⚠️ ChatService: Failed to create channel for friend connection: {}", createResp);
+                return;
+            }
+
+            Map<String, Object> channelData = createResp.getData();
+            Object idObj = channelData.get("id");
+            UUID channelId = idObj instanceof String ? UUID.fromString((String) idObj) : (UUID) idObj;
+
+            // Add the requester to the newly created channel
+            Map<String, Object> addReq = new HashMap<>();
+            addReq.put("memberIds", List.of(event.getRequesterId()));
+
+            ApiResponse<Map<String, Object>> addResp = channelServiceClient.addPeopleToChannel(channelId, addReq);
+            if (addResp == null || !addResp.isSuccess()) {
+                log.warn("⚠️ ChatService: Failed to add friend to channel: {}", addResp);
+            } else {
+                log.info("✅ ChatService: Created direct channel {} for users {} and {}",
+                        channelId, event.getRequesterId(), event.getAccepterId());
+            }
+
+            // Create a NOTICE message for the new direct channel so both users see it in chat
+            try {
+                ChannelMessageKey key = new ChannelMessageKey();
+                key.setChannelId(channelId);
+                key.setMessageId(Uuids.timeBased());
+
+                String content = "You are connected on messenger";
+
+                ChannelMessage noticeMessage = ChannelMessage.builder()
+                        .key(key)
+                        .userId(event.getAccepterId())
+                        .content(content)
+                        .type(ChannelMessageType.NOTICE)
+                        .timestamp(Instant.now())
+                        .build();
+
+                // Save to channel_message
+                channelMessageRepository.save(noticeMessage);
+                log.info("✅ ChatService: Saved friend-connect notice message to DB for channel: {}", channelId);
+
+                // Save to user_message table
+                saveToUserMessageTable(noticeMessage);
+
+                // Produce MessageSentEvent to notify both participants (do not exclude anyone)
+                produceNewMessageEvent(noticeMessage, null);
+                log.info("✅ ChatService: Produced MessageSentEvent for friend-connect notice in channel: {}", channelId);
+
+            } catch (Exception e) {
+                log.error("❌ ChatService: Failed to create/publish friend-connect notice: {}", e.getMessage(), e);
+            }
+
+        } catch (Exception e) {
+            log.error("❌ ChatService: Error handling FRIEND_REQUEST_ACCEPTED: {}", e.getMessage(), e);
+        }
+    }
+
     private void produceNewMessageEvent(ChannelMessage message, UUID excludeUserId) {
         ApiResponse<List<UUID>> response = channelServiceClient.getParticipantIdsByChannelId(message.getKey().getChannelId());
         List<UUID> allRecipientIds = response.getData();
@@ -173,19 +246,19 @@ public class ChatServiceEventConsumer {
         // Get sender information for real-time display
         SenderInfo senderInfo = getSenderInfoForNotice();
 
-        MessageSentEvent event = MessageSentEvent.builder()
-                .key(MessageSentEventKey.builder()
-                        .channelId(message.getKey().getChannelId())
-                        .messageId(message.getKey().getMessageId())
-                        .build())
-                .type(message.getType())
-                .userId(message.getUserId())
-                .content(message.getContent())
-                .timestamp(message.getTimestamp())
-                .senderName(senderInfo.name())
-                .senderAvatar(senderInfo.avatar())
-                .recipientIds(recipientIds)
-                .build();
+    MessageSentEvent event = MessageSentEvent.builder()
+        .key(MessageSentEventKey.builder()
+            .channelId(message.getKey().getChannelId())
+            .messageId(message.getKey().getMessageId())
+            .build())
+        .type(message.getType() != null ? message.getType().name() : null)
+        .userId(message.getUserId())
+        .content(message.getContent())
+        .timestamp(message.getTimestamp())
+        .senderName(senderInfo.name())
+        .senderAvatar(senderInfo.avatar())
+        .recipientIds(recipientIds)
+        .build();
 
         EventWrapper<MessageSentEvent> wrapper = new EventWrapper<>(MessageSentEvent.EVENT_TYPE, event);
         kafkaTemplate.send(NOTIFICATION_TOPIC, wrapper);

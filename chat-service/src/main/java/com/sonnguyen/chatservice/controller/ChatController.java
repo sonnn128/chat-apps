@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -41,8 +43,8 @@ public class ChatController {
     @PostMapping
     public ResponseEntity<ChannelMessageDto> sendChannelMessage(
             @Valid @RequestBody SendMessageRequest request,
-            @RequestHeader("X-User-Id") @NotNull String authenticatedUserId) {
-        UUID userId = UUID.fromString(authenticatedUserId);
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
         ChannelMessage sentMessage = channelMessageService.sendMessage(request, userId);
         ChannelMessageDto messageDto = convertToDto(sentMessage);
         return new ResponseEntity<>(messageDto, HttpStatus.CREATED);
@@ -51,10 +53,9 @@ public class ChatController {
     @PostMapping("/save-only")
     public ResponseEntity<ChannelMessageDto> saveChannelMessage(
             @Valid @RequestBody SendMessageRequest request,
-            @RequestHeader("X-User-Id") @NotNull String authenticatedUserId) {
+            @AuthenticationPrincipal Jwt jwt) {
         log.info("Saving a message (without producing event) to channelId: {}", request.getChannelId());
-
-        UUID userId = UUID.fromString(authenticatedUserId);
+        UUID userId = UUID.fromString(jwt.getSubject());
 
         ChannelMessage savedMessage = channelMessageService.saveMessage(request, userId);
         ChannelMessageDto messageDto = convertToDto(savedMessage);
