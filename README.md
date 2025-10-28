@@ -90,6 +90,7 @@ java -jar -Xmx2048m -Xms256m /target/media-service-0.0.1-SNAPSHOT.jar
 ```
 
 ### 3.4 Run ui
+```
 
 cd <project folder/ui>
 npm install
@@ -100,7 +101,6 @@ Then visit: [http://localhost:5173](http://localhost:5173) to access this app
 
 ## Git commit intervention
 ```
-
 feat: chat
 feat(ui): create Emoji message
 feat(api): create api GET /users
@@ -110,16 +110,13 @@ fix(api):
 
 test(ui):
 test(api):
-
+```
+## export realms
+```
 docker exec -it keycloak /opt/keycloak/bin/kc.sh export --dir /opt/keycloak/data/export --realm chat-apps
-
 ```
 
+## Restart container and apply code or config
 ```
-
-Restart container and apply code or config
 docker compose up --build api-gateway
-
-```
-
 ```
