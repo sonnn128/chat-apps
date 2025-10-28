@@ -520,7 +520,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "e4qQufaOrco7xu7HMEKpLRonaNFlMjGU",
-    "redirectUris" : [ "http://localhost:9005/*" ],
+  "redirectUris" : [ "http://localhost:9006/*" ],
     "webOrigins" : [ "*" ],
     "notBefore" : 0,
     "bearerOnly" : false,
