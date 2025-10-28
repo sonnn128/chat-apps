@@ -1,13 +1,13 @@
 package com.sonnguyen.chatservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sonnguyen.chatservice.events.dto.ChannelCreatedEvent;
-import com.sonnguyen.chatservice.events.dto.EventWrapper;
-import com.sonnguyen.chatservice.events.dto.MessageSentEvent;
-import com.sonnguyen.chatservice.events.dto.AddPeopleEvent;
-import com.sonnguyen.chatservice.events.dto.FriendRequestAcceptedEvent;
-import com.sonnguyen.chatservice.events.dto.FriendRequestRejectedEvent;
-import com.sonnguyen.chatservice.events.dto.FriendRequestSentEvent;
+import com.sonnguyen.chatservice.kafka.dto.ChannelCreatedEvent;
+import com.sonnguyen.chatservice.kafka.dto.EventWrapper;
+import com.sonnguyen.chatservice.kafka.dto.MessageSentEvent;
+import com.sonnguyen.chatservice.kafka.dto.AddPeopleEvent;
+import com.sonnguyen.chatservice.kafka.dto.FriendRequestAcceptedEvent;
+import com.sonnguyen.chatservice.kafka.dto.FriendRequestRejectedEvent;
+import com.sonnguyen.chatservice.kafka.dto.FriendRequestSentEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;

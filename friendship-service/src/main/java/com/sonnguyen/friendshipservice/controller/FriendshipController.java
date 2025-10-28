@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,10 +25,11 @@ public class FriendshipController {
     private final FriendshipService friendshipService;
 
     @PostMapping("/request/{friendId}")
-    public ResponseEntity<?> sendFriendRequest(
-            @PathVariable UUID friendId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        Friendship friendship = friendshipService.sendFriendRequest(UUID.fromString(authenticatedUserId), friendId);
+        public ResponseEntity<?> sendFriendRequest(
+                        @PathVariable UUID friendId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                Friendship friendship = friendshipService.sendFriendRequest(authenticatedUserId, friendId);
         ApiResponse<Friendship> response = ApiResponse.<Friendship>builder()
                 .success(true)
                 .message("Friend request sent successfully")
@@ -37,11 +40,12 @@ public class FriendshipController {
     }
 
     @PutMapping("/accept/{friendId}")
-    public ResponseEntity<ApiResponse<Friendship>> acceptFriendRequest(
-            @PathVariable UUID friendId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Accepting friend request from {} to {}", friendId, authenticatedUserId);
-        Friendship friendship = friendshipService.acceptFriendRequest(friendId, UUID.fromString(authenticatedUserId));
+        public ResponseEntity<ApiResponse<Friendship>> acceptFriendRequest(
+                        @PathVariable UUID friendId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Accepting friend request from {} to {}", friendId, authenticatedUserId);
+                Friendship friendship = friendshipService.acceptFriendRequest(friendId, authenticatedUserId);
         ApiResponse<Friendship> response = ApiResponse.<Friendship>builder()
                 .success(true)
                 .message("Friend request accepted successfully")
@@ -51,11 +55,12 @@ public class FriendshipController {
     }
 
     @DeleteMapping("/{friendId}")
-    public ResponseEntity<ApiResponse<Void>> removeFriend(
-            @PathVariable UUID friendId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Removing friendship between {} and {}", authenticatedUserId, friendId);
-        friendshipService.removeFriend(UUID.fromString(authenticatedUserId), friendId);
+        public ResponseEntity<ApiResponse<Void>> removeFriend(
+                        @PathVariable UUID friendId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Removing friendship between {} and {}", authenticatedUserId, friendId);
+                friendshipService.removeFriend(authenticatedUserId, friendId);
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .success(true)
                 .message("Friend removed successfully")
@@ -66,10 +71,11 @@ public class FriendshipController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FriendResponse>>> getFriends(
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Getting friends for user: {}", authenticatedUserId);
-        List<FriendResponse> friends = friendshipService.getFriendsWithUserInfo(UUID.fromString(authenticatedUserId));
+        public ResponseEntity<ApiResponse<List<FriendResponse>>> getFriends(
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Getting friends for user: {}", authenticatedUserId);
+                List<FriendResponse> friends = friendshipService.getFriendsWithUserInfo(authenticatedUserId);
         ApiResponse<List<FriendResponse>> response = ApiResponse.<List<FriendResponse>>builder()
                 .success(true)
                 .message("Friends retrieved successfully")
@@ -80,10 +86,11 @@ public class FriendshipController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse<List<FriendRequestResponse>>> getPendingRequests(
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Getting pending friend requests for user: {}", authenticatedUserId);
-        List<FriendRequestResponse> pendingRequests = friendshipService.getPendingRequestsWithUserInfo(UUID.fromString(authenticatedUserId));
+        public ResponseEntity<ApiResponse<List<FriendRequestResponse>>> getPendingRequests(
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Getting pending friend requests for user: {}", authenticatedUserId);
+                List<FriendRequestResponse> pendingRequests = friendshipService.getPendingRequestsWithUserInfo(authenticatedUserId);
         ApiResponse<List<FriendRequestResponse>> response = ApiResponse.<List<FriendRequestResponse>>builder()
                 .success(true)
                 .message("Pending requests retrieved successfully")
@@ -93,11 +100,12 @@ public class FriendshipController {
     }
 
     @DeleteMapping("/reject/{requesterId}")
-    public ResponseEntity<ApiResponse<String>> rejectFriendRequest(
-            @PathVariable UUID requesterId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Rejecting friend request from {} by {}", requesterId, authenticatedUserId);
-        friendshipService.rejectFriendRequest(UUID.fromString(authenticatedUserId), requesterId);
+        public ResponseEntity<ApiResponse<String>> rejectFriendRequest(
+                        @PathVariable UUID requesterId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Rejecting friend request from {} by {}", requesterId, authenticatedUserId);
+                friendshipService.rejectFriendRequest(authenticatedUserId, requesterId);
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .success(true)
                 .message("Friend request rejected successfully")
@@ -107,11 +115,12 @@ public class FriendshipController {
     }
 
     @DeleteMapping("/cancel/{friendId}")
-    public ResponseEntity<ApiResponse<String>> cancelFriendRequest(
-            @PathVariable UUID friendId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Cancelling friend request to {} by {}", friendId, authenticatedUserId);
-        friendshipService.cancelFriendRequest(UUID.fromString(authenticatedUserId), friendId);
+        public ResponseEntity<ApiResponse<String>> cancelFriendRequest(
+                        @PathVariable UUID friendId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Cancelling friend request to {} by {}", friendId, authenticatedUserId);
+                friendshipService.cancelFriendRequest(authenticatedUserId, friendId);
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .success(true)
                 .message("Friend request cancelled successfully")
@@ -121,11 +130,12 @@ public class FriendshipController {
     }
 
     @DeleteMapping("/unfriend/{friendId}")
-    public ResponseEntity<ApiResponse<String>> unfriendUser(
-            @PathVariable UUID friendId,
-            @RequestHeader("X-User-Id") String authenticatedUserId) {
-        log.info("Unfriending user {} by {}", friendId, authenticatedUserId);
-        friendshipService.unfriendUser(UUID.fromString(authenticatedUserId), friendId);
+        public ResponseEntity<ApiResponse<String>> unfriendUser(
+                        @PathVariable UUID friendId,
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID authenticatedUserId = UUID.fromString(jwt.getSubject());
+                log.info("Unfriending user {} by {}", friendId, authenticatedUserId);
+                friendshipService.unfriendUser(authenticatedUserId, friendId);
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .success(true)
                 .message("Friend removed successfully")

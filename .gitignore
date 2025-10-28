@@ -19,7 +19,7 @@ note.md
 .env.*.local
 
 # Exclude shell scripts from root (but keep scripts/ directory)
-/*.sh
+# /*.sh
 
 # Build artifacts
 target/
@@ -42,3 +42,4 @@ Thumbs.db
 
 # Docker volumes
 volumes/
+del.md

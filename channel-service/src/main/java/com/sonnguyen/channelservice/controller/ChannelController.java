@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,26 +25,27 @@ public class ChannelController {
     private final ChannelService channelService;
 
     @PostMapping
-    public ResponseEntity<?> createChannel(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestBody CreateChannelRequest request) {
-        return ResponseEntity.ok().body(ApiResponse.builder()
-                .success(true)
-                .message("Channel created successfully")
-                .data(channelService.createChannel(request, UUID.fromString(userId)))
-                .build());
-    }
+        public ResponseEntity<?> createChannel(
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestBody CreateChannelRequest request) {
+                UUID userId = UUID.fromString(jwt.getSubject());
+                ApiResponse response = new ApiResponse();
+                response.setSuccess(true);
+                response.setMessage("Channel created successfully");
+                response.setData(channelService.createChannel(request, userId));
+                return ResponseEntity.ok().body(response);
+        }
 
     @GetMapping(value = {"", "/"})
-    public ResponseEntity<?> getMyChannels(
-            @RequestHeader("X-User-Id") String userId) {
-        List<ChannelResponse> channels = channelService.getChannelsWithMessagesForUser(UUID.fromString(userId));
+        public ResponseEntity<?> getMyChannels(
+                        @AuthenticationPrincipal Jwt jwt) {
+                UUID userId = UUID.fromString(jwt.getSubject());
+                List<ChannelResponse> channels = channelService.getChannelsWithMessagesForUser(userId);
 
-        ApiResponse<List<ChannelResponse>> response = ApiResponse.<List<ChannelResponse>>builder()
-                .success(true)
-                .message("Get all channels with messages successfully")
-                .data(channels)
-                .build();
+        ApiResponse<List<ChannelResponse>> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage("Get all channels with messages successfully");
+        response.setData(channels);
         return ResponseEntity.ok(response);
     }
 
@@ -64,11 +67,10 @@ public class ChannelController {
     @GetMapping("/{channelId}/participants/ids")
     public ResponseEntity<ApiResponse<List<UUID>>> getParticipantIdsByChannelId(@PathVariable UUID channelId) {
         List<UUID> participantIds = channelService.getParticipantIdsByChannelId(channelId);
-        ApiResponse<List<UUID>> response = ApiResponse.<List<UUID>>builder()
-                .success(true)
-                .message("Participant IDs retrieved successfully")
-                .data(participantIds)
-                .build();
+        ApiResponse<List<UUID>> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage("Participant IDs retrieved successfully");
+        response.setData(participantIds);
         
         return ResponseEntity.ok(response);
     }
@@ -76,26 +78,25 @@ public class ChannelController {
     @GetMapping("/user/{userId}/ids")
     public ResponseEntity<ApiResponse<List<UUID>>> getChannelIdsByUserId(@PathVariable UUID userId) {
         List<UUID> channelIds = channelService.getChannelIdsByUserId(userId);
-        ApiResponse<List<UUID>> response = ApiResponse.<List<UUID>>builder()
-                .success(true)
-                .message("Channel IDs retrieved successfully")
-                .data(channelIds)
-                .build();
+        ApiResponse<List<UUID>> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage("Channel IDs retrieved successfully");
+        response.setData(channelIds);
         
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{channelId}/add-people")
-    public ResponseEntity<ApiResponse<AddPeopleResponse>> addPeopleToChannel(
-            @PathVariable UUID channelId,
-            @RequestHeader("X-User-Id") String userId,
-            @RequestBody AddPeopleToChannelRequest request) {
-        AddPeopleResponse addPeopleResponse = channelService.addPeopleToChannel(channelId, UUID.fromString(userId), request.getMemberIds());
-        ApiResponse<AddPeopleResponse> response = ApiResponse.<AddPeopleResponse>builder()
-                .success(true)
-                .message("People added to channel successfully")
-                .data(addPeopleResponse)
-                .build();
+        public ResponseEntity<ApiResponse<AddPeopleResponse>> addPeopleToChannel(
+                        @PathVariable UUID channelId,
+                        @AuthenticationPrincipal Jwt jwt,
+                        @RequestBody AddPeopleToChannelRequest request) {
+                UUID userId = UUID.fromString(jwt.getSubject());
+                AddPeopleResponse addPeopleResponse = channelService.addPeopleToChannel(channelId, userId, request.getMemberIds());
+        ApiResponse<AddPeopleResponse> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage("People added to channel successfully");
+        response.setData(addPeopleResponse);
         return ResponseEntity.ok(response);
     }
 }

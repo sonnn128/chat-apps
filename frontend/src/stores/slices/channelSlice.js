@@ -108,13 +108,14 @@ const channelSlice = createSlice({
         console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
       } else {
         console.warn("⚠️ Channel: Channel not found for message:", channelId);
-        
-        // If this is a notice message about adding people, create a basic channel
-        if (action.payload.type === "NOTICE" && action.payload.content && action.payload.content.includes("đã thêm")) {
+
+        // If this is a notice message (server-created notice such as friend-connect), create a basic channel
+        // This covers different notice text/locales (e.g., "You are connected on messenger")
+        if (action.payload.type === "NOTICE") {
           console.log("📨 Channel: Creating basic channel for notice message:", channelId);
           const newChannel = {
             id: channelId,
-            channelName: "New Channel", // Will be updated when user clicks on it
+            channelName: "New Channel", // Will be updated when user clicks on it or when channel info arrives
             createdAt: new Date().toISOString(),
             messages: [messageWithSender],
             memberIds: [],

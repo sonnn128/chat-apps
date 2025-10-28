@@ -101,6 +101,32 @@ services:
 #    volumes:
 #      - ./data/redis:/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+
+  # presence-service:
+  #   build: ./presence-service
+  #   ports:
+  #     - "9015:9015"
+  #   depends_on:
+  #     redis:
+  #       condition: service_started
+  #     discovery-server:
+  #       condition: service_healthy
+  #   environment:
+  #     - SPRING_PROFILES_ACTIVE=dev
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://presence-service:9015/actuator/health"]
+  #     interval: 20s
+  #     timeout: 10s
+  #     retries: 5
+
   # CONFIGURATION SERVICE
   discovery-server:
     build: ./discovery-server

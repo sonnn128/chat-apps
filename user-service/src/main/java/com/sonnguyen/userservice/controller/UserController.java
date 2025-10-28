@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
@@ -65,7 +67,8 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getUserProfile(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+    public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt != null ? jwt.getSubject() : null;
         log.info("Fetching user with id: {}", userId);
         return ResponseEntity.ok().body(ApiResponse.builder()
                         .message("User profile")
@@ -94,27 +97,29 @@ public class UserController {
 
     @PutMapping("/me")
     public ResponseEntity<?> updateUserProfile(
-            @RequestHeader(value = "X-User-Id", required = false) String userId,
-            @RequestBody User updateRequest) {
-        log.info("Updating user profile with id: {}", userId);
-        UserResponse updatedUser = userService.updateUserProfile(UUID.fromString(userId), updateRequest);
-        return ResponseEntity.ok().body(ApiResponse.builder()
-                        .message("User profile updated successfully")
-                        .success(true)
-                        .data(updatedUser)
-                .build());
+        @AuthenticationPrincipal Jwt jwt,
+        @RequestBody User updateRequest) {
+    String userId = jwt != null ? jwt.getSubject() : null;
+    log.info("Updating user profile with id: {}", userId);
+    UserResponse updatedUser = userService.updateUserProfile(UUID.fromString(userId), updateRequest);
+    return ResponseEntity.ok().body(ApiResponse.builder()
+            .message("User profile updated successfully")
+            .success(true)
+            .data(updatedUser)
+        .build());
     }
 
     @PutMapping("/me/avatar")
     public ResponseEntity<?> updateUserAvatar(
-            @RequestHeader(value = "X-User-Id", required = false) String userId,
-            @RequestParam("avatar") MultipartFile avatar) {
-        log.info("Updating user avatar with id: {}", userId);
-        // This method should use AvatarController instead
-        return ResponseEntity.badRequest().body(ApiResponse.builder()
-                .success(false)
-                .message("Please use /api/v1/users/{userId}/avatar endpoint for avatar upload")
-                .build());
+        @AuthenticationPrincipal Jwt jwt,
+        @RequestParam("avatar") MultipartFile avatar) {
+    String userId = jwt != null ? jwt.getSubject() : null;
+    log.info("Updating user avatar with id: {}", userId);
+    // This method should use AvatarController instead
+    return ResponseEntity.badRequest().body(ApiResponse.builder()
+        .success(false)
+        .message("Please use /api/v1/users/{userId}/avatar endpoint for avatar upload")
+        .build());
     }
 
     @DeleteMapping("/{id}")

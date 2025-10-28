@@ -1,4 +1,4 @@
-package com.sonnguyen.friendshipservice.events.dto;
+package com.sonnguyen.friendshipservice.kafka.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

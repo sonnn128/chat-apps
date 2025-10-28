@@ -13,6 +13,7 @@ import { successToast } from "@/utils/toast";
 
 const ChatSection = () => {
   const { channels, currentChannelId } = useSelector((state) => state.channel);
+  const currentFriend = useSelector((state) => state.friendship.currentFriend);
 
   const currentChannel = channels.find((x) => x.id === currentChannelId);
   const dispatch = useDispatch();
@@ -173,9 +174,16 @@ const ChatSection = () => {
   return (
     <div className="flex-1 flex flex-row bg-white overflow-hidden">
       <div className="flex-1 flex flex-col relative">
-        {currentChannelId ? (
+        {currentChannelId || currentFriend ? (
           <>
-            <ChatHeader title={currentChannel?.name || "Channel"} />
+            <ChatHeader title={
+              // If a friend is selected, show their name
+              currentFriend ? `${currentFriend.firstname || ''} ${currentFriend.lastname || ''}` : (
+                currentChannel && currentChannel.participants && currentChannel.participants.length === 2
+                  ? (currentChannel.participants.find(p => p.userId !== user?.data?.id)?.name || currentChannel.channelName || "Conversation")
+                  : (currentChannel?.name || "Channel")
+              )
+            } />
             <ChatMessages />
             <ChatInput />
           </>
@@ -186,7 +194,7 @@ const ChatSection = () => {
         )}
       </div>
 
-      {currentChannelId && <ChatInfoSidebar />}
+  {!(currentFriend) && currentChannelId && !(currentChannel && currentChannel.participants && currentChannel.participants.length === 2) && <ChatInfoSidebar />}
 
       <AddMemberModal open={false} onClose={() => {}} channelId={null} />
     </div>

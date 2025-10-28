@@ -21,10 +21,10 @@ public class FeignConfig {
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 if (attributes != null) {
                     HttpServletRequest request = attributes.getRequest();
-                    String userId = request.getHeader("X-User-Id");
-                    if (userId != null && !userId.isEmpty()) {
-                        // Truyền header X-User-Id sang service khác
-                        template.header("X-User-Id", userId);
+                    String auth = request.getHeader("Authorization");
+                    if (auth != null && !auth.isEmpty()) {
+                        // Forward Authorization header so downstream services can validate the JWT
+                        template.header("Authorization", auth);
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package com.sonnguyen.channelservice.events.dto;
+package com.sonnguyen.channelservice.legacy.events.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
