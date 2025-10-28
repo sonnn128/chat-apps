@@ -2,13 +2,11 @@ services:
   # KAFKA
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
-    container_name: zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
-    container_name: kafka
     ports:
       # port for spring
       - "9092:9092"
@@ -52,7 +50,6 @@ services:
 
   keycloak-mysql:
     image: mysql:8.0
-    container_name: keycloak-mysql
     restart: always
     volumes:
       - ./data/mysql_keycloak_data:/var/lib/mysql
@@ -69,7 +66,6 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.0
-    container_name: keycloak
     command: [ "start-dev", "--import-realm" ]
     restart: always
     depends_on:
@@ -92,42 +88,14 @@ services:
       # everything in keycloaks is storage in keycloak-mysql
       # how to export json file in keycloak
 
-#  redis:
-#    image: redis:latest
-#    restart: unless-stopped
-#    ports:
-#      - "6380:6379"
-#    #      - host-port:container-port(6379)
-#    volumes:
-#      - ./data/redis:/data
-
   redis:
     image: redis:7-alpine
-    container_name: redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - ./data/redis:/data
 
-  # presence-service:
-  #   build: ./presence-service
-  #   ports:
-  #     - "9015:9015"
-  #   depends_on:
-  #     redis:
-  #       condition: service_started
-  #     discovery-server:
-  #       condition: service_healthy
-  #   environment:
-  #     - SPRING_PROFILES_ACTIVE=dev
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://presence-service:9015/actuator/health"]
-  #     interval: 20s
-  #     timeout: 10s
-  #     retries: 5
-
-  # CONFIGURATION SERVICE
   discovery-server:
     build: ./discovery-server
     # env_file:
@@ -139,18 +107,3 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
-
-  # api-gateway:
-  #   build: ./api-gateway
-  #   env_file:
-  #     - ./.env.dev
-  #   ports:
-  #     - 8888:8888
-  #   depends_on:
-  #     discovery-server:
-  #       condition: service_healthy      
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
-  #     interval: 20s
-  #     timeout: 10s
-  #     retries: 5

@@ -1,7 +1,6 @@
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0
-    container_name: zookeeper
     env_file:
       - ./.env.dev
     environment:
@@ -9,7 +8,6 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.3.0
-    container_name: kafka
     ports:
       - "9092:9092"
     depends_on:
@@ -62,7 +60,6 @@ services:
 
   keycloak-mysql:
     image: mysql:8.0
-    container_name: keycloak-mysql
     restart: always
     volumes:
       - ./data/mysql_keycloak_data:/var/lib/mysql
@@ -81,7 +78,6 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.0
-    container_name: keycloak
     command: [ "start-dev", "--import-realm" ]
     restart: always
     depends_on:
@@ -132,7 +128,7 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     ports:
-      - "9005:9005"
+  - "9006:9006"
     env_file:
       - ./.env.dev
     environment:
@@ -143,7 +139,7 @@ services:
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9005/actuator/health || exit 1"]
+  test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -155,12 +151,12 @@ services:
     env_file:
       - ./.env.dev
     ports:
-      - "9006:9006"
+  - "9004:9004"
     depends_on:
       discovery-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
+  test: ["CMD-SHELL", "curl -f http://localhost:9004/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -170,13 +166,13 @@ services:
       context: ./chat-service
       dockerfile: Dockerfile
     ports:
-      - "9007:9007"
+  - "9002:9002"
     env_file:
       - ./.env.dev
     environment:
       # Server Configuration
-      user-service.url: http://user-service:9005
-      channel-service.url: http://channel-service:9008
+  user-service.url: http://user-service:9006
+  channel-service.url: http://channel-service:9001
       # Ensure cassandra host/port passed so wait script can use them
       CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
       CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
@@ -188,7 +184,7 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9007/actuator/health || exit 1"]
+  test: ["CMD-SHELL", "curl -f http://localhost:9002/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -198,7 +194,7 @@ services:
       context: ./channel-service
       dockerfile: Dockerfile
     ports:
-      - "9008:9008"
+  - "9001:9001"
     env_file:
       - ./.env.dev
     environment:
@@ -207,7 +203,7 @@ services:
       # Uses POSTGRES_* from env_file
       
       # External Services
-      user-service.url: http://user-service:9005
+  user-service.url: http://user-service:9006
       chat-service.url: http://chat-service:9007
       
     depends_on:
@@ -218,7 +214,7 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9008/actuator/health || exit 1"]
+  test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -228,11 +224,11 @@ services:
       context: ./friendship-service
       dockerfile: Dockerfile
     ports:
-      - "9009:9009"
+  - "9003:9003"
     env_file:
       - ./.env.dev
     environment:
-      user-service.url: http://user-service:9005
+  user-service.url: http://user-service:9006
       
     depends_on:
       postgres:
@@ -242,7 +238,7 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9009/actuator/health || exit 1"]
+  test: ["CMD-SHELL", "curl -f http://localhost:9003/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
