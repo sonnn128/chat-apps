@@ -1,10 +1,12 @@
-package com.sonnguyen.mediaservice.dto;
+package com.nnson128.chatapps_base.dto.res;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Setter
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ApiResponse<T> {
     private boolean success;
     private String message;
