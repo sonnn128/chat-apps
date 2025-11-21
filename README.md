@@ -120,3 +120,13 @@ docker exec -it keycloak /opt/keycloak/bin/kc.sh export --dir /opt/keycloak/data
 ```
 docker compose up --build api-gateway
 ```
+## Services
+```
+--- chatapps-base
+1. discovery-server
+2. api-gateway
+3. chat-service
+4. relationship-service
+5. media-service
+7. user-service
+```

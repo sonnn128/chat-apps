@@ -2,7 +2,8 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Modal, Typography, Button, Avatar, List, Popconfirm } from "antd";
 import { setCurrentFriend, unfriendUser } from "@/stores/slices/friendshipSlice";
-import { removeCurrentChannel } from "@/stores/slices/channelSlice";
+import { setCurrentChannel } from "@/stores/slices/channelSlice";
+import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
 
 const { Title, Text } = Typography;
 
@@ -10,10 +11,17 @@ const FriendsModal = ({ open, onClose }) => {
   const dispatch = useDispatch();
   const friends = useSelector((state) => state.friendship.friends);
 
-  const handleSelectFriend = (friend) => {
+  const handleSelectFriend = async (friend) => {
     dispatch(setCurrentFriend(friend));
-    dispatch(removeCurrentChannel());
-    onClose();
+
+    // Fetch or create direct channel with this friend
+    try {
+      const result = await dispatch(fetchGetOrCreateDirectChannel(friend.friendId)).unwrap();
+      dispatch(setCurrentChannel(result));
+      onClose();
+    } catch (error) {
+      console.error("Failed to get or create direct channel:", error);
+    }
   };
 
   const handleUnfriend = (friendId, e) => {

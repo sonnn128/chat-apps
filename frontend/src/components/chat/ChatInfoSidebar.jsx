@@ -30,8 +30,12 @@ const ChatInfoSidebar = () => {
     }
   };
 
+  if (!currentChannel) {
+    return <div className="w-[420px] flex-shrink-0 bg-white border-l border-gray-200 h-full flex items-center justify-center">Select a channel</div>;
+  }
+
   return (
-    <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col">
+    <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col items-center text-center">
           <Avatar size={80}>A</Avatar>
@@ -71,9 +75,8 @@ const ChatInfoSidebar = () => {
                 {item.key === "chatMembers" ? (
                   <ChevronRight
                     size={20}
-                    className={`text-gray-400 transform transition-transform ${
-                      showMembers ? "rotate-90" : ""
-                    }`}
+                    className={`text-gray-400 transform transition-transform ${showMembers ? "rotate-90" : ""
+                      }`}
                   />
                 ) : (
                   <ChevronRight size={20} className="text-gray-400" />

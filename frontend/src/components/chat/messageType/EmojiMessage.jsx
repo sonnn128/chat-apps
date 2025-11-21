@@ -4,11 +4,11 @@ import { MoreOutlined, RollbackOutlined, SmileOutlined } from "@ant-design/icons
 import PropTypes from "prop-types";
 import { useUserInfo } from "@/hooks/useUserInfo";
 
-function EmojiMessage({ content, isCurrentUser, userId }) {
-  // Get real-time user info
-  const { userInfo } = useUserInfo(userId);
-  const senderName = userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...';
-  const senderAvatar = userInfo?.avatarUrl || null;
+function EmojiMessage({ content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar }) {
+  // Get real-time user info - but only if props not provided
+  const { userInfo } = useUserInfo(userId && !propSenderName ? userId : null);
+  const senderName = propSenderName || (userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...');
+  const senderAvatar = propSenderAvatar || userInfo?.avatarUrl || null;
   return (
     <div className={`flex items-start ${isCurrentUser ? "justify-end" : ""}`}>
       {!isCurrentUser && (
@@ -61,6 +61,8 @@ EmojiMessage.propTypes = {
   content: PropTypes.string.isRequired,
   isCurrentUser: PropTypes.bool.isRequired,
   userId: PropTypes.string.isRequired,
+  senderName: PropTypes.string,
+  senderAvatar: PropTypes.string,
 };
 
 export default EmojiMessage;

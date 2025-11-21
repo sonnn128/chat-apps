@@ -21,7 +21,9 @@ function Main() {
   return (
     <div className="flex h-screen bg-gray-100 font-sans antialiased overflow-hidden">
       <Sidebar />
-      <ChatSection />
+      <div className="flex-1 flex overflow-hidden">
+        <ChatSection />
+      </div>
     </div>
   );
 }

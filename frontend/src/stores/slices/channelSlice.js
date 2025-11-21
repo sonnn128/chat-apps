@@ -91,6 +91,7 @@ const channelSlice = createSlice({
     },
     receiveMessage: (state, action) => {
       const channelId = action.payload.key.channelId;
+      const messageId = action.payload.key.messageId;
       let channelFind = state.channels.find((item) => item.id == channelId);
       
       // Add senderName for real-time messages
@@ -104,11 +105,17 @@ const channelSlice = createSlice({
         if (!channelFind.messages) {
           channelFind.messages = [];
         }
-        channelFind.messages.push(messageWithSender);
-        console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
+        // Check if message already exists (deduplication)
+        const messageExists = channelFind.messages.some(msg => msg.key.messageId === messageId);
+        if (!messageExists) {
+          channelFind.messages.push(messageWithSender);
+          console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
+        } else {
+          console.log("⚠️ Channel: Message already exists, skipping duplicate:", messageId);
+        }
       } else {
         console.warn("⚠️ Channel: Channel not found for message:", channelId);
-
+        
         // If this is a notice message (server-created notice such as friend-connect), create a basic channel
         // This covers different notice text/locales (e.g., "You are connected on messenger")
         if (action.payload.type === "NOTICE") {
@@ -131,7 +138,12 @@ const channelSlice = createSlice({
       if (!state.messageCache[channelId]) {
         state.messageCache[channelId] = [];
       }
-      state.messageCache[channelId].push(messageWithSender);
+      
+      // Check if message already exists in cache (deduplication)
+      const cacheMessageExists = state.messageCache[channelId].some(msg => msg.key.messageId === messageId);
+      if (!cacheMessageExists) {
+        state.messageCache[channelId].push(messageWithSender);
+      }
       
       // Sort messages by timestamp (oldest first)
       state.messageCache[channelId].sort((a, b) => {
