@@ -6,14 +6,14 @@ import ReactionPicker from "../ReactionPicker";
 import PropTypes from "prop-types";
 import { useUserInfo } from "@/hooks/useUserInfo";
 
-const UserMessage = ({ content, isCurrentUser, userId }) => {
+const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
   
-  // Get real-time user info
-  const { userInfo, loading } = useUserInfo(userId);
-  const senderName = userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...';
-  const senderAvatar = userInfo?.avatarUrl || null;
+  // Get real-time user info - but only if props not provided
+  const { userInfo, loading } = useUserInfo(userId && !propSenderName ? userId : null);
+  const senderName = propSenderName || (userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...');
+  const senderAvatar = propSenderAvatar || userInfo?.avatarUrl || null;
 
   const handleReactionClick = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -98,6 +98,8 @@ UserMessage.propTypes = {
   content: PropTypes.string.isRequired,
   isCurrentUser: PropTypes.bool.isRequired,
   userId: PropTypes.string.isRequired,
+  senderName: PropTypes.string,
+  senderAvatar: PropTypes.string,
 };
 
 export default UserMessage;

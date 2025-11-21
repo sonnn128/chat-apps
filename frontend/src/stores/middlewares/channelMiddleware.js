@@ -52,3 +52,11 @@ export const fetchDeleteChannel = createAsyncThunk(
   "channels/deleteChannel",
   async (channelId) => await channelService.deleteChannel(channelId)
 );
+
+export const fetchGetOrCreateDirectChannel = createAsyncThunk(
+  "channels/fetchGetOrCreateDirectChannel",
+  async (friendId) => {
+    const res = await channelService.getOrCreateDirectChannel(friendId);
+    return res.data;
+  }
+);

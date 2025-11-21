@@ -48,7 +48,7 @@ const logout = async () => {
 };
 
 const getUserProfile = async () =>
-  get(`users/me`, { headers: getAuthHeaders() });
+  get(`me`, { headers: getAuthHeaders() });
 
 const authServices = {
   login,

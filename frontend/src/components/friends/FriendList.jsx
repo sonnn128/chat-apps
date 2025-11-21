@@ -3,7 +3,8 @@ import { List, Avatar, Typography } from "antd";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrentFriend } from "@/stores/slices/friendshipSlice";
-import { removeCurrentChannel } from "@/stores/slices/channelSlice";
+import { setCurrentChannel } from "@/stores/slices/channelSlice";
+import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
 
 const { Text, Paragraph } = Typography;
 
@@ -11,9 +12,20 @@ const FriendList = () => {
   const dispatch = useDispatch();
   const friends = useSelector((state) => state.friendship.friends);
 
-  const handleSelectFriend = (friend) => {
+  const handleSelectFriend = async (friend) => {
     dispatch(setCurrentFriend(friend));
-    dispatch(removeCurrentChannel());
+
+    // Fetch or create direct channel with this friend
+    try {
+      console.log("🔍 Fetching direct channel for friend:", friend.friendId);
+      const result = await dispatch(fetchGetOrCreateDirectChannel(friend.friendId)).unwrap();
+      console.log("✅ Direct channel result:", result);
+      console.log("✅ Channel ID:", result?.id);
+      dispatch(setCurrentChannel(result));
+      console.log("✅ Current channel set");
+    } catch (error) {
+      console.error("❌ Failed to get or create direct channel:", error);
+    }
   };
 
   return (

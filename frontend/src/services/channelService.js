@@ -29,13 +29,17 @@ const addMembersToChannel = async (channelId, userIds) =>
 const addPeopleToChannel = async (channelId, memberIds) =>
   post(`${CHANNEL_API}/${channelId}/add-people`, {memberIds}, { headers: getAuthHeaders() });
 
+const getOrCreateDirectChannel = async (friendId) =>
+  post(`${CHANNEL_API}/direct`, { friendId }, { headers: getAuthHeaders() });
+
 const channelService = {
   createChannel,
   getChannels,
   getChannelById,
   addMembersToChannel,
   addPeopleToChannel,
-  deleteChannel
+  deleteChannel,
+  getOrCreateDirectChannel
 };
 
 export default channelService;

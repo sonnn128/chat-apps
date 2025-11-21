@@ -9,7 +9,7 @@
         <version>3.3.5</version>
         <relativePath />
     </parent>
-    <groupId>com.sonnguyen</groupId>
+    <groupId>com.nnson128</groupId>
     <artifactId>presence-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>presence-service</name>
@@ -51,6 +51,11 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.nnson128</groupId>
+            <artifactId>chatapps-base</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <dependencyManagement>

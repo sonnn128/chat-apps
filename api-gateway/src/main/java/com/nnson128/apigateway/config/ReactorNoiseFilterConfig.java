@@ -25,7 +25,6 @@ public class ReactorNoiseFilterConfig {
                 && t.getMessage().contains("WebSocket close status code does NOT comply with RFC-6455: 1005")) {
                 return;
             }
-            log.error("Dropped reactive error", ex);
         });
     }
 }

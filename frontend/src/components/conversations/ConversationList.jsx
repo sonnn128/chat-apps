@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { setCurrentFriend, removeCurrentFriend } from "@/stores/slices/friendshipSlice";
+import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
 
 const { Text } = Typography;
 
@@ -17,11 +18,16 @@ const ConversationList = ({ channels = [], friends = [] }) => {
     dispatch(removeCurrentFriend());
   };
 
-  const handleSelectFriend = (friend) => {
-    // Do NOT create channel here. Server will create channel when friend request is accepted.
-    // Selecting a friend opens a 1-1 conversation view (virtual) until the real channel exists.
+  const handleSelectFriend = async (friend) => {
     dispatch(setCurrentFriend(friend));
-    dispatch(setCurrentChannel(null));
+
+    // Fetch or create direct channel with this friend
+    try {
+      const result = await dispatch(fetchGetOrCreateDirectChannel(friend.friendId)).unwrap();
+      dispatch(setCurrentChannel(result));
+    } catch (error) {
+      console.error("Failed to get or create direct channel:", error);
+    }
   };
 
   // merge lists: channels first, then friends (friends appear as pseudo-channels)
@@ -37,13 +43,17 @@ const ConversationList = ({ channels = [], friends = [] }) => {
         renderItem={(item) => {
           if (item.type === "channel") {
             const ch = item.data;
+            // Get member count - prefer memberIds, fallback to participants
+            const memberCount = ch.memberIds?.length || ch.participants?.length || 0;
+            const memberText = memberCount === 1 ? "1 member" : memberCount + " members";
+
             return (
               <motion.div key={item.key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <List.Item onClick={() => onSelectChannel(ch)} className="rounded-lg px-2 py-2 hover:bg-gray-100 cursor-pointer">
                   <List.Item.Meta
                     avatar={<Avatar size={36}>{(ch.channelName || "#")[0]}</Avatar>}
                     title={<Text style={{ fontWeight: 500 }}>{ch.channelName || "Channel"}</Text>}
-                    description={<Text type="secondary">{ch.memberIds ? ch.memberIds.length + " members" : "Group"}</Text>}
+                    description={<Text type="secondary">{memberText}</Text>}
                   />
                 </List.Item>
               </motion.div>

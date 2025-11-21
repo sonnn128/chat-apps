@@ -1,0 +1,72 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: chat-service
+  cassandra:
+    request:
+      timeout: 30s
+    connection:
+      connect-timeout: 30s
+      init-query-timeout: 30s
+  output:
+    ansi:
+      enabled: ALWAYS
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: false
+      cache:
+        enabled: true
+  kafka:
+    bootstrap-servers: localhost:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        spring.json.add.type.headers: false
+        spring.jackson.serialization.write-dates-as-timestamps: false
+    consumer:
+      group-id: chat-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.use.type.headers: false
+        spring.json.deserializer.trusted.packages: '*'
+        spring.jackson.deserialization.fail-on-unknown-properties: false
+        spring.jackson.default-property-inclusion: NON_NULL
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: NON_NULL
+  security:
+    oauth2:
+      resource server:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/chat-apps
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    instance-id: ${spring.application.name}
+
+logging:
+  level:
+    org.springframework.data.cassandra.core.cql.CqlTemplate: DEBUG
+
+user-service:
+  url: http://localhost:9006
+
+relationship-service:
+  url: http://localhost:9001

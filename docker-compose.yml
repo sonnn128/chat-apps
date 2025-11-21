@@ -1,34 +1,56 @@
 services:
+  # ZooKeeper Service
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.0
-    env_file:
-      - ./.env.dev
+    image: confluentinc/cp-zookeeper:7.7.1
+    container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-
-  kafka:
-    image: confluentinc/cp-kafka:7.3.0
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "9092:9092"
+      - "2181:2181"
+    volumes:
+      - ./data/zookeeper-data:/var/lib/zookeeper/data
+      - ./data/zookeeper-log:/var/lib/zookeeper/log
+
+  # Kafka Service
+  kafka:
+    image: confluentinc/cp-kafka:7.7.1
+    container_name: kafka
+    restart: unless-stopped
     depends_on:
       - zookeeper
-    env_file:
-      - ./.env.dev
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      # Cấu hình quan trọng cho dev
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    ports:
+      - "29092:29092"
+    volumes:
+      - ./data/kafka-data:/var/lib/kafka/
 
+      # kafka ui
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    restart: unless-stopped
 
+# postgres databases
   postgres:
     image: postgres:16-alpine
     restart: always
-    env_file:
-      - ./.env.dev
     environment:
       POSTGRES_DB: chatapps
       POSTGRES_USER: chatapps
@@ -38,18 +60,12 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       # - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U chatapps"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
+# cassandra databases
   cassandra:
     image: cassandra:latest
     ports:
       - "9042:9042"
-    env_file:
-      - ./.env.dev
     healthcheck:
       test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra", "-e describe keyspaces" ]
       interval: 15s
@@ -63,13 +79,11 @@ services:
     restart: always
     volumes:
       - ./data/mysql_keycloak_data:/var/lib/mysql
-    env_file:
-      - ./.env.dev
-    # environment:
-    #   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    #   MYSQL_DATABASE: ${MYSQL_DATABASE}
-    #   MYSQL_USER: ${MYSQL_USER}
-    #   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: password
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       interval: 10s
@@ -83,8 +97,14 @@ services:
     depends_on:
       keycloak-mysql:
         condition: service_healthy
-    env_file:
-      - ./.env.dev
+    environment:
+      KC_DB: mysql
+      KC_DB_URL_HOST: keycloak-mysql
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
     volumes:
@@ -94,11 +114,18 @@ services:
       # everything in keycloaks is storage in keycloak-mysql
       # how to export json file in keycloak
 
-  # CONFIGURATION SERVICE
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+
   discovery-server:
     build: ./discovery-server
-    env_file:
-      - ./.env.dev
+    # env_file:
+    #   - ./.env
     ports:
       - 8761:8761
     healthcheck:
@@ -109,8 +136,8 @@ services:
 
   api-gateway:
     build: ./api-gateway
-    env_file:
-      - ./.env.dev
+    # env_file:
+    #   - ./.env
     ports:
       - 8888:8888
     depends_on:
@@ -120,15 +147,13 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
       interval: 20s
       timeout: 10s
-      retries: 5
-      start_period: 30s
-
+      retries: 5      
   user-service:
     build:
       context: ./user-service
       dockerfile: Dockerfile
     ports:
-  - "9006:9006"
+      - "9006:9006"
     env_file:
       - ./.env.dev
     environment:
@@ -139,11 +164,11 @@ services:
       discovery-server:
         condition: service_healthy
     healthcheck:
-  test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
-
+  
   media-service:
     build:
       context: ./media-service
@@ -151,29 +176,27 @@ services:
     env_file:
       - ./.env.dev
     ports:
-  - "9004:9004"
+      - "9004:9004"
     depends_on:
       discovery-server:
         condition: service_healthy
     healthcheck:
-  test: ["CMD-SHELL", "curl -f http://localhost:9004/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9004/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
-
+  
   chat-service:
     build:
       context: ./chat-service
       dockerfile: Dockerfile
     ports:
-  - "9002:9002"
+      - "9002:9002"
     env_file:
       - ./.env.dev
     environment:
-      # Server Configuration
-  user-service.url: http://user-service:9006
-  channel-service.url: http://channel-service:9001
-      # Ensure cassandra host/port passed so wait script can use them
+      user-service.url: http://user-service:9006
+      relationship-service.url: http://relationship-service:9001
       CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
       CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
     depends_on:
@@ -184,28 +207,22 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-  test: ["CMD-SHELL", "curl -f http://localhost:9002/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9002/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
-
-  channel-service:
+  
+  relationship-service:
     build:
-      context: ./channel-service
+      context: ./relationship-service
       dockerfile: Dockerfile
     ports:
-  - "9001:9001"
+      - "9001:9001"
     env_file:
       - ./.env.dev
     environment:
-      
-      # Database Configuration
-      # Uses POSTGRES_* from env_file
-      
-      # External Services
-  user-service.url: http://user-service:9006
-      chat-service.url: http://chat-service:9007
-      
+      user-service.url: http://user-service:9006
+      chat-service.url: http://chat-service:9002
     depends_on:
       postgres:
         condition: service_healthy
@@ -214,32 +231,30 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-  test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  friendship-service:
+  presence-service:
     build:
-      context: ./friendship-service
+      context: ./presence-service
       dockerfile: Dockerfile
     ports:
-  - "9003:9003"
+      - "9003:9003"
     env_file:
       - ./.env.dev
-    environment:
-  user-service.url: http://user-service:9006
-      
     depends_on:
-      postgres:
-        condition: service_healthy
+      redis:
+        condition: service_started
       discovery-server:
         condition: service_healthy
       kafka:
         condition: service_started
     healthcheck:
-  test: ["CMD-SHELL", "curl -f http://localhost:9003/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9003/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
- 
+
+  
