@@ -2,7 +2,6 @@ services:
   # ZooKeeper Service
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.1
-    container_name: zookeeper
     restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -16,7 +15,6 @@ services:
   # Kafka Service
   kafka:
     image: confluentinc/cp-kafka:7.7.1
-    container_name: kafka
     restart: unless-stopped
     depends_on:
       - zookeeper
@@ -27,6 +25,12 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     ports:
       - "29092:29092"
     volumes:
@@ -35,7 +39,6 @@ services:
       # kafka ui
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
     depends_on:
       - kafka
       - zookeeper
@@ -60,6 +63,11 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       # - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatapps"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 # cassandra databases
   cassandra:
@@ -89,10 +97,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.0
-    command: [ "start-dev", "--import-realm" ]
+    command: ["start-dev", "--import-realm"]
     restart: always
     depends_on:
       keycloak-mysql:
@@ -109,10 +118,14 @@ services:
       - "8080:8080"
     volumes:
       - ./keycloak-realms/:/opt/keycloak/data/import/
-      - ./keycloak-realms:/opt/keycloak/data/export
-      # - ./keycloak-realms:/opt/keycloak/data/export
-      # everything in keycloaks is storage in keycloak-mysql
-      # how to export json file in keycloak
+      - ./keycloak-realms-export:/opt/keycloak/data/export
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
 
   redis:
     image: redis:7-alpine
@@ -123,11 +136,14 @@ services:
       - ./data/redis:/data
 
   discovery-server:
-    build: ./discovery-server
-    # env_file:
-    #   - ./.env
+    build:
+      context: .
+      dockerfile: ./discovery-server/Dockerfile
     ports:
       - 8761:8761
+    environment:
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 20s
@@ -135,11 +151,14 @@ services:
       retries: 5
 
   api-gateway:
-    build: ./api-gateway
-    # env_file:
-    #   - ./.env
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
     ports:
       - 8888:8888
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/chat-apps
     depends_on:
       discovery-server:
         condition: service_healthy      
@@ -150,46 +169,37 @@ services:
       retries: 5      
   user-service:
     build:
-      context: ./user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./user-service/Dockerfile
     ports:
       - "9006:9006"
     env_file:
       - ./.env.dev
     environment:
       MEDIA_SERVICE: media-service
+      POSTGRES_HOST: postgres
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      MEDIA_SERVICE_URL: http://media-service:9004
     depends_on:
       postgres:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-  
-  media-service:
-    build:
-      context: ./media-service
-      dockerfile: Dockerfile
-    env_file:
-      - ./.env.dev
-    ports:
-      - "9004:9004"
-    depends_on:
-      discovery-server:
+      keycloak:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9004/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9005/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 120s
   
   chat-service:
     build:
-      context: ./chat-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./chat-service/Dockerfile
     ports:
       - "9002:9002"
     env_file:
@@ -199,23 +209,29 @@ services:
       relationship-service.url: http://relationship-service:9001
       CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
       CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
       discovery-server:
         condition: service_healthy
       cassandra:
         condition: service_healthy
       kafka:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9002/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    # healthcheck:
+    #   test: ["CMD-SHELL", "curl -f http://localhost:9002/actuator/health || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 30
+    #   start_period: 120s
   
   relationship-service:
     build:
-      context: ./relationship-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./relationship-service/Dockerfile
     ports:
       - "9001:9001"
     env_file:
@@ -223,38 +239,75 @@ services:
     environment:
       user-service.url: http://user-service:9006
       chat-service.url: http://chat-service:9002
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      
     depends_on:
       postgres:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9001/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 120s
 
-  presence-service:
+  media-service:
     build:
-      context: ./presence-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./media-service/Dockerfile
     ports:
-      - "9003:9003"
+      - "9004:9004"
     env_file:
       - ./.env.dev
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
-      redis:
-        condition: service_started
       discovery-server:
         condition: service_healthy
-      kafka:
-        condition: service_started
+      keycloak:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9003/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9004/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 120s
 
-  
+
+  # presence-service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./presence-service/Dockerfile
+  #   ports:
+  #     - "9005:9005"
+  #   env_file:
+  #     - ./.env.dev
+  #   environment:
+  #     EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  #     SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+  #     SPRING_REDIS_HOST: redis
+  #     SPRING_REDIS_PORT: 6379
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #     discovery-server:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #     keycloak:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:9005/actuator/health || exit 1"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
