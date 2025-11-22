@@ -123,9 +123,9 @@ services:
       - ./data/redis:/data
 
   discovery-server:
-    build: ./discovery-server
-    # env_file:
-    #   - ./.env
+    build:
+      context: .
+      dockerfile: ./discovery-server/Dockerfile
     ports:
       - 8761:8761
     healthcheck:
@@ -135,9 +135,9 @@ services:
       retries: 5
 
   api-gateway:
-    build: ./api-gateway
-    # env_file:
-    #   - ./.env
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
     ports:
       - 8888:8888
     depends_on:
@@ -150,10 +150,10 @@ services:
       retries: 5      
   user-service:
     build:
-      context: ./user-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./user-service/Dockerfile
     ports:
-      - "9006:9006"
+      - "9004:9004"
     env_file:
       - ./.env.dev
     environment:
@@ -171,8 +171,8 @@ services:
   
   media-service:
     build:
-      context: ./media-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./media-service/Dockerfile
     env_file:
       - ./.env.dev
     ports:
@@ -188,8 +188,8 @@ services:
   
   chat-service:
     build:
-      context: ./chat-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./chat-service/Dockerfile
     ports:
       - "9002:9002"
     env_file:
@@ -214,8 +214,8 @@ services:
   
   relationship-service:
     build:
-      context: ./relationship-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./relationship-service/Dockerfile
     ports:
       - "9001:9001"
     env_file:
@@ -238,10 +238,10 @@ services:
 
   presence-service:
     build:
-      context: ./presence-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./presence-service/Dockerfile
     ports:
-      - "9003:9003"
+      - "9005:9005"
     env_file:
       - ./.env.dev
     depends_on:
@@ -252,7 +252,7 @@ services:
       kafka:
         condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9003/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9005/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10

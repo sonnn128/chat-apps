@@ -72,12 +72,6 @@ java -jar -Xmx2048m -Xms256m /target/chat-service-0.0.1-SNAPSHOT.jar
 ```
 
 ```
-cd <project folder/channel-service>
-mvn install -DskipTests=true
-java -jar -Xmx2048m -Xms256m /target/channel-service-0.0.1-SNAPSHOT.jar
-```
-
-```
 cd <project folder/friendshipservice-service>
 mvn install -DskipTests=true
 java -jar -Xmx2048m -Xms256m /target/friendshipservice-service-0.0.1-SNAPSHOT.jar
@@ -128,5 +122,5 @@ docker compose up --build api-gateway
 3. chat-service
 4. relationship-service
 5. media-service
-7. user-service
+6. user-service
 ```

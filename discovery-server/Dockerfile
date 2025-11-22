@@ -13,8 +13,3 @@ EXPOSE 8761
 
 ENV JAVA_OPTIONS="-Xmx2048m -Xms256m"
 ENTRYPOINT ["java", "-jar", "/run/discovery-server-0.0.1-SNAPSHOT.jar"]
-
-# RUN: Build the image: RUN apt-get update && apt-get install -y python3
-# CMD ["python3", "app.py"]
-# CMD ["npm", "start"]
-# 
