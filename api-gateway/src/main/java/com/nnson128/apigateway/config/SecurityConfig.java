@@ -42,23 +42,32 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         
         // Set specific origin instead of wildcard to avoid conflicts
-        configuration.setAllowedOrigins(java.util.Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://localhost", "http://34.158.40.253:80", "http://chat.nnson128.io.vn"));
+        configuration.setAllowedOrigins(java.util.Arrays.asList(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://localhost",
+                "http://34.158.40.253",
+                "http://34.158.40.253:80",
+                "http://chat.nnson128.io.vn"
+        ));
         configuration.setAllowedMethods(java.util.Arrays.asList(
                 HttpMethod.GET.name(),
                 HttpMethod.POST.name(),
                 HttpMethod.PUT.name(),
                 HttpMethod.DELETE.name(),
+                HttpMethod.PATCH.name(),
                 HttpMethod.OPTIONS.name()
         ));
         configuration.setAllowedHeaders(java.util.Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With"
+                "*"
         ));
         configuration.setExposedHeaders(java.util.Arrays.asList(
-                "Location"
+                "Location",
+                "Authorization",
+                "Content-Type"
         ));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 // Apply CORS to API and docs paths only, exclude /ws to avoid duplicate CORS headers on SockJS handshake
