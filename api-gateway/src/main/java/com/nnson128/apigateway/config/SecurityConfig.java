@@ -58,7 +58,11 @@ public class SecurityConfig {
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        // Apply CORS to API and docs paths only, exclude /ws to avoid duplicate CORS headers on SockJS handshake
+        source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/v3/api-docs/**", configuration);
+        source.registerCorsConfiguration("/swagger-ui/**", configuration);
+        source.registerCorsConfiguration("/eureka/**", configuration);
         return source;
     }
 }
