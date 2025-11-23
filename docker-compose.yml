@@ -6,6 +6,7 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_4LW_COMMANDS_WHITELIST: "*"
     ports:
       - "2181:2181"
     volumes:
@@ -114,6 +115,10 @@ services:
       KC_DB_PASSWORD: password
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME_STRICT: "false"           # ← SỬA: Thêm dấu : và quotes
+      KC_HTTP_ENABLED: "true"               # ← SỬA: Thêm dấu : và quotes
+      KC_HOSTNAME_STRICT_HTTPS: "false"     # ← SỬA: Thêm dấu : và quotes
+      KC_PROXY: edge 
     ports:
       - "8080:8080"
     volumes:
@@ -125,7 +130,6 @@ services:
       timeout: 5s
       retries: 10
       # start_period: 60s
-
 
   redis:
     image: redis:7-alpine
