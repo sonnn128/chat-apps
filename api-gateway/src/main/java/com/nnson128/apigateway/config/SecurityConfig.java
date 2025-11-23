@@ -20,62 +20,45 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity serverHttpSecurity) {
-        serverHttpSecurity.csrf(csrf -> csrf.disable()
+        serverHttpSecurity
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeExchange(
-                        exchange -> exchange.pathMatchers("/eureka/**").permitAll()
-                                .pathMatchers("/actuator/**").permitAll() // Allow health checks
-                                .pathMatchers("/ws", "/ws/**").permitAll() // Allow WebSocket/SockJS handshake
-                                .pathMatchers("/swagger-ui/**").permitAll()
-                                .pathMatchers("/v3/api-docs/**").permitAll()
-                                .pathMatchers("/api/v1/auth/register").permitAll()
-                                .pathMatchers("/api/v1/auth/login").permitAll()
-                                .pathMatchers("/api/v1/users/search/phone").permitAll() // Temporarily allow phone search for testing
-                                .anyExchange().authenticated())
+                .authorizeExchange(exchange -> exchange
+                        .pathMatchers("/eureka/**").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers("/ws", "/ws/**").permitAll()
+                        .pathMatchers("/swagger-ui/**").permitAll()
+                        .pathMatchers("/v3/api-docs/**").permitAll()
+                        .pathMatchers("/api/v1/auth/register").permitAll()
+                        .pathMatchers("/api/v1/auth/login").permitAll()
+                        .pathMatchers("/api/v1/users/search/phone").permitAll()
+                        .anyExchange().authenticated()
+                )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> {
-                        })));
+                        .jwt(jwt -> {})
+                );
         return serverHttpSecurity.build();
     }
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Set specific origin instead of wildcard to avoid conflicts
         configuration.setAllowedOrigins(java.util.Arrays.asList(
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "http://localhost",
+                "http://localhost:80",
                 "http://34.158.40.253",
                 "http://34.158.40.253:80",
                 "http://chat.nnson128.io.vn"
         ));
-        configuration.setAllowedMethods(java.util.Arrays.asList(
-                HttpMethod.GET.name(),
-                HttpMethod.POST.name(),
-                HttpMethod.PUT.name(),
-                HttpMethod.DELETE.name(),
-                HttpMethod.PATCH.name(),
-                HttpMethod.OPTIONS.name()
-        ));
-        configuration.setAllowedHeaders(java.util.Arrays.asList(
-                "*"
-        ));
-        configuration.setExposedHeaders(java.util.Arrays.asList(
-                "Location",
-                "Authorization",
-                "Content-Type"
-        ));
+        configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
+        configuration.setExposedHeaders(java.util.Arrays.asList("Location", "Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-                // Apply CORS to API and docs paths only, exclude /ws to avoid duplicate CORS headers on SockJS handshake
-        source.registerCorsConfiguration("/api/**", configuration);
-        source.registerCorsConfiguration("/v3/api-docs/**", configuration);
-        source.registerCorsConfiguration("/swagger-ui/**", configuration);
-        source.registerCorsConfiguration("/eureka/**", configuration);
-
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }
