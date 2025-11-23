@@ -2,6 +2,11 @@ pipeline {
     agent { 
         label 'dev-server'
     }
+    
+    parameters {
+        booleanParam(name: 'FORCE_BUILD_ALL', defaultValue: false, description: 'Check this to force build all services regardless of changes')
+    }
+
     environment {
         // Docker Hub Config
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-creds'
@@ -21,13 +26,19 @@ pipeline {
         stage('Determine Changes') {
             steps {
                 script {
-                    // Lấy danh sách file thay đổi giữa commit hiện tại và commit trước đó
-                    // Nếu là lần build đầu tiên hoặc force build, có thể cần logic khác
-                    def changedFiles = sh(script: "git diff --name-only ${env.GIT_PREVIOUS_COMMIT} ${env.GIT_COMMIT}", returnStdout: true).trim()
+                    // Lấy danh sách file thay đổi
+                    def changedFiles = ""
+                    try {
+                        changedFiles = sh(script: "git diff --name-only ${env.GIT_PREVIOUS_COMMIT} ${env.GIT_COMMIT}", returnStdout: true).trim()
+                    } catch (Exception e) {
+                        echo "Could not determine changed files (First run?), defaulting to empty."
+                    }
                     echo "Changed files:\n${changedFiles}"
                     
-                    // Hàm kiểm tra thay đổi
-                    env.BUILD_ALL = changedFiles.contains('pom.xml') || changedFiles.contains('chatapps-base/') ? 'true' : 'false'
+                    // Logic kiểm tra: Build nếu có thay đổi HOẶC Force Build được chọn
+                    def force = params.FORCE_BUILD_ALL == true
+                    
+                    env.BUILD_ALL = force || changedFiles.contains('pom.xml') || changedFiles.contains('chatapps-base/') ? 'true' : 'false'
                     
                     env.BUILD_USER = env.BUILD_ALL == 'true' || changedFiles.contains('user-service/') ? 'true' : 'false'
                     env.BUILD_CHAT = env.BUILD_ALL == 'true' || changedFiles.contains('chat-service/') ? 'true' : 'false'
@@ -35,7 +46,11 @@ pipeline {
                     env.BUILD_MEDIA = env.BUILD_ALL == 'true' || changedFiles.contains('media-service/') ? 'true' : 'false'
                     env.BUILD_GATEWAY = env.BUILD_ALL == 'true' || changedFiles.contains('api-gateway/') ? 'true' : 'false'
                     env.BUILD_DISCOVERY = env.BUILD_ALL == 'true' || changedFiles.contains('discovery-server/') ? 'true' : 'false'
-                    env.BUILD_FRONTEND = changedFiles.contains('frontend/') ? 'true' : 'false'
+                    
+                    // Frontend tách biệt
+                    env.BUILD_FRONTEND = force || changedFiles.contains('frontend/') ? 'true' : 'false'
+                    
+                    echo "Build Plan: User=${env.BUILD_USER}, Chat=${env.BUILD_CHAT}, Frontend=${env.BUILD_FRONTEND}..."
                 }
             }
         }
