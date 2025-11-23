@@ -141,12 +141,11 @@ pipeline {
 def buildAndPushService(String serviceName, String port) {
     script {
         echo "Building ${serviceName}..."
-        // Build Maven
-        sh "mvn clean package -pl ${serviceName} -am -DskipTests"
         
-        // Build Docker & Push
+        // Build Docker & Push (Sử dụng Multi-stage build trong Dockerfile)
+        // Context là '.' (Root) để Dockerfile có thể truy cập pom.xml gốc và các module khác
         docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
-            def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-${serviceName}:${env.BUILD_NUMBER}", "./${serviceName}")
+            def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-${serviceName}:${env.BUILD_NUMBER}", "-f ${serviceName}/Dockerfile .")
             image.push()
             image.push('latest')
         }
