@@ -8,7 +8,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'sonta28122004'
         
         // Deploy Config
-        DEPLOY_DIR = '/app/chatapps'
+        DEPLOY_DIR = '/home/jenkins/chatapps' // Hoặc thư mục home của user chạy agent
     }
 
     stages {
