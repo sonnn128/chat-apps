@@ -60,37 +60,79 @@ pipeline {
                 stage('User Service') {
                     when { expression { return env.BUILD_USER == 'true' } }
                     steps {
-                        buildAndPushService('user-service', '9006')
+                        script {
+                            echo "Building user-service..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-user-service:${env.BUILD_NUMBER}", "-f user-service/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
                 stage('Chat Service') {
                     when { expression { return env.BUILD_CHAT == 'true' } }
                     steps {
-                        buildAndPushService('chat-service', '9002')
+                        script {
+                            echo "Building chat-service..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-chat-service:${env.BUILD_NUMBER}", "-f chat-service/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
                 stage('Relationship Service') {
                     when { expression { return env.BUILD_RELATIONSHIP == 'true' } }
                     steps {
-                        buildAndPushService('relationship-service', '9001')
+                        script {
+                            echo "Building relationship-service..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-relationship-service:${env.BUILD_NUMBER}", "-f relationship-service/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
                 stage('Media Service') {
                     when { expression { return env.BUILD_MEDIA == 'true' } }
                     steps {
-                        buildAndPushService('media-service', '9004')
+                        script {
+                            echo "Building media-service..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-media-service:${env.BUILD_NUMBER}", "-f media-service/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
                 stage('API Gateway') {
                     when { expression { return env.BUILD_GATEWAY == 'true' } }
                     steps {
-                        buildAndPushService('api-gateway', '8888')
+                        script {
+                            echo "Building api-gateway..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-api-gateway:${env.BUILD_NUMBER}", "-f api-gateway/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
                 stage('Discovery Server') {
                     when { expression { return env.BUILD_DISCOVERY == 'true' } }
                     steps {
-                        buildAndPushService('discovery-server', '8761')
+                        script {
+                            echo "Building discovery-server..."
+                            docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
+                                def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-discovery-server:${env.BUILD_NUMBER}", "-f discovery-server/Dockerfile .")
+                                image.push()
+                                image.push('latest')
+                            }
+                        }
                     }
                 }
             }
@@ -138,16 +180,4 @@ pipeline {
     }
 }
 
-def buildAndPushService(String serviceName, String port) {
-    script {
-        echo "Building ${serviceName}..."
-        
-        // Build Docker & Push (Sử dụng Multi-stage build trong Dockerfile)
-        // Context là '.' (Root) để Dockerfile có thể truy cập pom.xml gốc và các module khác
-        docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
-            def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-${serviceName}:${env.BUILD_NUMBER}", "-f ${serviceName}/Dockerfile .")
-            image.push()
-            image.push('latest')
-        }
-    }
-}
+
