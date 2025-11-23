@@ -5,11 +5,9 @@ pipeline {
     environment {
         // Docker Hub Config
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-creds'
-        DOCKERHUB_USERNAME = 'your_dockerhub_username' // Thay đổi thành username của bạn
+        DOCKERHUB_USERNAME = 'sonta28122004'
         
-        // SSH Config
-        SSH_CREDENTIALS_ID = 'ssh-deploy-key'
-        DEPLOY_SERVER_IP = 'deploy-server-ip' // Thay đổi thành IP thực tế
+        // Deploy Config
         DEPLOY_DIR = '/app/chatapps'
     }
 
@@ -102,26 +100,23 @@ pipeline {
         stage('Deploy') {
             steps {
                 withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sshagent(credentials: ["${SSH_CREDENTIALS_ID}"]) {
-                        sh """
-                            ssh -o StrictHostKeyChecking=no root@${DEPLOY_SERVER_IP} '
-                                mkdir -p ${DEPLOY_DIR}
-                                cd ${DEPLOY_DIR}
-                                
-                                # Login Docker Hub
-                                echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
-                                
-                                # Pull images mới nhất
-                                docker-compose -f docker-compose.prod.yml pull
-                                
-                                # Recreate containers
-                                docker-compose -f docker-compose.prod.yml up -d
-                                
-                                # Clean up unused images
-                                docker image prune -f
-                            '
-                        """
-                    }
+                    sh """
+                        mkdir -p ${DEPLOY_DIR}
+                        cp docker-compose.prod.yml ${DEPLOY_DIR}/
+                        cd ${DEPLOY_DIR}
+                        
+                        # Login Docker Hub
+                        echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                        
+                        # Pull images mới nhất
+                        docker-compose -f docker-compose.prod.yml pull
+                        
+                        # Recreate containers
+                        docker-compose -f docker-compose.prod.yml up -d
+                        
+                        # Clean up unused images
+                        docker image prune -f
+                    """
                 }
             }
         }
