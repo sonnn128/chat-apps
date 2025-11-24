@@ -11,7 +11,10 @@ COPY package*.json ./
 RUN npm install
 
 ARG VITE_REACT_APP_BASE_URL
-ENV VITE_REACT_APP_BASE_URL=$VITE_REACT_APP_BASE_URL
+# Debug: Print the variable to build logs
+RUN echo "Building with VITE_REACT_APP_BASE_URL=$VITE_REACT_APP_BASE_URL"
+# Write to .env file so Vite picks it up guaranteed
+RUN echo "VITE_REACT_APP_BASE_URL=$VITE_REACT_APP_BASE_URL" > .env
 
 #### copy things
 COPY . .
