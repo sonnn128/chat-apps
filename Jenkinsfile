@@ -144,6 +144,7 @@ pipeline {
             when { expression { return env.BUILD_FRONTEND == 'true' } }
             steps {
                 script {
+                    echo "DEBUG: VITE_REACT_APP_BASE_URL is '${env.VITE_REACT_APP_BASE_URL}'"
                     dir('frontend') {
                         // Docker Hub registry URL is empty string
                         docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {

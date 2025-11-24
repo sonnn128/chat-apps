@@ -31,6 +31,7 @@ services:
       - ./.env.prod
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
       - discovery-server
     restart: always
@@ -43,6 +44,7 @@ services:
       - ./.env.prod
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
       - discovery-server
     restart: always
@@ -55,6 +57,7 @@ services:
       - ./.env.prod
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
       - discovery-server
     restart: always
@@ -67,6 +70,7 @@ services:
       - ./.env.prod
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
     depends_on:
       - discovery-server
     restart: always
