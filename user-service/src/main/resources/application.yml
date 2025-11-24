@@ -1,33 +1,25 @@
 server:
-  port: 9001
-
+  port: 9006
 spring:
   application:
-    name: relationship-service
+    name: user-service
   datasource:
-    driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:chatapps}
     username: ${POSTGRES_USER:chatapps}
     password: ${POSTGRES_PASSWORD:chatapps}
+    driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
-    generate-ddl: true
     properties:
       hibernate:
         format_sql: false
+    generate-ddl: true
   output:
     ansi:
       enabled: ALWAYS
-  kafka:
-    bootstrap-servers: ${KAFKA_HOST:localhost}:29092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-      retries: 3
   security:
     oauth2:
       resourceserver:
@@ -43,18 +35,23 @@ eureka:
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
 
-user-service:
-  url: http://${USER_SERVICE:localhost}:9006
+keycloak:
+  auth-server-url: http://${KEYCLOAK_HOST:localhost}:8080
+  realm: chat-apps
+  resource: chat-apps-client
+  credentials:
+    secret: e4qQufaOrco7xu7HMEKpLRonaNFlMjGU
 
-chat-service:
-  url: http://${CHAT_SERVICE:localhost}:9002
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: basic
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: when-authorized
-      show-components: always
+media:
+  service:
+    name: media-service
+media-service:
+  url: http://${MEDIA_SERVICE:localhost}:9004

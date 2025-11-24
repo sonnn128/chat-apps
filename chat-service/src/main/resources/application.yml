@@ -20,7 +20,7 @@ spring:
       cache:
         enabled: true
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: ${KAFKA_HOST:localhost}:29092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -46,16 +46,16 @@ spring:
     default-property-inclusion: NON_NULL
   security:
     oauth2:
-      resource server:
+      resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/chat-apps
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
   instance:
     prefer-ip-address: true
     hostname: ${spring.application.name}
@@ -66,7 +66,7 @@ logging:
     org.springframework.data.cassandra.core.cql.CqlTemplate: DEBUG
 
 user-service:
-  url: http://localhost:9006
+  url: http://${USER_SERVICE:localhost}:9006
 
 relationship-service:
-  url: http://localhost:9001
+  url: http://${RELATIONSHIP_SERVICE:localhost}:9001

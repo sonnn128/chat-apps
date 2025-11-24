@@ -28,7 +28,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/chat-apps
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
 
 management:
   endpoints:
@@ -39,7 +39,7 @@ management:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
   instance:
     prefer-ip-address: true
     hostname: ${spring.application.name}

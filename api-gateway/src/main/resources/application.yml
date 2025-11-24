@@ -1,0 +1,64 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: api-gateway
+  output:
+    ansi:
+      enabled: always
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: USER-SERVICE
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**, /api/v1/users/**, /api/v1/admin/**, /api/v1/me/**
+        - id: CHAT-SERVICE-NOTIFICATIONS
+          uri: lb://CHAT-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/**
+        - id: RELATIONSHIP-SERVICE
+          uri: lb://RELATIONSHIP-SERVICE
+          predicates:
+            - Path=/api/v1/channels/**
+        - id: CHAT-SERVICE
+          uri: lb://CHAT-SERVICE
+          predicates:
+            - Path=/api/v1/messages/**
+        - id: RELATIONSHIP-SERVICE-FRIENDSHIPS
+          uri: lb://RELATIONSHIP-SERVICE
+          predicates:
+            - Path=/api/v1/friendships/**
+        - id: MEDIA-SERVICE
+          uri: lb://MEDIA-SERVICE
+          predicates:
+            - Path=/api/v1/media/**
+        - id: CHAT-SERVICE-WS
+          uri: lb://CHAT-SERVICE
+          predicates:
+            - Path=/ws, /ws/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
+
+eureka:
+  instance:
+    hostname: ${spring.application.name}
+    instance-id: ${spring.application.name}
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+
+logging:
+  level:
+    reactor.core.publisher.Operators: OFF
+    reactor.netty.http.server.WebsocketServerOperations: OFF
+    reactor.netty.http.client.WebsocketClientOperations: OFF
+    org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession: OFF
+    io.netty.handler.codec.http.websocketx: ERROR

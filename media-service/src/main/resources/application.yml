@@ -1,0 +1,34 @@
+server:
+  port: 9004
+spring:
+  application:
+    name: media-service
+  output:
+    ansi:
+      enabled: ALWAYS
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    hostname: ${spring.application.name}
+    instance-id: ${spring.application.name}
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:dswdadh2n}
+  api-key: ${CLOUDINARY_API_KEY:741574128814778}
+  api-secret: ${CLOUDINARY_API_SECRET:J9XuHektVDcN5CI_3_58RmDjSoE}
+  secure: true
