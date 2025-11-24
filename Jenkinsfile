@@ -14,6 +14,8 @@ pipeline {
         
         // Deploy Config
         DEPLOY_DIR = '/home/jenkins/chatapps' // Hoặc thư mục home của user chạy agent
+        
+        VITE_REACT_APP_BASE_URL = 'http://34.158.40.253:8888'
     }
 
     stages {
@@ -145,7 +147,7 @@ pipeline {
                     dir('frontend') {
                         // Docker Hub registry URL is empty string
                         docker.withRegistry('', "${DOCKERHUB_CREDENTIALS_ID}") {
-                            def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-frontend:${env.BUILD_NUMBER}")
+                            def image = docker.build("${DOCKERHUB_USERNAME}/chatapps-frontend:${env.BUILD_NUMBER}", "--build-arg VITE_REACT_APP_BASE_URL=${env.VITE_REACT_APP_BASE_URL} .")
                             image.push()
                             image.push('latest')
                         }

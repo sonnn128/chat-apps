@@ -10,6 +10,9 @@ COPY package*.json ./
 #### install project dependencies
 RUN npm install
 
+ARG VITE_REACT_APP_BASE_URL
+ENV VITE_REACT_APP_BASE_URL=$VITE_REACT_APP_BASE_URL
+
 #### copy things
 COPY . .
 
