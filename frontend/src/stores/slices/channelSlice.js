@@ -211,7 +211,21 @@ const channelSlice = createSlice({
         };
         console.log("✅ Channel: Channel data prepared with notice message:", channelCreate);
 
-        state.channels.push(channelCreate);
+        // Check if channel already exists
+        const existingChannel = state.channels.find(ch => ch.id === channelCreate.id);
+        if (!existingChannel) {
+            state.channels.push(channelCreate);
+            console.log("✅ Channel: Channel added to state");
+        } else {
+            console.log("ℹ️ Channel: Channel already exists, updating data:", channelCreate.id);
+            // Update properties that might have been placeholder values
+            existingChannel.channelName = channelCreate.channelName;
+            existingChannel.participants = channelCreate.participants;
+            existingChannel.memberIds = channelCreate.memberIds;
+            existingChannel.createdAt = channelCreate.createdAt;
+            // We don't overwrite messages here to preserve any real-time messages received
+        }
+
         state.currentChannel = channelCreate;
         state.currentChannelId = channelCreate?.id || null;
         
@@ -222,7 +236,7 @@ const channelSlice = createSlice({
           console.log("✅ Channel: Notice message cached for new channel:", action.payload.id);
         }
         
-        console.log("✅ Channel: Channel added to state and set as current");
+        console.log("✅ Channel: Channel set as current");
       })
       .addCase(fetchCreateChannel.rejected, (state, action) => {
         state.loading = false;

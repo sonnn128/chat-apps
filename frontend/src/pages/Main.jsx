@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import Sidebar from "@/pages/components/Sidebar";
-import ChatSection from "@/pages/components/ChatSection";
-import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
+import Sidebar from "@/components/layout/Sidebar";
+import ChatSection from "@/components/layout/ChatSection";
 import { websocketService } from "@/utils/ws";
+
 function Main() {
   const dispatch = useDispatch();
+
   useEffect(() => {
     console.log("🚀 Main: Application initialized");
     // Channels are now loaded after login, no need to load here

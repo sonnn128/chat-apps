@@ -85,11 +85,11 @@ public class AuthService {
         
         // 3. Check if user already exists
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
-            throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.BAD_REQUEST);
+            throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.CONFLICT);
         });
 
         userRepository.findByPhone(normalizedPhone).ifPresent(user -> {
-            throw new CommonException("Phone " + normalizedPhone + " is already in use.", HttpStatus.BAD_REQUEST);
+            throw new CommonException("Phone " + normalizedPhone + " is already in use.", HttpStatus.CONFLICT);
         });
 
         String token = identityClient.getClientToken(TokenExchangeParam.builder()

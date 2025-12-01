@@ -5,6 +5,7 @@ import ChatMessages from "@/components/chat/ChatMessages";
 import ChatInput from "@/components/chat/ChatInput";
 import AddMemberModal from "@/components/modals/AddMemberModal";
 import ChatInfoSidebar from "@/components/chat/ChatInfoSidebar";
+import WelcomeState from "@/components/chat/WelcomeState";
 import { websocketService } from "@/utils/ws";
 import { receiveMessage, addChannel, receiveChannelAddedNotification } from "@/stores/slices/channelSlice";
 import { receiveFriendRequest, receiveFriendRequestAccepted, receiveFriendRequestRejected } from "@/stores/slices/friendshipSlice";
@@ -170,6 +171,15 @@ const ChatSection = () => {
             console.log("🧹 ChatSection: Cleaning up WebSocket subscription");
         };
     }, [dispatch, user?.data?.id]);
+
+    if (!currentChannelId && !currentFriend) {
+        return (
+            <div className="flex h-full w-full">
+                <WelcomeState />
+                <AddMemberModal open={false} onClose={() => { }} channelId={null} />
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-full w-full">

@@ -8,7 +8,8 @@ import {
   TeamOutlined,
   UserOutlined,
   PlusOutlined,
-  PhoneOutlined, // Import icon PhoneOutlined cho trường hợp tìm kiếm SĐT
+  PhoneOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import debounce from "lodash.debounce";
 
@@ -47,6 +48,7 @@ const Sidebar = () => {
   const [displayedSearchTerm, setDisplayedSearchTerm] = useState(""); // State để lưu giá trị hiển thị trên Input
   const [searchResult, setSearchResult] = useState(null); // State để lưu kết quả tìm kiếm
   const [isSearching, setIsSearching] = useState(false); // State để hiển thị loading
+  const [isCreatingChannel, setIsCreatingChannel] = useState(false);
 
   const handleAddFriend = async (userId) => {
     const res = await dispatch(sendFriendRequest(userId)).unwrap();
@@ -78,12 +80,15 @@ const Sidebar = () => {
       console.warn("⚠️ Sidebar: Channel name is empty");
       return;
     }
-    
+
+    if (isCreatingChannel) return;
+
     console.log("📝 Sidebar: Creating channel:", name);
+    setIsCreatingChannel(true);
     const form = {
       channelName: name,
     };
-    
+
     try {
       const result = await dispatch(fetchCreateChannel(form));
       if (result.type.endsWith('fulfilled')) {
@@ -95,6 +100,8 @@ const Sidebar = () => {
       }
     } catch (error) {
       console.error("❌ Sidebar: Error creating channel:", error);
+    } finally {
+      setIsCreatingChannel(false);
     }
   };
 
@@ -106,7 +113,7 @@ const Sidebar = () => {
     debounce(async (value) => {
       const trimmedValue = value.trim();
       setSearchTerm(trimmedValue);
-      
+
       // Nếu là số điện thoại (chỉ chứa số và có độ dài hợp lý)
       if (trimmedValue && /^\d{10,11}$/.test(trimmedValue)) {
         setIsSearching(true);
@@ -285,7 +292,7 @@ const Sidebar = () => {
             {(() => {
               const isFriend = friends.some(friend => friend.friendId === searchResult.id);
               const hasSentRequest = sentRequests.some(req => req.friendId === searchResult.id);
-              
+
               if (isFriend) {
                 return (
                   <Button
@@ -305,7 +312,7 @@ const Sidebar = () => {
                   </Button>
                 );
               }
-              
+
               if (hasSentRequest) {
                 return (
                   <Button
@@ -318,7 +325,7 @@ const Sidebar = () => {
                   </Button>
                 );
               }
-              
+
               return (
                 <Button
                   type="primary"
@@ -365,6 +372,8 @@ const Sidebar = () => {
                     value={newChannelName}
                     onChange={(e) => setNewChannelName(e.target.value)}
                     onPressEnter={handleChannelSubmit}
+                    disabled={isCreatingChannel}
+                    suffix={isCreatingChannel ? <LoadingOutlined /> : null}
                     style={{
                       width: 150,
                       borderRadius: 9999,

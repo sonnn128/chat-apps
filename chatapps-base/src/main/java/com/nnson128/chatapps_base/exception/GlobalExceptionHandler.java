@@ -134,10 +134,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(Exception ex, WebRequest request) {
+        ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.<Object>builder()
                         .success(false)
-                        .message("An unexpected error occurred")
+                        .message("An unexpected error occurred: " + ex.getMessage())
                         .data(null)
                         .build());
     }

@@ -17,12 +17,12 @@ function Register() {
     setIsLoading(true);
     try {
       console.log("values: ", values);
-      
+
       await dispatch(registerUser({ ...values })).unwrap();
       successToast("Registration successful! Please log in.");
       navigate("/login");
     } catch (err) {
-      errorToast(err.message || "Registration failed. Please try again.");
+      // Error is handled globally by httpRequest.js
     } finally {
       setIsLoading(false);
     }

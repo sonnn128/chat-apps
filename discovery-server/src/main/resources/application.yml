@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: discovery-server
+  output:
+    ansi:
+      enabled: always
 eureka:
   client:
     register-with-eureka: false

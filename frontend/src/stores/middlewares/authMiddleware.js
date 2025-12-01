@@ -1,21 +1,20 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import authServices from "@/services/authServices";
+import authService from "../../services/authService";
 
 export const fetchUserProfile = createAsyncThunk(
   "auth/fetchUserProfile",
-  async () => await authServices.getUserProfile()
+  async () => await authService.getUserProfile()
 );
 
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password }) => {
-    const res = await authServices.login({ email, password })
+    const res = await authService.login({ email, password })
     return res.data;
   }
 );
 
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
-  async (registerData) => await authServices.register(registerData)
+  async (registerData) => await authService.register(registerData)
 );
-
