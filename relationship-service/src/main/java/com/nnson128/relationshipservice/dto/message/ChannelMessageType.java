@@ -4,5 +4,8 @@ public enum ChannelMessageType {
     CHAT,
     NOTICE,
     REACTION,
-    EMOJI
+    EMOJI,
+    IMAGE,
+    VIDEO,
+    FILE
 }

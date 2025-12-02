@@ -7,50 +7,120 @@ import {
   AudioOutlined,
   PlayCircleOutlined,
   FileOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
 import { sendChannelMessage } from "@/stores/middlewares/channelMiddleware";
+import { addPendingMessage } from "@/stores/slices/channelSlice";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
 const ChatInput = () => {
   const [message, setMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { currentChannelId } = useSelector((state) => state.channel);
   const dispatch = useDispatch();
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const { user } = useSelector((state) => state.auth);
+  const userId = user?.data?.id;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (message.trim() === "") return;
+    if (message.trim() === "" && selectedFiles.length === 0) return;
 
-    // Check emoji-only
-    const isEmojiOnly = (text) => {
-      const cleanText = text.trim();
-      if (cleanText === "") return false;
-      const emojiOnlyText = cleanText.replace(
-        /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/gu,
-        ""
-      );
-      return emojiOnlyText.trim() === "";
-    };
+    // 1. Send text message if exists
+    if (message.trim() !== "") {
+      // Check emoji-only
+      const isEmojiOnly = (text) => {
+        const cleanText = text.trim();
+        if (cleanText === "") return false;
+        const emojiOnlyText = cleanText.replace(
+          /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}\u{238C}-\u{2454}\u{20D0}-\u{20FF}\u{FE0F}\u{200D}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/gu,
+          ""
+        );
+        return emojiOnlyText.trim() === "";
+      };
 
-    let messageType = "CHAT";
-    if (isEmojiOnly(message)) {
-      messageType = "EMOJI";
-      console.log("Emoji-only message detected:", message);
+      let messageType = "CHAT";
+      if (isEmojiOnly(message)) {
+        messageType = "EMOJI";
+      }
+
+      const tempId = crypto.randomUUID();
+      const form = {
+        channelId: currentChannelId,
+        content: message,
+        type: messageType,
+        tempId,
+        userId
+      };
+      dispatch(sendChannelMessage(form));
+      setMessage("");
     }
 
-    const form = {
-      channelId: currentChannelId,
-      content: message,
-      type: messageType,
-    };
+    // 2. Upload and send files
+    if (selectedFiles.length > 0) {
+      const mediaService = (await import("@/services/mediaService")).default;
 
-    console.log("Sending message:", form);
-    await dispatch(sendChannelMessage(form));
-    setMessage("");
+      // Process files sequentially or parallel
+      for (const fileObj of selectedFiles) {
+        try {
+          // Create a tempId for the file message
+          const tempId = crypto.randomUUID();
+
+          // Optimistically add file message with local preview
+          const pendingContent = fileObj.type === "FILE"
+            ? JSON.stringify({ url: "#", name: fileObj.file.name, size: fileObj.file.size })
+            : fileObj.previewUrl;
+
+          const pendingMessage = {
+            key: {
+              channelId: currentChannelId,
+              messageId: tempId,
+              timestamp: new Date().toISOString()
+            },
+            userId: userId || "current-user",
+            content: pendingContent,
+            type: fileObj.type,
+            status: "pending",
+            senderName: user?.data?.firstname + " " + user?.data?.lastname,
+            senderAvatar: user?.data?.avatarUrl
+          };
+
+          dispatch(addPendingMessage(pendingMessage));
+
+          const res = await mediaService.uploadFile(fileObj.file);
+          if (res.success) {
+            const { secureUrl, originalFileName, fileSize } = res.data;
+
+            let content = JSON.stringify({ url: secureUrl, name: originalFileName, size: fileSize });
+            if (fileObj.type === "IMAGE" || fileObj.type === "VIDEO") {
+              content = secureUrl;
+            }
+
+            const form = {
+              channelId: currentChannelId,
+              content: content,
+              type: fileObj.type,
+              tempId,
+              userId
+            };
+            dispatch(sendChannelMessage(form));
+          } else {
+            // Handle upload failure - mark message as failed
+            // We can dispatch a rejected action or manually update status
+            // For now, let's just log it. Ideally we should update the message status to failed.
+            console.error("Upload failed for file:", fileObj.file.name);
+          }
+        } catch (error) {
+          console.error("Failed to upload file:", fileObj.file.name, error);
+        }
+      }
+      setSelectedFiles([]);
+    }
   };
 
   const handleEmojiSelect = (emoji) => {
@@ -58,11 +128,31 @@ const ChatInput = () => {
     setShowEmojiPicker(false);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log("File selected:", file);
-    }
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const newFiles = files.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      type: file.type.startsWith("image/")
+        ? "IMAGE"
+        : file.type.startsWith("video/")
+          ? "VIDEO"
+          : "FILE",
+    }));
+
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].previewUrl);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
   };
 
   const handleImageUpload = () => fileInputRef.current?.click();
@@ -84,7 +174,42 @@ const ChatInput = () => {
   }, []);
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-col">
+      {/* File Preview Area */}
+      {selectedFiles.length > 0 && (
+        <div className="flex gap-2 p-2 bg-gray-50 border-t overflow-x-auto">
+          {selectedFiles.map((file, index) => (
+            <div key={index} className="relative group flex-shrink-0">
+              {file.type === "IMAGE" ? (
+                <img
+                  src={file.previewUrl}
+                  alt="preview"
+                  className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                />
+              ) : file.type === "VIDEO" ? (
+                <video
+                  src={file.previewUrl}
+                  className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                />
+              ) : (
+                <div className="h-20 w-20 flex flex-col items-center justify-center bg-white rounded-lg border border-gray-200 p-1">
+                  <FileOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
+                  <span className="text-xs text-gray-500 truncate w-full text-center mt-1">
+                    {file.file.name}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => removeFile(index)}
+                className="absolute -top-2 -right-2 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-full p-1 shadow-sm transition-colors"
+                type="button"
+              >
+                <CloseOutlined style={{ fontSize: "12px" }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <form
         onSubmit={handleSubmit}
         className="p-3 border-t flex items-center gap-2 bg-white"
@@ -141,7 +266,7 @@ const ChatInput = () => {
           type="file"
           multiple
           accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-          onChange={handleFileUpload}
+          onChange={handleFileSelect}
           className="hidden"
         />
 

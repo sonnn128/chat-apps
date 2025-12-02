@@ -14,7 +14,6 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/v1/media")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MediaController {
 
     private final MediaService mediaService;

@@ -1,153 +1,22 @@
-/* Trong file src/index.css hoặc file CSS global tương tự */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body {
-  /* 1. ĐỊNH NGHĨA DANH SÁCH FONT (SYSTEM FONT STACK) */
-  /* Đây là dòng quan trọng nhất, nó yêu cầu trình duyệt sử dụng font hệ thống tốt nhất có sẵn. */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  
-  /* 2. ĐẶT KÍCH THƯỚC FONT NHƯ TRONG HÌNH */
-  /* Dựa trên hình ảnh bạn cung cấp, font size là 15px. */
-  font-size: 15px;
-
-  /* 3. CẢI THIỆN KHẢ NĂNG ĐỌC */
-  /* Thêm khoảng cách dòng hợp lý. */
-  line-height: 1.5;
-
-  /* 4. TÙY CHỌN: GIÚP FONT CHỮ HIỂN THỊ MƯỢT MÀ HƠN */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  
-  /* Bạn cũng có thể đặt màu chữ và màu nền mặc định ở đây */
-  color: #1c1e21; /* Màu chữ xám đen gần giống Facebook/Messenger */
-  background-color: #ffffff;
-}
-
-/* Các quy tắc CSS khác của bạn... */
-
-/* Custom tooltip styles */
-.custom-tooltip .ant-tooltip-inner {
-  background-color: white !important;
-  color: #1f2937 !important;
-  font-size: 11px !important;
-  border-radius: 12px !important;
-  border: 1px solid #e5e7eb !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-  padding: 8px 16px !important;
-}
-
-.custom-tooltip .ant-tooltip-arrow::before {
-  background-color: white !important;
-  border: 1px solid #e5e7eb !important;
-}
-
-/* Emoji Mart Custom Styles */
-.emoji-mart {
-  border: none !important;
-  box-shadow: none !important;
-  background: white !important;
-  border-radius: 12px !important;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-}
-
-.emoji-mart-bar {
-  background: #f8fafc !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  border-radius: 12px 12px 0 0 !important;
-  padding: 8px !important;
-}
-
-.emoji-mart-bar button {
-  border-radius: 8px !important;
-  margin: 2px !important;
-  transition: all 0.2s ease !important;
-  border: none !important;
-  background: transparent !important;
-}
-
-.emoji-mart-bar button:hover {
-  background-color: #e2e8f0 !important;
-  transform: scale(1.05) !important;
-}
-
-.emoji-mart-bar button.active {
-  background-color: #3b82f6 !important;
-  color: white !important;
-}
-
-.emoji-mart-search {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 8px 12px !important;
-  font-size: 14px !important;
-  background: #f8fafc !important;
-  margin: 8px !important;
-  width: calc(100% - 16px) !important;
-}
-
-.emoji-mart-search:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-  outline: none !important;
-}
-
-.emoji-mart-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e0 #f7fafc;
-  max-height: 300px !important;
-}
-
-.emoji-mart-scroll::-webkit-scrollbar {
+/* Custom Scrollbar */
+::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
-.emoji-mart-scroll::-webkit-scrollbar-track {
-  background: #f7fafc;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bdc3c7;
   border-radius: 3px;
 }
 
-.emoji-mart-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 3px;
-}
-
-.emoji-mart-scroll::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
-}
-
-.emoji-mart-category-label {
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  color: #64748b !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  margin-bottom: 8px !important;
-  padding: 0 8px !important;
-}
-
-.emoji-mart-emoji {
-  border-radius: 8px !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer !important;
-  padding: 4px !important;
-  margin: 2px !important;
-}
-
-.emoji-mart-emoji:hover {
-  background-color: #e2e8f0 !important;
-  transform: scale(1.1) !important;
-}
-
-.emoji-mart-emoji:active {
-  transform: scale(0.95) !important;
-}
-
-/* Override emoji-mart default styles */
-.emoji-mart * {
-  box-sizing: border-box !important;
-}
-
-.emoji-mart .emoji-mart-emoji {
-  font-size: 20px !important;
-  line-height: 1 !important;
+::-webkit-scrollbar-thumb:hover {
+  background: #95a5a6;
 }

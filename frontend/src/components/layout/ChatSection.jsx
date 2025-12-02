@@ -192,7 +192,7 @@ const ChatSection = () => {
                             : (currentChannel?.channelName || "Channel")
                     )
                 } />
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col">
                     {currentChannelId ? (
                         <ChatMessages />
                     ) : (

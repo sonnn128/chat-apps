@@ -18,15 +18,47 @@ const ChatMessages = () => {
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const prevMessagesLengthRef = useRef(messagesOfCurrentChannel.length);
+  const prevLastMessageIdRef = useRef(null);
+  const isFirstLoadRef = useRef(true);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Handle scroll positioning
   useEffect(() => {
-    if (messagesEndRef.current) {
-      requestAnimationFrame(() => {
-        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      });
+    const container = messagesContainerRef.current;
+    if (!container || !messagesEndRef.current) return;
+
+    const currentLength = messagesOfCurrentChannel.length;
+    const prevLength = prevMessagesLengthRef.current;
+
+    const lastMessage = messagesOfCurrentChannel[currentLength - 1];
+    const lastMessageId = lastMessage?.key?.messageId || lastMessage?.id;
+
+    // 1. Initial Load: Scroll to bottom
+    if (isFirstLoadRef.current && currentLength > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+      isFirstLoadRef.current = false;
+      prevLastMessageIdRef.current = lastMessageId;
     }
-  }, [messagesOfCurrentChannel]);
+    // 2. Updates
+    else if (currentLength > prevLength) {
+      // Check if the last message ID has changed
+      const isMessageAddedAtBottom = lastMessageId !== prevLastMessageIdRef.current;
+
+      if (isMessageAddedAtBottom) {
+        // Scroll to bottom if user is near bottom OR it's their own message
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+        const isOwnMessage = lastMessage?.userId === user?.data?.id;
+
+        if (isNearBottom || isOwnMessage) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+      // If message added at top (history), do nothing (browser maintains scroll position relative to content usually, or we might need to adjust if it jumps)
+    }
+
+    prevMessagesLengthRef.current = currentLength;
+    prevLastMessageIdRef.current = lastMessageId;
+  }, [messagesOfCurrentChannel, user?.data?.id]);
 
   // Infinite scroll handler
   const handleScroll = useCallback((e) => {
@@ -40,19 +72,13 @@ const ChatMessages = () => {
   }, [isLoading, loadMoreMessages]);
 
   const renderMessage = (message) => {
-    // Debug: Log message structure and user info
-    console.log("🔍 ChatMessages: Rendering message:", message);
-    console.log("🔍 ChatMessages: Message keys:", Object.keys(message || {}));
-    console.log("🔍 ChatMessages: Message type:", message.type);
-    console.log("🔍 ChatMessages: Message userId:", message.userId);
-    console.log("🔍 ChatMessages: User data:", user);
-    console.log("🔍 ChatMessages: User data.id:", user?.data?.id);
-
     const isCurrentUser = user?.data?.id === message.userId;
-    console.log("🔍 ChatMessages: isCurrentUser:", isCurrentUser);
 
     switch (message.type) {
       case "CHAT":
+      case "IMAGE":
+      case "VIDEO":
+      case "FILE":
         return (
           <UserMessage
             key={message.key.messageId}
@@ -61,6 +87,8 @@ const ChatMessages = () => {
             userId={message.userId}
             senderName={message.senderName}
             senderAvatar={message.senderAvatar}
+            type={message.type}
+            status={message.status}
           />
         );
       case "EMOJI":
@@ -88,6 +116,7 @@ const ChatMessages = () => {
             content={message.content}
             isCurrentUser={isCurrentUser}
             userId={message.userId}
+            status={message.status}
           />
         );
     }

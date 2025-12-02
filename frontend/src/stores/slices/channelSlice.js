@@ -209,6 +209,22 @@ const channelSlice = createSlice({
       state.preloadedChannels[channelId] = true;
       console.log(`✅ Channel: Cached ${messages.length} messages for channel ${channelId}`);
     },
+    
+    addPendingMessage: (state, action) => {
+       const message = action.payload;
+       const channelId = message.key.channelId;
+       
+       if (!state.messageCache[channelId]) {
+         state.messageCache[channelId] = [];
+       }
+       state.messageCache[channelId].push(message);
+       
+       const channel = state.channels.find(c => c.id === channelId);
+       if (channel) {
+          if (!channel.messages) channel.messages = [];
+          channel.messages.push(message);
+       }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -438,42 +454,106 @@ const channelSlice = createSlice({
           }
         }
       })
-      .addCase(sendChannelMessage.fulfilled, (state, action) => {
-        const message = action.payload;
-        const channelId = message.key.channelId;
+      .addCase(sendChannelMessage.pending, (state, action) => {
+        const { channelId, content, type, tempId, userId } = action.meta.arg;
         
-        // Add message to channel messages
-        const channelFind = state.channels.find(
-          (item) => item.id == channelId
-        );
-        
-        if (channelFind) {
-          if (!channelFind.messages) {
-            channelFind.messages = [];
-          }
-          channelFind.messages.push(message);
-          console.log("✅ Channel: Message sent and added to channel:", channelId);
-        } else {
-          console.warn("⚠️ Channel: Channel not found for sent message:", channelId);
-        }
-        
-        // Also cache message for real-time UI updates
+        // Create temporary message
+        const tempMessage = {
+          key: {
+            channelId,
+            messageId: tempId, // Use tempId as messageId initially
+            timestamp: new Date().toISOString()
+          },
+          userId: userId || "current-user", 
+          content,
+          type: type || "CHAT",
+          status: "pending",
+          timestamp: new Date().toISOString()
+        };
+
+        // Add to cache immediately if not exists
         if (!state.messageCache[channelId]) {
           state.messageCache[channelId] = [];
         }
-        state.messageCache[channelId].push(message);
         
-        // Sort messages by timestamp (oldest first)
-        state.messageCache[channelId].sort((a, b) => {
-          const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
-          const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
-          return timestampA - timestampB;
-        });
+        const existsInCache = state.messageCache[channelId].some(m => m.key.messageId === tempId);
+        if (!existsInCache) {
+            state.messageCache[channelId].push(tempMessage);
+        }
         
-        console.log("✅ Channel: Message cached for real-time UI:", channelId, "Total cached messages:", state.messageCache[channelId].length);
+        // Add to channel messages if loaded and not exists
+        const channel = state.channels.find(c => c.id === channelId);
+        if (channel && channel.messages) {
+           const existsInChannel = channel.messages.some(m => m.key.messageId === tempId);
+           if (!existsInChannel) {
+               channel.messages.push(tempMessage);
+           }
+        }
+      })
+      .addCase(sendChannelMessage.fulfilled, (state, action) => {
+        const message = action.payload;
+        const channelId = message.key.channelId;
+        const { tempId } = action.meta.arg;
+        
+        // Update cache: Find pending message by tempId and replace/update it
+        if (state.messageCache[channelId]) {
+          const index = state.messageCache[channelId].findIndex(
+            m => m.key.messageId === tempId
+          );
+          
+          if (index !== -1) {
+            // Replace pending message with real message
+            state.messageCache[channelId][index] = {
+              ...message,
+              status: "sent"
+            };
+          } else {
+            // Fallback if not found (shouldn't happen usually)
+            state.messageCache[channelId].push({ ...message, status: "sent" });
+          }
+           // Sort messages by timestamp (oldest first)
+          state.messageCache[channelId].sort((a, b) => {
+            const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+            const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+            return timestampA - timestampB;
+          });
+        }
+
+        // Update channel messages if loaded
+        const channel = state.channels.find(c => c.id === channelId);
+        if (channel && channel.messages) {
+           const index = channel.messages.findIndex(m => m.key.messageId === tempId);
+           if (index !== -1) {
+             channel.messages[index] = { ...message, status: "sent" };
+           } else {
+             channel.messages.push({ ...message, status: "sent" });
+           }
+        }
+        
+        console.log("✅ Channel: Message sent and updated in cache:", channelId);
       })
       .addCase(sendChannelMessage.rejected, (state, action) => {
         console.error("❌ Channel: Failed to send message:", action.error);
+        const { channelId, tempId } = action.meta.arg;
+        
+        // Mark message as failed in cache
+        if (state.messageCache[channelId]) {
+          const index = state.messageCache[channelId].findIndex(
+            m => m.key.messageId === tempId
+          );
+          if (index !== -1) {
+            state.messageCache[channelId][index].status = "failed";
+          }
+        }
+        
+        // Mark message as failed in channel messages
+        const channel = state.channels.find(c => c.id === channelId);
+        if (channel && channel.messages) {
+           const index = channel.messages.findIndex(m => m.key.messageId === tempId);
+           if (index !== -1) {
+             channel.messages[index].status = "failed";
+           }
+        }
       })
       .addCase(fetchDeleteChannel.fulfilled, (state, action) => {
         state.loading = false;
@@ -503,5 +583,6 @@ export const {
   receiveMessage,
   receiveChannelAddedNotification,
   cacheChannelMessages,
+  addPendingMessage,
 } = channelSlice.actions;
 export default channelSlice.reducer;
