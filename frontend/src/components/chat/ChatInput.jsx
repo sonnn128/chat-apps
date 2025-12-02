@@ -63,10 +63,13 @@ const ChatInput = () => {
 
     // 2. Upload and send files
     if (selectedFiles.length > 0) {
+      const filesToProcess = [...selectedFiles];
+      setSelectedFiles([]); // Clear UI immediately
+
       const mediaService = (await import("@/services/mediaService")).default;
 
       // Process files sequentially or parallel
-      for (const fileObj of selectedFiles) {
+      for (const fileObj of filesToProcess) {
         try {
           // Create a tempId for the file message
           const tempId = crypto.randomUUID();
@@ -119,7 +122,6 @@ const ChatInput = () => {
           console.error("Failed to upload file:", fileObj.file.name, error);
         }
       }
-      setSelectedFiles([]);
     }
   };
 

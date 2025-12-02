@@ -2,11 +2,12 @@ import { useSelector } from "react-redux";
 import ChannelMembers from "../ChannelMembers";
 import React, { useState } from "react";
 import { Avatar } from "antd";
-import { User, Bell, Search, ChevronRight, Lock, UserPlus } from "lucide-react";
+import { User, Bell, Search, ChevronRight, Lock, UserPlus, Edit3, Image as ImageIcon, Palette, Smile, Type } from "lucide-react";
 
 const ChatInfoSidebar = () => {
   const { currentChannel, channels } = useSelector((state) => state.channel);
   const [showMembers, setShowMembers] = useState(false);
+  const [showCustomizeChat, setShowCustomizeChat] = useState(false);
 
   const menuItems = [
     { label: "Chat info", key: "chatInfo" },
@@ -25,6 +26,8 @@ const ChatInfoSidebar = () => {
   const handleMenuItemClick = (key) => {
     if (key === "chatMembers") {
       setShowMembers(!showMembers);
+    } else if (key === "customizeChat") {
+      setShowCustomizeChat(!showCustomizeChat);
     } else {
       console.log(`Clicked on: ${key}`);
     }
@@ -72,10 +75,13 @@ const ChatInfoSidebar = () => {
                 className="w-full flex justify-between items-center p-3 hover:bg-gray-100 rounded-lg"
               >
                 <h2 className="text-sm font-semibold">{item.label}</h2>
-                {item.key === "chatMembers" ? (
+                {item.key === "chatMembers" || item.key === "customizeChat" ? (
                   <ChevronRight
                     size={20}
-                    className={`text-gray-400 transform transition-transform ${showMembers ? "rotate-90" : ""
+                    className={`text-gray-400 transform transition-transform ${(item.key === "chatMembers" && showMembers) ||
+                        (item.key === "customizeChat" && showCustomizeChat)
+                        ? "rotate-90"
+                        : ""
                       }`}
                   />
                 ) : (
@@ -84,6 +90,31 @@ const ChatInfoSidebar = () => {
               </button>
 
               {item.key === "chatMembers" && showMembers && <ChannelMembers />}
+
+              {item.key === "customizeChat" && showCustomizeChat && (
+                <div className="pl-4 pr-2 pb-2">
+                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                    <Edit3 size={18} className="text-gray-500" />
+                    <span>Change chat name</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                    <ImageIcon size={18} className="text-gray-500" />
+                    <span>Change photo</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                    <Palette size={18} className="text-gray-500" />
+                    <span>Change theme</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                    <Smile size={18} className="text-gray-500" />
+                    <span>Change emoji</span>
+                  </button>
+                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                    <Type size={18} className="text-gray-500" />
+                    <span>Edit nicknames</span>
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

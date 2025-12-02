@@ -6,7 +6,7 @@ import ReactionPicker from "../ReactionPicker";
 import PropTypes from "prop-types";
 import { useUserInfo } from "@/hooks/useUserInfo";
 
-const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar, type = "CHAT", status = "sent" }) => {
+const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar, type = "CHAT", status = "sent", timestamp, isLastMessage }) => {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
 
@@ -99,10 +99,12 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
         )}
         <div className={`flex items-end gap-2 group ${isCurrentUser ? "flex-row-reverse" : ""}`}>
           <div
-            className={`${isCurrentUser
-                ? "bg-blue-500 text-white"
-                : "bg-[#8e5cff] text-white"
-              } p-2 rounded-2xl max-w-xs user-message`}
+            className={`${["IMAGE", "VIDEO"].includes(type)
+              ? ""
+              : isCurrentUser
+                ? "bg-blue-500 text-white p-2"
+                : "bg-[#8e5cff] text-white p-2"
+              } rounded-2xl max-w-xs user-message`}
             style={{
               borderTopLeftRadius: isCurrentUser ? 16 : 4,
               borderTopRightRadius: isCurrentUser ? 4 : 16,
@@ -135,6 +137,12 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
             </Tooltip>
           </div>
         </div>
+        {/* Status Text */}
+        {isCurrentUser && (status === "pending" || (status === "sent" && isLastMessage)) && (
+          <div className="text-xs text-gray-400 mt-1 mr-1">
+            {status === "pending" ? "Sending..." : "Sent"}
+          </div>
+        )}
       </div>
 
       <ReactionPicker
@@ -155,6 +163,8 @@ UserMessage.propTypes = {
   senderAvatar: PropTypes.string,
   type: PropTypes.string,
   status: PropTypes.string,
+  timestamp: PropTypes.string,
+  isLastMessage: PropTypes.bool,
 };
 
 export default UserMessage;

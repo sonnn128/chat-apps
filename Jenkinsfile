@@ -8,13 +8,10 @@ pipeline {
     }
 
     environment {
-        // Docker Hub Config
         DOCKERHUB_CREDENTIALS_ID = 'dockerhub-creds'
         DOCKERHUB_USERNAME = 'sonta28122004'
         
-        // Deploy Config
         DEPLOY_DIR = '/home/jenkins/chatapps' // Hoặc thư mục home của user chạy agent
-        
         VITE_REACT_APP_BASE_URL = 'http://34.158.40.253:8888'
     }
 

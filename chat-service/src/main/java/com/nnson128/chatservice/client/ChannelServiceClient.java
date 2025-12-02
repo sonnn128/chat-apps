@@ -33,4 +33,7 @@ public interface ChannelServiceClient {
     ApiResponse<Map<String, Object>> addPeopleToChannel(@PathVariable("channelId") UUID channelId,
                                                         @RequestBody Map<String, Object> request);
 
+    @PostMapping("/direct")
+    ApiResponse<Map<String, Object>> createDirectChannel(@RequestBody Map<String, Object> request);
+
 }

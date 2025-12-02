@@ -71,7 +71,7 @@ const ChatMessages = () => {
     }
   }, [isLoading, loadMoreMessages]);
 
-  const renderMessage = (message) => {
+  const renderMessage = (message, isLastMessage) => {
     const isCurrentUser = user?.data?.id === message.userId;
 
     switch (message.type) {
@@ -89,6 +89,8 @@ const ChatMessages = () => {
             senderAvatar={message.senderAvatar}
             type={message.type}
             status={message.status}
+            timestamp={message.timestamp || message.key.timestamp}
+            isLastMessage={isLastMessage}
           />
         );
       case "EMOJI":
@@ -100,6 +102,7 @@ const ChatMessages = () => {
             userId={message.userId}
             senderName={message.senderName}
             senderAvatar={message.senderAvatar}
+            timestamp={message.timestamp || message.key.timestamp}
           />
         );
       case "NOTICE":
@@ -117,6 +120,8 @@ const ChatMessages = () => {
             isCurrentUser={isCurrentUser}
             userId={message.userId}
             status={message.status}
+            timestamp={message.timestamp || message.key.timestamp}
+            isLastMessage={isLastMessage}
           />
         );
     }
@@ -152,7 +157,7 @@ const ChatMessages = () => {
       )}
 
       <div className="flex flex-col gap-2">
-        {messagesOfCurrentChannel.map((message) => renderMessage(message))}
+        {messagesOfCurrentChannel.map((message, index) => renderMessage(message, index === messagesOfCurrentChannel.length - 1))}
         <div ref={messagesEndRef} />
       </div>
     </div>
