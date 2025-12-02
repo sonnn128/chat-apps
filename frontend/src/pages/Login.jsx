@@ -27,6 +27,7 @@ function Login() {
   const [form] = Form.useForm(); // Optional: if you need to interact with form instance
 
   const handleSubmit = async (values) => {
+    setIsLoading(true);
     try {
       console.log("🔐 Login: Attempting to login...");
       const result = await dispatch(
@@ -36,15 +37,21 @@ function Login() {
       if (result) {
         console.log("✅ Login: Login successful, loading channels...");
         successToast("Log in successfully");
-        
+
         // Load channels after successful login
-        await dispatch(fetchAllChannels());
-        console.log("✅ Login: Channels loaded successfully");
-        
+        await Promise.all([
+          dispatch(fetchAllChannels()).unwrap(),
+          dispatch(fetchFriendList()).unwrap(),
+          dispatch(fetchPendingRequests()).unwrap()
+        ]);
+        console.log("✅ Login: Initial data loaded successfully");
+
         navigate("/");
       }
     } catch (error) {
       console.error("❌ Login: Login failed:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +102,7 @@ function Login() {
               placeholder="Enter your password"
               disabled={isLoading}
               autoComplete="current-password"
-              // iconRender is handled by Input.Password by default
+            // iconRender is handled by Input.Password by default
             />
           </Form.Item>
 

@@ -3,6 +3,7 @@ package com.nnson128.relationshipservice.dto.response;
 import com.nnson128.chatapps_base.dto.res.UserResponse;
 import com.nnson128.relationshipservice.dto.message.ChannelMessageDto;
 import com.nnson128.relationshipservice.model.channel.Channel;
+import com.nnson128.relationshipservice.model.membership.MembershipRole;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,8 +20,9 @@ public class ChannelResponse {
     private LocalDateTime createdAt;
     private List<ChannelMessageDto> messages; // Messages from chat-service
     private List<UUID> memberIds; // Member IDs
-    private List<UserResponse> participants; // Detailed participant info
+    private List<ChannelParticipantResponse> participants; // Detailed participant info
     private ChannelMessageDto message; // Notice message for channel creation
+    private MembershipRole role; // Current user's role in the channel
 
     public static ChannelResponse from(Channel channel) {
         return ChannelResponse.builder()
@@ -28,7 +30,7 @@ public class ChannelResponse {
                 .channelName(channel.getChannelName())
                 .createdAt(channel.getCreatedAt())
                 .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list
-                .memberIds(List.of()) // Initialize empty memberIds list
+                .memberIds(List.<UUID>of()) // Initialize empty memberIds list
                 .build();
     }
 

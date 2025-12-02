@@ -106,7 +106,10 @@ const channelSlice = createSlice({
           channelFind.messages = [];
         }
         // Check if message already exists (deduplication)
-        const messageExists = channelFind.messages.some(msg => msg.key.messageId === messageId);
+        const messageExists = channelFind.messages.some(msg => {
+            const msgId = msg.key?.messageId || msg.id;
+            return msgId === messageId;
+        });
         if (!messageExists) {
           channelFind.messages.push(messageWithSender);
           console.log("✅ Channel: Message added to channel", channelId, "Total messages:", channelFind.messages.length);
@@ -161,7 +164,7 @@ const channelSlice = createSlice({
       console.log("📨 ChannelSlice: Received channel added notification:", event);
       
       // Create new channel object for the added user
-      const newChannel = {
+      const newChannelData = {
         id: event.channelId,
         channelName: event.channelName,
         createdAt: event.addedAt,
@@ -180,13 +183,22 @@ const channelSlice = createSlice({
         isNewChannel: true // Flag to show notification
       };
       
-      // Add to channels list if not already there
-      const existingChannel = state.channels.find(ch => ch.id === event.channelId);
-      if (!existingChannel) {
-        state.channels.push(newChannel);
+      // Add to channels list if not already there, OR update if it exists (placeholder)
+      const existingChannelIndex = state.channels.findIndex(ch => ch.id === event.channelId);
+      
+      if (existingChannelIndex === -1) {
+        state.channels.push(newChannelData);
         console.log("✅ ChannelSlice: Added new channel from notification:", event.channelId);
       } else {
-        console.log("ℹ️ ChannelSlice: Channel already exists, skipping:", event.channelId);
+        console.log("ℹ️ ChannelSlice: Channel already exists, updating with full data:", event.channelId);
+        const existingChannel = state.channels[existingChannelIndex];
+        
+        // Update properties
+        existingChannel.channelName = newChannelData.channelName;
+        existingChannel.createdAt = newChannelData.createdAt;
+        existingChannel.memberIds = newChannelData.memberIds;
+        existingChannel.participants = newChannelData.participants;
+        // Keep existing messages (e.g. the notice message that arrived earlier)
       }
     },
     
@@ -321,6 +333,7 @@ const channelSlice = createSlice({
         console.log("✅ Channel: People added to channel successfully:", action.payload);
         
         const responseData = action.payload.data;
+        const noticeMessage = responseData.message;
         
         // Update participants in current channel if it matches
         if (state.currentChannel && responseData.channelId === state.currentChannel.id) {
@@ -342,27 +355,50 @@ const channelSlice = createSlice({
           }
           
           // Add notice message to current channel messages
-          if (responseData.message) {
+          if (noticeMessage) {
             if (!state.currentChannel.messages) {
               state.currentChannel.messages = [];
             }
-            state.currentChannel.messages.push(responseData.message);
-            console.log("✅ Channel: Added notice message to current channel");
+            
+            // Check for duplicates
+            const messageExists = state.currentChannel.messages.some(
+                msg => {
+                    const msgId = msg.key?.messageId || msg.id;
+                    const noticeId = noticeMessage.key?.messageId || noticeMessage.id;
+                    return msgId === noticeId;
+                }
+            );
+            
+            if (!messageExists) {
+                state.currentChannel.messages.push(noticeMessage);
+                console.log("✅ Channel: Added notice message to current channel");
+            } else {
+                console.log("ℹ️ Channel: Notice message already exists in current channel, skipping");
+            }
             
             // Also cache notice message for real-time UI updates
             if (!state.messageCache[responseData.channelId]) {
               state.messageCache[responseData.channelId] = [];
             }
-            state.messageCache[responseData.channelId].push(responseData.message);
             
-            // Sort messages by timestamp (oldest first)
-            state.messageCache[responseData.channelId].sort((a, b) => {
-              const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
-              const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
-              return timestampA - timestampB;
-            });
+            const cacheExists = state.messageCache[responseData.channelId].some(
+                msg => msg.key?.messageId === noticeMessage.key?.messageId
+            );
             
-            console.log("✅ Channel: Notice message cached for real-time UI:", responseData.channelId, "Total cached messages:", state.messageCache[responseData.channelId].length);
+            if (!cacheExists) {
+                state.messageCache[responseData.channelId].push(noticeMessage);
+                
+                // Sort messages by timestamp (oldest first)
+                state.messageCache[responseData.channelId].sort((a, b) => {
+                  const timestampA = new Date(a.timestamp || a.key?.timestamp || 0).getTime();
+                  const timestampB = new Date(b.timestamp || b.key?.timestamp || 0).getTime();
+                  return timestampA - timestampB;
+                });
+                
+                console.log("✅ Channel: Notice message cached for real-time UI:", responseData.channelId, "Total cached messages:", state.messageCache[responseData.channelId].length);
+            } else {
+                console.log("ℹ️ Channel: Notice message already cached, skipping");
+            }
           }
         }
         
@@ -386,12 +422,19 @@ const channelSlice = createSlice({
           }
           
           // Add notice message to channel messages
-          if (responseData.message) {
+          if (noticeMessage) {
             if (!state.channels[channelIndex].messages) {
               state.channels[channelIndex].messages = [];
             }
-            state.channels[channelIndex].messages.push(responseData.message);
-            console.log("✅ Channel: Added notice message to channel in list");
+            
+            const listMessageExists = state.channels[channelIndex].messages.some(
+                msg => msg.key?.messageId === noticeMessage.key?.messageId
+            );
+            
+            if (!listMessageExists) {
+                state.channels[channelIndex].messages.push(noticeMessage);
+                console.log("✅ Channel: Added notice message to channel in list");
+            }
           }
         }
       })
@@ -434,15 +477,16 @@ const channelSlice = createSlice({
       })
       .addCase(fetchDeleteChannel.fulfilled, (state, action) => {
         state.loading = false;
+        const deletedChannelId = action.meta.arg; // channelId passed to the thunk
         state.channels = state.channels.filter(
-          (channel) => channel.id !== action.payload.data
+          (channel) => channel.id !== deletedChannelId
         );
-        if (state.currentChannelId === action.payload) {
+        if (state.currentChannelId === deletedChannelId) {
           state.currentChannelId = null;
           state.currentChannel = null;
+          state.messagesOfCurrentChannel = [];
         }
-        state.currentChannelId = null;
-        state.currentChannel = null;
+        console.log("✅ Channel: Channel deleted successfully:", deletedChannelId);
       })
       ;
   },

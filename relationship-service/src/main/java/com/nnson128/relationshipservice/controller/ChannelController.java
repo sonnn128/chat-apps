@@ -114,4 +114,18 @@ public class ChannelController {
                 .build();
         return ResponseEntity.ok().body(response);
     }
+    @DeleteMapping("/{channelId}")
+    public ResponseEntity<ApiResponse<Void>> deleteChannel(
+            @PathVariable UUID channelId,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        channelService.deleteChannel(channelId, userId);
+        
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .success(true)
+                .message("Channel deleted successfully")
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
 }

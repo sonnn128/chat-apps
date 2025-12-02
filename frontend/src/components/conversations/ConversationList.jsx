@@ -1,10 +1,22 @@
 import React from "react";
-import { List, Avatar, Typography } from "antd";
+import { List, Avatar, Typography, Dropdown, Button } from "antd";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { setCurrentFriend, removeCurrentFriend } from "@/stores/slices/friendshipSlice";
-import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
+import { fetchGetOrCreateDirectChannel, fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
+import {
+  MoreOutlined,
+  MailOutlined,
+  BellOutlined,
+  UserOutlined,
+  PhoneOutlined,
+  VideoCameraOutlined,
+  StopOutlined,
+  InboxOutlined,
+  DeleteOutlined,
+  WarningOutlined
+} from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -30,6 +42,79 @@ const ConversationList = ({ channels = [], friends = [] }) => {
     }
   };
 
+  // Menu items for channel options
+  const getChannelMenuItems = (channel) => {
+    const items = [
+      {
+        key: 'mark_unread',
+        label: 'Mark as unread',
+        icon: <MailOutlined />,
+        onClick: () => console.log('Mark as unread', channel.id),
+      },
+      {
+        key: 'mute',
+        label: 'Mute notifications',
+        icon: <BellOutlined />,
+        onClick: () => console.log('Mute notifications', channel.id),
+      },
+      {
+        key: 'view_profile',
+        label: 'View profile',
+        icon: <UserOutlined />,
+        onClick: () => console.log('View profile', channel.id),
+      },
+      { type: 'divider' },
+      {
+        key: 'audio_call',
+        label: 'Audio call',
+        icon: <PhoneOutlined />,
+        onClick: () => console.log('Audio call', channel.id),
+      },
+      {
+        key: 'video_chat',
+        label: 'Video chat',
+        icon: <VideoCameraOutlined />,
+        onClick: () => console.log('Video chat', channel.id),
+      },
+      { type: 'divider' },
+      {
+        key: 'block',
+        label: 'Block',
+        icon: <StopOutlined />,
+        onClick: () => console.log('Block', channel.id),
+      },
+      {
+        key: 'archive',
+        label: 'Archive chat',
+        icon: <InboxOutlined />,
+        onClick: () => console.log('Archive chat', channel.id),
+      },
+      {
+        key: 'report',
+        label: 'Report',
+        icon: <WarningOutlined />,
+        onClick: () => console.log('Report', channel.id),
+      },
+    ];
+
+    // Only show delete option for ADMIN
+    if (channel.role === 'ADMIN') {
+      items.splice(items.length - 1, 0, {
+        key: 'delete',
+        label: 'Delete chat',
+        icon: <DeleteOutlined />,
+        danger: true,
+        onClick: () => {
+          if (window.confirm("Are you sure you want to delete this channel?")) {
+            dispatch(fetchDeleteChannel(channel.id));
+          }
+        },
+      });
+    }
+
+    return items;
+  };
+
   // merge lists: channels first, then friends (friends appear as pseudo-channels)
   const items = [
     ...(channels || []).map((ch) => ({ type: "channel", key: ch.id, data: ch })),
@@ -49,13 +134,38 @@ const ConversationList = ({ channels = [], friends = [] }) => {
 
             return (
               <motion.div key={item.key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <List.Item onClick={() => onSelectChannel(ch)} className="rounded-lg px-2 py-2 hover:bg-gray-100 cursor-pointer">
-                  <List.Item.Meta
-                    avatar={<Avatar size={36}>{(ch.channelName || "#")[0]}</Avatar>}
-                    title={<Text style={{ fontWeight: 500 }}>{ch.channelName || "Channel"}</Text>}
-                    description={<Text type="secondary">{memberText}</Text>}
-                  />
-                </List.Item>
+                <div
+                  className="group relative rounded-lg px-2 py-2 hover:bg-gray-100 cursor-pointer flex items-center justify-between"
+                  onClick={() => onSelectChannel(ch)}
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar size={36}>{(ch.channelName || "#")[0]}</Avatar>
+                    <div className="flex flex-col overflow-hidden">
+                      <Text style={{ fontWeight: 500 }} ellipsis>{ch.channelName || "Channel"}</Text>
+                      <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>{memberText}</Text>
+                    </div>
+                  </div>
+
+                  {/* Options Menu Trigger - Visible on Hover */}
+                  <div
+                    className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 bg-gray-100 rounded-full shadow-sm"
+                    onClick={(e) => e.stopPropagation()} // Prevent triggering item click
+                  >
+                    <Dropdown
+                      menu={{ items: getChannelMenuItems(ch) }}
+                      trigger={['click']}
+                      placement="bottomRight"
+                    >
+                      <Button
+                        type="text"
+                        shape="circle"
+                        icon={<MoreOutlined rotate={90} />}
+                        size="small"
+                        className="flex items-center justify-center bg-white hover:bg-gray-200 border border-gray-200"
+                      />
+                    </Dropdown>
+                  </div>
+                </div>
               </motion.div>
             );
           }

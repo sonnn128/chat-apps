@@ -1,6 +1,5 @@
 package com.nnson128.relationshipservice.dto.response;
 
-import com.nnson128.chatapps_base.dto.res.UserResponse;
 import com.nnson128.relationshipservice.dto.message.ChannelMessageDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +16,6 @@ import java.util.UUID;
 public class AddPeopleResponse {
     private UUID channelId;
     private String channelName;
-    private List<UserResponse> newMembers;
+    private List<ChannelParticipantResponse> newMembers;
     private ChannelMessageDto message;
 }

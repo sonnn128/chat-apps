@@ -13,6 +13,7 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
     List<Membership> findByMembershipKeyUserId(UUID userId);
     List<Membership> findByMembershipKeyChannelId(UUID channelId);
     boolean existsByMembershipKeyChannelIdAndMembershipKeyUserId(UUID channelId, UUID userId);
+    java.util.Optional<Membership> findByMembershipKeyChannelIdAndMembershipKeyUserId(UUID channelId, UUID userId);
 
     @org.springframework.data.jpa.repository.Query("SELECT m1.membershipKey.channelId FROM Membership m1 " +
            "JOIN Membership m2 ON m1.membershipKey.channelId = m2.membershipKey.channelId " +

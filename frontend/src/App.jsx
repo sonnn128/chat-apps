@@ -25,11 +25,18 @@ function App() {
     const fetchProfile = async () => {
       if (token) {
         setIsLoading(true);
-        await dispatch(fetchUserProfile());
-        dispatch(fetchAllChannels());
-        dispatch(fetchFriendList());
-        dispatch(fetchPendingRequests());
-        setIsLoading(false);
+        try {
+          await dispatch(fetchUserProfile()).unwrap();
+          await Promise.all([
+            dispatch(fetchAllChannels()).unwrap(),
+            dispatch(fetchFriendList()).unwrap(),
+            dispatch(fetchPendingRequests()).unwrap()
+          ]);
+        } catch (error) {
+          console.error("Failed to load initial data:", error);
+        } finally {
+          setIsLoading(false);
+        }
       }
     };
     fetchProfile();

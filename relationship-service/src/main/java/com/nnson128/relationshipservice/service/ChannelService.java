@@ -7,6 +7,7 @@ import com.nnson128.relationshipservice.dto.request.SendMessageRequest;
 import com.nnson128.relationshipservice.dto.message.ChannelMessageDto;
 import com.nnson128.relationshipservice.dto.response.ChannelResponse;
 import com.nnson128.chatapps_base.dto.res.UserResponse;
+import com.nnson128.relationshipservice.dto.response.ChannelParticipantResponse;
 import com.nnson128.relationshipservice.dto.response.AddPeopleResponse;
 import com.nnson128.relationshipservice.exception.ChannelNotFoundException;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
@@ -29,6 +30,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +59,7 @@ public class ChannelService {
                         .userId(creatorId)
                         .build())
                 .role(MembershipRole.ADMIN)
+                .joinedAt(LocalDateTime.now())
                 .build());
 
         // 4. create notice message for immediate response to sender
@@ -80,7 +83,7 @@ public class ChannelService {
         produceNewChannelEvent(savedChannel, creatorId, memberIds);
 
         // 6. Get detailed user info for the creator
-        List<UserResponse> participants = getDetailedUserInfo(memberIds);
+        List<ChannelParticipantResponse> participants = getChannelParticipants(savedChannel.getId(), memberIds);
 
         // 7. return response with notice message (sender gets message immediately via HTTP)
         return ChannelResponse.builder()
@@ -123,7 +126,7 @@ public class ChannelService {
         return noticeMessage;
     }
 
-    private ChannelMessageDto createAddPeopleNoticeMessage(Channel channel, UUID addedByUserId, List<UserResponse> newMembers) {
+    private ChannelMessageDto createAddPeopleNoticeMessage(Channel channel, UUID addedByUserId, List<ChannelParticipantResponse> newMembers) {
         // Generate message ID
         UUID messageId = UUID.randomUUID();
 
@@ -156,7 +159,7 @@ public class ChannelService {
         return noticeMessage;
     }
 
-    private void produceAddPeopleEvent(Channel channel, UUID addedByUserId, List<UUID> newMemberIds, List<UserResponse> newMembers) {
+    private void produceAddPeopleEvent(Channel channel, UUID addedByUserId, List<UUID> newMemberIds, List<ChannelParticipantResponse> newMembers) {
         // Get added by user name
         String addedByUserName = "A user";
         try {
@@ -227,7 +230,11 @@ public class ChannelService {
                 .map(membership -> {
                     UUID channelId = membership.getMembershipKey().getChannelId();
                     return channelRepository.findById(channelId)
-                            .map(ChannelResponse::from)
+                            .map(channel -> {
+                                ChannelResponse response = ChannelResponse.from(channel);
+                                response.setRole(membership.getRole());
+                                return response;
+                            })
                             .orElse(null);
                 })
                 .filter(Objects::nonNull)
@@ -243,6 +250,13 @@ public class ChannelService {
         List<UUID> channelIds = memberships.stream()
                 .map(membership -> membership.getMembershipKey().getChannelId())
                 .collect(Collectors.toList());
+
+        // Map channelId to role
+        Map<UUID, MembershipRole> channelRoles = memberships.stream()
+                .collect(Collectors.toMap(
+                        m -> m.getMembershipKey().getChannelId(),
+                        Membership::getRole
+                ));
 
         // Get all channels
         List<Channel> channels = channelRepository.findAllById(channelIds);
@@ -263,7 +277,7 @@ public class ChannelService {
                     List<UUID> channelMembers = memberIdsMap.getOrDefault(channel.getId(), List.of());
 
                     // Get detailed user info for participants
-                    List<UserResponse> participants = getDetailedUserInfo(channelMembers);
+                    List<ChannelParticipantResponse> participants = getChannelParticipants(channel.getId(), channelMembers);
 
                     return ChannelResponse.builder()
                             .id(channel.getId())
@@ -272,11 +286,37 @@ public class ChannelService {
                             .messages(channelMessages)
                             .memberIds(channelMembers)
                             .participants(participants)
+                            .role(channelRoles.get(channel.getId()))
                             .build();
                 })
                 .collect(Collectors.toList());
 
         return channelResponses;
+    }
+
+    public void deleteChannel(UUID channelId, UUID requesterId) {
+        // 1. Check if channel exists
+        if (!channelRepository.existsById(channelId)) {
+            throw new ChannelNotFoundException("Channel not found with id: " + channelId);
+        }
+
+        // 2. Check if requester is ADMIN
+        Membership membership = membershipRepository.findByMembershipKeyChannelIdAndMembershipKeyUserId(channelId, requesterId)
+                .orElseThrow(() -> new RuntimeException("User is not a member of this channel"));
+
+        if (membership.getRole() != MembershipRole.ADMIN) {
+            throw new RuntimeException("Only ADMIN can delete the channel");
+        }
+
+        // 3. Delete all memberships
+        List<Membership> memberships = membershipRepository.findByMembershipKeyChannelId(channelId);
+        membershipRepository.deleteAll(memberships);
+
+        // 4. Delete channel
+        channelRepository.deleteById(channelId);
+
+        // 5. Publish event
+        // TODO: Publish CHANNEL_DELETED event
     }
 
     public boolean isUserParticipant(UUID channelId, UUID userId) {
@@ -382,13 +422,15 @@ public class ChannelService {
         membershipRepository.saveAll(newMemberships);
 
         // Get detailed user info for new members
-        List<UserResponse> newMembers = getDetailedUserInfo(newMemberIds);
-
-        // Create notice message for immediate response to sender
-        ChannelMessageDto noticeMessage = createAddPeopleNoticeMessage(channel, addedByUserId, newMembers);
+        List<ChannelParticipantResponse> newMembers = getChannelParticipants(channelId, newMemberIds);
 
         // Send notification message and real-time event
-        sendMembersAddedNotification(channelId, addedByUserId, newMemberIds, channel.getChannelName());
+        ChannelMessageDto noticeMessage = sendMembersAddedNotification(channelId, addedByUserId, newMemberIds, channel.getChannelName());
+
+        // Fallback if noticeMessage is null (e.g. service down)
+        if (noticeMessage == null) {
+            noticeMessage = createAddPeopleNoticeMessage(channel, addedByUserId, newMembers);
+        }
 
         // Publish event for chat service to save notice message
         produceAddPeopleEvent(channel, addedByUserId, newMemberIds, newMembers);
@@ -401,7 +443,7 @@ public class ChannelService {
                 .build();
     }
 
-    private void sendMembersAddedNotification(UUID channelId, UUID addedByUserId, List<UUID> newMemberIds, String channelName) {
+    private ChannelMessageDto sendMembersAddedNotification(UUID channelId, UUID addedByUserId, List<UUID> newMemberIds, String channelName) {
         try {
             // Get user info for the person who added members
             UserResponse addedByResponse = userServiceClient.getUserById(addedByUserId);
@@ -447,49 +489,68 @@ public class ChannelService {
 
             try {
                 ChannelMessageDto response = chatServiceClient.sendMessage(addedByUserId, messageRequest);
-                if (response != null) {
-                } else {
-                }
+                return response;
             } catch (Exception e) {
+                return null;
             }
 
             // Event is already sent by produceAddPeopleEvent()
 
         } catch (Exception e) {
+            return null;
         }
     }
 
     /**
      * Get detailed user information for a list of user IDs
      */
-    private List<UserResponse> getDetailedUserInfo(List<UUID> userIds) {
+    /**
+     * Get detailed user information for a list of user IDs with roles for a specific channel
+     */
+    private List<ChannelParticipantResponse> getChannelParticipants(UUID channelId, List<UUID> userIds) {
         if (userIds == null || userIds.isEmpty()) {
             return List.of();
         }
 
         try {
+            // Get memberships for roles
+            List<Membership> memberships = membershipRepository.findByMembershipKeyChannelId(channelId);
+            Map<UUID, MembershipRole> roleMap = memberships.stream()
+                    .collect(Collectors.toMap(
+                            m -> m.getMembershipKey().getUserId(),
+                            Membership::getRole
+                    ));
+
             // Call user-service to get detailed user info
-            List<UserResponse> users = new ArrayList<>();
+            List<ChannelParticipantResponse> participants = new ArrayList<>();
             for (UUID userId : userIds) {
                 try {
                     UserResponse userResponse = userServiceClient.getUserById(userId);
                     if (userResponse != null) {
-                        users.add(userResponse);
+                        participants.add(ChannelParticipantResponse.builder()
+                                .userId(userResponse.getId())
+                                .firstname(userResponse.getFirstname())
+                                .lastname(userResponse.getLastname())
+                                .email(userResponse.getEmail())
+                                .avatarUrl(userResponse.getAvatarUrl())
+                                .role(roleMap.getOrDefault(userId, MembershipRole.MEMBER))
+                                .build());
                     }
                 } catch (Exception e) {
                     // Create a fallback user response
-                    users.add(UserResponse.builder()
-                            .id(userId)
+                    participants.add(ChannelParticipantResponse.builder()
+                            .userId(userId)
                             .firstname("User")
                             .lastname(userId.toString().substring(0, 8))
                             .email(userId.toString().substring(0, 8) + "@example.com")
                             .avatarUrl(null)
+                            .role(roleMap.getOrDefault(userId, MembershipRole.MEMBER))
                             .build());
                 }
             }
-            return users;
+            return participants;
         } catch (Exception e) {
-            return List.of();
+            return java.util.Collections.emptyList();
         }
     }
 
@@ -504,7 +565,7 @@ public class ChannelService {
             // Get messages and members
             List<ChannelMessageDto> messages = chatServiceClient.getChannelMessages(channelId);
             List<UUID> memberIds = List.of(user1, user2);
-            List<UserResponse> participants = getDetailedUserInfo(memberIds);
+            List<ChannelParticipantResponse> participants = getChannelParticipants(channelId, memberIds);
 
             return ChannelResponse.builder()
                     .id(channel.getId())
@@ -537,7 +598,7 @@ public class ChannelService {
 
         // 4. Return response
         List<UUID> memberIds = List.of(user1, user2);
-        List<UserResponse> participants = getDetailedUserInfo(memberIds);
+        List<ChannelParticipantResponse> participants = getChannelParticipants(savedChannel.getId(), memberIds);
 
         return ChannelResponse.builder()
                 .id(savedChannel.getId())
@@ -550,3 +611,4 @@ public class ChannelService {
     }
 
 }
+
