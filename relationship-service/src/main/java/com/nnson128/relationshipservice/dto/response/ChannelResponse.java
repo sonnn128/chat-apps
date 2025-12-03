@@ -16,6 +16,7 @@ import java.util.UUID;
 public class ChannelResponse {
     private UUID id;
     private String channelName;
+    private String avatar;
     private UUID createdBy;
     private LocalDateTime createdAt;
     private List<ChannelMessageDto> messages; // Messages from chat-service
@@ -28,6 +29,7 @@ public class ChannelResponse {
         return ChannelResponse.builder()
                 .id(channel.getId())
                 .channelName(channel.getChannelName())
+                .avatar(channel.getAvatar())
                 .createdAt(channel.getCreatedAt())
                 .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list
                 .memberIds(List.<UUID>of()) // Initialize empty memberIds list
@@ -38,6 +40,7 @@ public class ChannelResponse {
         return ChannelResponse.builder()
                 .id(channelResponse.getId())
                 .channelName(channelResponse.getChannelName())
+                .avatar(channelResponse.getAvatar())
                 .createdBy(channelResponse.getCreatedBy())
                 .createdAt(channelResponse.getCreatedAt())
                 .messages(channelResponse.getMessages())

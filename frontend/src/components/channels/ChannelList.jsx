@@ -45,7 +45,7 @@ const StyledListItem = styled(List.Item)`
 function ChannelList({ channels }) {
   const dispatch = useDispatch();
   const { channels: storeChannels, currentChannelId, status, error } = useSelector((state) => state.channel);
-  
+
   // Use prop channels if provided, otherwise use store channels
   const channelsToRender = channels || storeChannels;
 
@@ -90,7 +90,7 @@ function ChannelList({ channels }) {
   const handleDeleteChannelConfirm = () => {
     if (selectedChannelToDelete) {
       console.log(`Deleting channel: ${selectedChannelToDelete.id}`);
-      
+
       dispatch(fetchDeleteChannel(selectedChannelToDelete.id));
     }
     setIsDeleteChannelModalVisible(false);
@@ -180,7 +180,7 @@ function ChannelList({ channels }) {
               style={{ flexGrow: 1, display: "flex", alignItems: "center" }}
             >
               <List.Item.Meta
-                avatar={<Avatar>{channel.channelName[0]}</Avatar>}
+                avatar={<Avatar src={channel.avatar}>{channel.channelName ? channel.channelName[0] : "C"}</Avatar>}
                 title={channel.channelName}
                 description={`Created: ${new Date(
                   channel.createdAt

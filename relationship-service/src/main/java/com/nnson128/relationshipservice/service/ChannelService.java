@@ -89,6 +89,7 @@ public class ChannelService {
         return ChannelResponse.builder()
                 .id(savedChannel.getId())
                 .channelName(savedChannel.getChannelName())
+                .avatar(savedChannel.getAvatar())
                 .createdAt(savedChannel.getCreatedAt())
                 .message(noticeMessage)
                 .memberIds(memberIds)
@@ -282,6 +283,7 @@ public class ChannelService {
                     return ChannelResponse.builder()
                             .id(channel.getId())
                             .channelName(channel.getChannelName())
+                            .avatar(channel.getAvatar())
                             .createdAt(channel.getCreatedAt())
                             .messages(channelMessages)
                             .memberIds(channelMembers)
@@ -570,6 +572,7 @@ public class ChannelService {
             return ChannelResponse.builder()
                     .id(channel.getId())
                     .channelName(channel.getChannelName())
+                    .avatar(channel.getAvatar())
                     .createdAt(channel.getCreatedAt())
                     .messages(messages)
                     .memberIds(memberIds)
@@ -603,8 +606,44 @@ public class ChannelService {
         return ChannelResponse.builder()
                 .id(savedChannel.getId())
                 .channelName(null)
+                .avatar(savedChannel.getAvatar())
                 .createdAt(savedChannel.getCreatedAt())
                 .messages(new ArrayList<>())
+                .memberIds(memberIds)
+                .participants(participants)
+                .build();
+    }
+
+    public ChannelResponse updateChannelAvatar(UUID channelId, String avatarUrl, UUID requesterId) {
+        // 1. Check if channel exists
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+
+        // 2. Check if requester is a participant
+        if (!isUserParticipant(channelId, requesterId)) {
+            throw new RuntimeException("User is not a member of this channel");
+        }
+
+        // 3. Update avatar
+        channel.setAvatar(avatarUrl);
+        Channel savedChannel = channelRepository.save(channel);
+
+        // 4. Return response
+        // We need to reconstruct the full response with participants etc.
+        List<UUID> memberIds = getParticipantIdsByChannelId(channelId);
+        List<ChannelParticipantResponse> participants = getChannelParticipants(channelId, memberIds);
+        
+        // Get messages (optional, maybe not needed for just avatar update, but consistent with other methods)
+        // For efficiency, we might skip messages here if the frontend doesn't need them immediately
+        // But to be safe and consistent:
+        List<ChannelMessageDto> messages = chatServiceClient.getChannelMessages(channelId);
+
+        return ChannelResponse.builder()
+                .id(savedChannel.getId())
+                .channelName(savedChannel.getChannelName())
+                .avatar(savedChannel.getAvatar())
+                .createdAt(savedChannel.getCreatedAt())
+                .messages(messages)
                 .memberIds(memberIds)
                 .participants(participants)
                 .build();

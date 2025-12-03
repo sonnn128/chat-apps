@@ -49,51 +49,51 @@ const ConversationList = ({ channels = [], friends = [] }) => {
         key: 'mark_unread',
         label: 'Mark as unread',
         icon: <MailOutlined />,
-        onClick: () => console.log('Mark as unread', channel.id),
+
       },
       {
         key: 'mute',
         label: 'Mute notifications',
         icon: <BellOutlined />,
-        onClick: () => console.log('Mute notifications', channel.id),
+
       },
       {
         key: 'view_profile',
         label: 'View profile',
         icon: <UserOutlined />,
-        onClick: () => console.log('View profile', channel.id),
+
       },
       { type: 'divider' },
       {
         key: 'audio_call',
         label: 'Audio call',
         icon: <PhoneOutlined />,
-        onClick: () => console.log('Audio call', channel.id),
+
       },
       {
         key: 'video_chat',
         label: 'Video chat',
         icon: <VideoCameraOutlined />,
-        onClick: () => console.log('Video chat', channel.id),
+
       },
       { type: 'divider' },
       {
         key: 'block',
         label: 'Block',
         icon: <StopOutlined />,
-        onClick: () => console.log('Block', channel.id),
+
       },
       {
         key: 'archive',
         label: 'Archive chat',
         icon: <InboxOutlined />,
-        onClick: () => console.log('Archive chat', channel.id),
+
       },
       {
         key: 'report',
         label: 'Report',
         icon: <WarningOutlined />,
-        onClick: () => console.log('Report', channel.id),
+
       },
     ];
 
@@ -139,10 +139,45 @@ const ConversationList = ({ channels = [], friends = [] }) => {
                   onClick={() => onSelectChannel(ch)}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar size={36}>{(ch.channelName || "#")[0]}</Avatar>
+                    <Avatar size={36} src={ch.avatar}>{(ch.channelName || "#")[0]}</Avatar>
                     <div className="flex flex-col overflow-hidden">
                       <Text style={{ fontWeight: 500 }} ellipsis>{ch.channelName || "Channel"}</Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>{memberText}</Text>
+                      <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>
+                        {(() => {
+                          if (!ch.messages || ch.messages.length === 0) return "No messages";
+                          const lastMsg = ch.messages[ch.messages.length - 1];
+
+                          let prefix = "";
+
+                          // Only add prefix if NOT a notice
+                          if (lastMsg.type !== 'NOTICE') {
+                            if (lastMsg.userId === userId) {
+                              prefix = "You: ";
+                            } else {
+                              let name = lastMsg.senderName;
+                              // Fallback to finding name in participants if senderName is missing
+                              if (!name && ch.participants) {
+                                const p = ch.participants.find(p => p.userId === lastMsg.userId);
+                                if (p) name = p.firstname || p.name;
+                              }
+                              if (name) {
+                                // Get first name only to keep it short
+                                const firstName = name.split(' ')[0];
+                                prefix = `${firstName}: `;
+                              }
+                            }
+                          }
+
+                          // Handle different message types
+                          if (lastMsg.type === 'IMAGE') return `${prefix}Sent an image`;
+                          if (lastMsg.type === 'FILE') return `${prefix}Sent a file`;
+
+                          // Truncate long messages
+                          const content = lastMsg.content || "";
+                          const truncated = content.length > 25 ? content.substring(0, 25) + "..." : content;
+                          return `${prefix}${truncated}`;
+                        })()}
+                      </Text>
                     </div>
                   </div>
 

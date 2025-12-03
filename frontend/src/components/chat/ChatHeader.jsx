@@ -36,8 +36,12 @@ const ChatHeader = ({ title: propTitle }) => {
   // Avatar logic: prefer avatar from friend or participant, else initials
   let avatarSrc = null;
   let avatarText = displayName[0] || "A";
-  if (currentFriend && currentFriend.avatar) avatarSrc = currentFriend.avatar;
-  else if (currentChannel && currentChannel.participants && currentChannel.participants.length === 2) {
+
+  if (currentChannel && currentChannel.avatar) {
+    avatarSrc = currentChannel.avatar;
+  } else if (currentFriend && currentFriend.avatar) {
+    avatarSrc = currentFriend.avatar;
+  } else if (currentChannel && currentChannel.participants && currentChannel.participants.length === 2) {
     const other = currentChannel.participants.find((p) => (p.userId || p.id) !== (user?.id));
     if (other) {
       avatarSrc = other.avatar || other.avatarUrl || null;

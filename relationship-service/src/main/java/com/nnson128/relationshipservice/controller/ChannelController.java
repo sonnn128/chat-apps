@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import java.util.Map;
 
 import java.util.List;
 import java.util.UUID;
@@ -124,6 +125,24 @@ public class ChannelController {
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .success(true)
                 .message("Channel deleted successfully")
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
+    @PatchMapping("/{channelId}/avatar")
+    public ResponseEntity<ApiResponse<ChannelResponse>> updateChannelAvatar(
+            @PathVariable UUID channelId,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        String avatarUrl = request.get("avatarUrl");
+        
+        ChannelResponse updatedChannel = channelService.updateChannelAvatar(channelId, avatarUrl, userId);
+        
+        ApiResponse<ChannelResponse> response = ApiResponse.<ChannelResponse>builder()
+                .success(true)
+                .message("Channel avatar updated successfully")
+                .data(updatedChannel)
                 .build();
         
         return ResponseEntity.ok(response);

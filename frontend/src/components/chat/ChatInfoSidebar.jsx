@@ -1,13 +1,18 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ChannelMembers from "../ChannelMembers";
-import React, { useState } from "react";
-import { Avatar } from "antd";
+import React, { useState, useRef } from "react";
+import { Avatar, message, Spin } from "antd";
 import { User, Bell, Search, ChevronRight, Lock, UserPlus, Edit3, Image as ImageIcon, Palette, Smile, Type } from "lucide-react";
+import channelService from "@/services/channelService";
+import { updateChannel } from "@/stores/slices/channelSlice";
 
 const ChatInfoSidebar = () => {
   const { currentChannel, channels } = useSelector((state) => state.channel);
   const [showMembers, setShowMembers] = useState(false);
   const [showCustomizeChat, setShowCustomizeChat] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const dispatch = useDispatch();
 
   const menuItems = [
     { label: "Chat info", key: "chatInfo" },
@@ -33,6 +38,40 @@ const ChatInfoSidebar = () => {
     }
   };
 
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      // 1. Upload image
+      const mediaService = (await import("@/services/mediaService")).default;
+      const uploadRes = await mediaService.uploadFile(file);
+
+      if (uploadRes.success) {
+        const avatarUrl = uploadRes.data.secureUrl;
+
+        // 2. Update channel
+        const updateRes = await channelService.updateChannelAvatar(currentChannel.id, avatarUrl);
+
+        if (updateRes.success) {
+          // 3. Update Redux state
+          dispatch(updateChannel(updateRes.data));
+          message.success("Channel photo updated successfully");
+        } else {
+          message.error("Failed to update channel photo");
+        }
+      } else {
+        message.error("Failed to upload image");
+      }
+    } catch (error) {
+      console.error("Error updating channel photo:", error);
+      message.error("An error occurred while updating channel photo");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!currentChannel) {
     return <div className="w-[420px] flex-shrink-0 bg-white border-l border-gray-200 h-full flex items-center justify-center">Select a channel</div>;
   }
@@ -41,7 +80,17 @@ const ChatInfoSidebar = () => {
     <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col items-center text-center">
-          <Avatar size={80}>A</Avatar>
+          {loading ? (
+            <Spin size="large">
+              <Avatar size={80} src={currentChannel.avatar}>
+                {currentChannel.channelName ? currentChannel.channelName[0] : "C"}
+              </Avatar>
+            </Spin>
+          ) : (
+            <Avatar size={80} src={currentChannel.avatar}>
+              {currentChannel.channelName ? currentChannel.channelName[0] : "C"}
+            </Avatar>
+          )}
           <h2 className="mt-4 text-xl font-bold text-gray-900">
             {currentChannel.channelName || "Channel Name"}
           </h2>
@@ -79,9 +128,9 @@ const ChatInfoSidebar = () => {
                   <ChevronRight
                     size={20}
                     className={`text-gray-400 transform transition-transform ${(item.key === "chatMembers" && showMembers) ||
-                        (item.key === "customizeChat" && showCustomizeChat)
-                        ? "rotate-90"
-                        : ""
+                      (item.key === "customizeChat" && showCustomizeChat)
+                      ? "rotate-90"
+                      : ""
                       }`}
                   />
                 ) : (
@@ -97,10 +146,21 @@ const ChatInfoSidebar = () => {
                     <Edit3 size={18} className="text-gray-500" />
                     <span>Change chat name</span>
                   </button>
-                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                  <button
+                    className={`w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => !loading && fileInputRef.current?.click()}
+                    disabled={loading}
+                  >
                     <ImageIcon size={18} className="text-gray-500" />
                     <span>Change photo</span>
                   </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                  />
                   <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
                     <Palette size={18} className="text-gray-500" />
                     <span>Change theme</span>

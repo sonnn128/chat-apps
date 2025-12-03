@@ -21,6 +21,9 @@ public class Channel {
     @Column(name = "channel_name")
     private String channelName;
 
+    @Column(name = "avatar")
+    private String avatar;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

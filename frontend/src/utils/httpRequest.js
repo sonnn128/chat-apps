@@ -20,6 +20,7 @@ const handleRequest = async (callback) => {
 export const get = (url, options = {}) => handleRequest(() => httpRequest.get(url, options));
 export const post = (url, data, options = {}) => handleRequest(() => httpRequest.post(url, data, options));
 export const put = (url, data, options = {}) => handleRequest(() => httpRequest.put(url, data, options));
+export const patch = (url, data, options = {}) => handleRequest(() => httpRequest.patch(url, data, options));
 export const del = (url, options = {}) => handleRequest(() => httpRequest.delete(url, options));
 
 export default httpRequest;
