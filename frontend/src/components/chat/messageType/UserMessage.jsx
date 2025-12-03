@@ -102,8 +102,8 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
             className={`${["IMAGE", "VIDEO"].includes(type)
               ? ""
               : isCurrentUser
-                ? "bg-blue-500 text-white p-2"
-                : "bg-[#8e5cff] text-white p-2"
+                ? "bg-[#503BFA] text-white p-2"
+                : "bg-[#F0F0F0] text-black p-2"
               } rounded-2xl max-w-xs user-message`}
             style={{
               borderTopLeftRadius: isCurrentUser ? 16 : 4,

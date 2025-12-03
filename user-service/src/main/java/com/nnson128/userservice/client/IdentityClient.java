@@ -1,4 +1,4 @@
-package com.nnson128.userservice.repository;
+package com.nnson128.userservice.client;
 
 import com.nnson128.userservice.dto.identity.TokenExchangeParam;
 import com.nnson128.userservice.dto.identity.TokenExchangeResponse;

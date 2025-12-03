@@ -10,7 +10,7 @@ import com.nnson128.userservice.dto.response.AuthResponse;
 import com.nnson128.userservice.dto.response.IntrospectResponse;
 import com.nnson128.userservice.dto.response.UserResponse;
 import com.nnson128.userservice.model.User;
-import com.nnson128.userservice.repository.IdentityClient;
+import com.nnson128.userservice.client.IdentityClient;
 import com.nnson128.userservice.repository.UserRepository;
 import com.nnson128.userservice.util.PhoneNumberUtils;
 import lombok.RequiredArgsConstructor;
