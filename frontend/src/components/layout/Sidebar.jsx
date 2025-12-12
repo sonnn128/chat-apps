@@ -28,6 +28,8 @@ import {
 import { removeCurrentChannel } from "@/stores/slices/channelSlice";
 import { fetchCreateChannel } from "@/stores/middlewares/channelMiddleware";
 
+import { DEFAULT_AVATAR } from "@/utils/constants";
+
 const { Title } = Typography;
 
 const Sidebar = () => {

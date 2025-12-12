@@ -23,7 +23,7 @@ function LeaveGroupModal({ visible, onConfirm, onCancel, groupName }) {
       maskClosable={false}
       closable={false}
       width={400}
-      bodyStyle={{ textAlign: "center", padding: "30px 24px" }}
+      styles={{ body: { textAlign: "center", padding: "30px 24px" } }}
     >
       <p style={{ fontSize: "16px", marginBottom: "20px" }}>
         Are you sure you want to leave the group "<strong>{groupName}</strong>"?

@@ -13,9 +13,7 @@ function Main() {
   }, [dispatch]);
 
   useEffect(() => {
-    console.log("🔌 Main: Connecting to WebSocket...");
     websocketService.connect(() => {
-      console.log("✅ Main: WebSocket connection established successfully");
     });
   }, []);
 

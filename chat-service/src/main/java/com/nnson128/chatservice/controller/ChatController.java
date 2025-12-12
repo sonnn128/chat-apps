@@ -45,6 +45,16 @@ public class ChatController {
         ChannelMessageDto messageDto = ChannelMessageDto.from(sentMessage);
         return new ResponseEntity<>(messageDto, HttpStatus.CREATED);
     }
+
+    @DeleteMapping("/{channelId}/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable("channelId") UUID channelId,
+            @PathVariable("messageId") UUID messageId,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject()); // Get authenticated user ID
+        channelMessageService.deleteMessage(channelId, messageId, userId);
+        return ResponseEntity.noContent().build();
+    }
     
     // Internal endpoint for service-to-service communication (no JWT required)
     @PostMapping("/internal")

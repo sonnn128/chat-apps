@@ -106,6 +106,62 @@ public class ChannelMessageService {
         return savedMessage;
     }
 
+    public void deleteMessage(UUID channelId, UUID messageId, UUID userId) {
+        // 1. Find the message
+        ChannelMessage message = channelMessageRepository.findById(
+                ChannelMessageKey.builder()
+                        .channelId(channelId)
+                        .messageId(messageId)
+                        .build())
+                .orElseThrow(() -> new com.nnson128.chatapps_base.exception.CommonException("Message not found", org.springframework.http.HttpStatus.NOT_FOUND));
+
+        // 2. Validate ownership
+        if (!message.getUserId().equals(userId)) {
+            throw new com.nnson128.chatapps_base.exception.CommonException("You can only delete your own messages", org.springframework.http.HttpStatus.FORBIDDEN);
+        }
+
+        // 3. Update message status
+        message.setType(ChannelMessageType.DELETED);
+        message.setContent(""); // Optional: clear content or keep it for audit? Clearing it for privacy.
+        
+        ChannelMessage savedMessage = channelMessageRepository.save(message);
+
+        // 4. Send notification (Event Sourcing)
+        // Re-fetch participants to broadcast the update
+        ApiResponse<List<UUID>> response = channelServiceClient
+                .getParticipantIdsByChannelId(channelId);
+
+        List<UUID> allRecipientIds = response.getData();
+        SenderInfo senderInfo = getSenderInfo(userId);
+
+        MessageSentPayload event = MessageSentPayload.builder()
+                .eventType(MessageEventType.MESSAGE_SENT) // Reusing SENT event, frontend filters by type='DELETED' is one way, or use MESSAGE_UPDATED if available
+                .eventId(UUID.randomUUID().toString())
+                .timestamp(message.getTimestamp())
+                .messageId(messageId.toString())
+                .channelId(channelId.toString())
+                .type("DELETED") // Explicitly set type to DELETED
+                .content("")
+                .userId(userId)
+                .senderName(senderInfo.name())
+                .senderAvatar(senderInfo.avatar())
+                .recipientIds(allRecipientIds)
+                .build();
+
+        EventWrapper<?> wrapper = EventWrapper.builder()
+                .eventType("MESSAGE_SENT")
+                .eventId(event.getEventId())
+                .timestamp(java.time.LocalDateTime.now())
+                .payload(event)
+                .build();
+
+        try {
+            messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, MessageEventType.MESSAGE_SENT.name(), wrapper, null, null);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to broadcast delete event", e);
+        }
+    }
+
     /**
      * Get messages for multiple channels in batch
      */

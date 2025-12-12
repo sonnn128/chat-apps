@@ -7,5 +7,6 @@ public enum ChannelMessageType {
     EMOJI,
     IMAGE,
     VIDEO,
-    FILE
+    FILE,
+    DELETED
 }

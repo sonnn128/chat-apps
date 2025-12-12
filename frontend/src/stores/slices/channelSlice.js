@@ -115,20 +115,30 @@ const channelSlice = createSlice({
         senderAvatar: action.payload.senderAvatar || null
       };
       
+      if (action.payload.type === "DELETED") {
+          console.log("REDUX DEBUG: Receiving DELETED message", { 
+              payloadType: action.payload.type, 
+              mergedType: messageWithSender.type,
+              payloadContent: action.payload.content,
+              key: action.payload.key
+          });
+      }
+      
       if (channelFind) {
         if (!channelFind.messages) {
           channelFind.messages = [];
         }
-        // Check if message already exists (deduplication)
-        const messageExists = channelFind.messages.some(msg => {
+        // Check if message already exists (deduplication or update)
+        const messageIndex = channelFind.messages.findIndex(msg => {
             const msgId = msg.key?.messageId || msg.id;
             return msgId === messageId;
         });
-        if (!messageExists) {
+
+        if (messageIndex === -1) {
           channelFind.messages.push(messageWithSender);
-
         } else {
-
+          // Update existing message (e.g. for DELETED status)
+          channelFind.messages[messageIndex] = { ...channelFind.messages[messageIndex], ...messageWithSender };
         }
         
         // Move channel to top
@@ -137,12 +147,10 @@ const channelSlice = createSlice({
             state.channels.unshift(movedChannel);
         }
       } else {
-
         
         // If this is a notice message (server-created notice such as friend-connect), create a basic channel
         // This covers different notice text/locales (e.g., "You are connected on messenger")
         if (action.payload.type === "NOTICE") {
-
           const newChannel = {
             id: channelId,
             channelName: "New Channel", // Will be updated when user clicks on it or when channel info arrives
@@ -153,7 +161,6 @@ const channelSlice = createSlice({
             isNewChannel: true
           };
           state.channels.unshift(newChannel);
-
         }
       }
       
@@ -162,10 +169,14 @@ const channelSlice = createSlice({
         state.messageCache[channelId] = [];
       }
       
-      // Check if message already exists in cache (deduplication)
-      const cacheMessageExists = state.messageCache[channelId].some(msg => msg.key.messageId === messageId);
-      if (!cacheMessageExists) {
+      // Check if message already exists in cache (deduplication or update)
+      const cacheMessageIndex = state.messageCache[channelId].findIndex(msg => msg.key.messageId === messageId);
+      
+      if (cacheMessageIndex === -1) {
         state.messageCache[channelId].push(messageWithSender);
+      } else {
+        // Update existing message in cache
+        state.messageCache[channelId][cacheMessageIndex] = { ...state.messageCache[channelId][cacheMessageIndex], ...messageWithSender };
       }
       
       // Sort messages by timestamp (oldest first)

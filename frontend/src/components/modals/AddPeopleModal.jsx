@@ -4,6 +4,7 @@ import { Modal, Button, Typography, List, Avatar, Checkbox, message } from "antd
 import PropTypes from "prop-types";
 import { fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
 import { addPeopleToChannel } from "@/stores/middlewares/channelMiddleware";
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const { Title, Text } = Typography;
 
@@ -13,7 +14,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
   const { channels } = useSelector((state) => state.channel);
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Get current channel data to display current members
   const currentChannel = channels.find(ch => ch.id === channelId);
   const currentChannelMembers = currentChannel?.participants || [];
@@ -64,8 +65,8 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
 
   const isAlreadyMember = (friendId) => {
     // Check both currentMembers prop and currentChannelMembers from Redux
-    return currentMembers.includes(friendId) || 
-           currentChannelMembers.some(member => member.userId === friendId);
+    return currentMembers.includes(friendId) ||
+      currentChannelMembers.some(member => member.userId === friendId);
   };
 
   // Get member details for display
@@ -82,11 +83,11 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
   // Get member role display
   const getMemberRoleDisplay = (member) => {
     // Only show email if it's a real email (not generated)
-    const isRealEmail = member.email && 
-                       member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
-                       member.email.includes('@') &&
-                       !member.email.includes('example.com');
-    
+    const isRealEmail = member.email &&
+      member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
+      member.email.includes('@') &&
+      !member.email.includes('example.com');
+
     if (isRealEmail && member.role) {
       return `${member.email} · Role: ${member.role}`;
     }
@@ -107,7 +108,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
         </div>
       );
     }
-    
+
     if (friends?.length > 0) {
       return (
         <List
@@ -116,20 +117,18 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
           renderItem={(friend) => {
             const isMember = isAlreadyMember(friend.friendId);
             const isSelected = selectedFriends.includes(friend.friendId);
-            
+
             return (
               <List.Item
                 key={friend.friendId}
                 className={`p-2 rounded-lg ${isMember ? 'bg-gray-100 opacity-60' : 'hover:bg-gray-50'}`}
               >
                 <div className="flex items-center w-full">
-                  <Avatar 
-                    src={friend.avatar} 
+                  <Avatar
+                    src={friend.avatar || DEFAULT_AVATAR}
                     className="mr-3"
-                  >
-                    {friend.firstname?.charAt(0)?.toUpperCase() || "U"}
-                  </Avatar>
-                  
+                  />
+
                   <div className="flex-1">
                     <Text strong className={isMember ? 'text-gray-500' : ''}>
                       {friend.firstname} {friend.lastname}
@@ -144,7 +143,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
                       </Text>
                     )}
                   </div>
-                  
+
                   <Checkbox
                     checked={isSelected}
                     disabled={isMember}
@@ -157,7 +156,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
         />
       );
     }
-    
+
     return (
       <div className="text-center py-8">
         <Text type="secondary">Bạn chưa có bạn bè nào</Text>
@@ -194,9 +193,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
           <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-gray-50">
             {currentChannelMembers.map((member) => (
               <div key={member.userId} className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded">
-                <Avatar size="small" src={member.avatar}>
-                  {getMemberDisplayName(member)?.[0]?.toUpperCase() || 'U'}
-                </Avatar>
+                <Avatar size="small" src={member.avatar || DEFAULT_AVATAR} />
                 <div className="flex-1">
                   <Text className="text-sm font-medium">{getMemberDisplayName(member)}</Text>
                   {getMemberRoleDisplay(member) && (

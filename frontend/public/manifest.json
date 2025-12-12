@@ -1,0 +1,20 @@
+{
+  "short_name": "Messenger",
+  "name": "Messenger App",
+  "icons": [
+    {
+      "src": "/src/assets/logo/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/src/assets/logo/android-icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

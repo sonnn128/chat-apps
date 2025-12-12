@@ -79,9 +79,11 @@ const ChatMessages = () => {
       case "IMAGE":
       case "VIDEO":
       case "FILE":
+      case "DELETED":
         return (
           <UserMessage
             key={message.key.messageId}
+            messageId={message.key.messageId}
             content={message.content}
             isCurrentUser={isCurrentUser}
             userId={message.userId}
@@ -110,12 +112,21 @@ const ChatMessages = () => {
           <NoticeMessage
             key={message.key.messageId}
             content={message.content}
-          />
+            isCurrentUser={isCurrentUser}
+            userId={message.userId}
+            senderName={message.senderName}
+            senderAvatar={message.senderAvatar}
+            type={message.type}
+            timestamp={message.timestamp || message.key.timestamp}
+          /> // NoticeMessage might not need messageId for now
         );
       default:
+        console.log("Unknown message type:", message.type);
+
         return (
           <UserMessage
             key={message.key.messageId}
+            messageId={message.key.messageId}
             content={message.content}
             isCurrentUser={isCurrentUser}
             userId={message.userId}

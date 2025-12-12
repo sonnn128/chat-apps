@@ -1,14 +1,27 @@
 import React, { useState } from "react";
-import { Button, Tooltip } from "antd";
-import { MoreOutlined, RollbackOutlined, SmileOutlined, FileOutlined, DownloadOutlined } from "@ant-design/icons";
+import { Button, Tooltip, Dropdown, Modal, Radio } from "antd";
+import { MoreOutlined, RollbackOutlined, SmileOutlined, FileOutlined, DownloadOutlined, DeleteOutlined, ShareAltOutlined, PushpinOutlined, FlagOutlined } from "@ant-design/icons";
 import Avatar from "antd/es/avatar/Avatar";
 import ReactionPicker from "../ReactionPicker";
 import PropTypes from "prop-types";
 import { useUserInfo } from "@/hooks/useUserInfo";
+import { DEFAULT_AVATAR } from "@/utils/constants";
+import chatService from "@/services/chatService";
+import { useSelector } from "react-redux";
 
-const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar, type = "CHAT", status = "sent", timestamp, isLastMessage }) => {
+const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar, type = "CHAT", status = "sent", timestamp, isLastMessage }) => {
+  // DEBUG LOG
+  if (content === "") {
+    console.log("UserMessage DEBUG:", { messageId, type, content, isCurrentUser });
+  }
+
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
+  const { currentChannelId } = useSelector((state) => state.channel);
+
+  // Unsend Modal state
+  const [isUnsendModalOpen, setIsUnsendModalOpen] = useState(false);
+  const [unsendType, setUnsendType] = useState('everyone');
 
   // Get real-time user info - but only if props not provided
   const { userInfo, loading } = useUserInfo(userId && !propSenderName ? userId : null);
@@ -25,13 +38,72 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
   };
 
   const handleReactionSelect = (emoji) => {
-    console.log("Reaction selected:", emoji);
-    // Reaction functionality will be implemented in future updates
     setShowReactionPicker(false);
   };
 
+  const handleMenuClick = (e) => {
+    if (e.key === 'unsend') {
+      setIsUnsendModalOpen(true);
+    }
+    // Handle other actions here if needed
+  };
+
+  const handleUnsendCancel = () => {
+    setIsUnsendModalOpen(false);
+    setUnsendType('everyone'); // Reset to default
+  };
+
+  const handleUnsendRemove = async () => {
+    // console.log("Unsend action:", unsendType);
+    if (unsendType === 'everyone') {
+      try {
+        await chatService.deleteMessage(currentChannelId, messageId);
+        // Optimistic update could be done here, or wait for socket event
+      } catch (error) {
+        console.error("Failed to unsend message", error);
+        // Show error toast?
+      }
+    } else {
+      // "For you" logic (local delete) - TO BE IMPLEMENTED
+      console.log("Unsend for you not implemented yet");
+    }
+    setIsUnsendModalOpen(false);
+  };
+
+  const menuItems = [
+    {
+      key: 'unsend',
+      label: 'Unsend',
+      icon: <DeleteOutlined />,
+      danger: true,
+    },
+    {
+      key: 'forward',
+      label: 'Forward',
+      icon: <ShareAltOutlined />,
+    },
+    {
+      key: 'pin',
+      label: 'Pin',
+      icon: <PushpinOutlined />,
+    },
+    {
+      key: 'report',
+      label: 'Report',
+      icon: <FlagOutlined />,
+      danger: true,
+    },
+  ];
+
   const renderContent = () => {
     switch (type) {
+      case "DELETED":
+        const displayName = isCurrentUser ? "You" : (senderName ? senderName.split(' ').pop() : 'User');
+        return (
+          <p className="text-sm mb-0 italic text-gray-500 bg-transparent">
+            {isCurrentUser ? "You deleted a message" : `${displayName} deleted a message`}
+          </p>
+        );
       case "IMAGE":
         return (
           <img
@@ -99,10 +171,10 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
         )}
         <div className={`flex items-end gap-2 group ${isCurrentUser ? "flex-row-reverse" : ""}`}>
           <div
-            className={`${["IMAGE", "VIDEO"].includes(type)
+            className={`${["IMAGE", "VIDEO", "DELETED"].includes(type)
               ? ""
               : isCurrentUser
-                ? "bg-[#503BFA] text-white p-2"
+                ? "bg-[#066CF6] text-white p-2"
                 : "bg-[#F0F0F0] text-black p-2"
               } rounded-2xl max-w-xs user-message`}
             style={{
@@ -111,6 +183,9 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
               marginLeft: !isCurrentUser ? 4 : 0,
               marginRight: 0,
               opacity: status === "pending" ? 0.7 : 1,
+              backgroundColor: type === "DELETED" ? "transparent" : undefined,
+              border: type === "DELETED" ? "1px solid #ccc" : undefined,
+              padding: type === "DELETED" ? "8px 12px" : undefined,
             }}
           >
             {renderContent()}
@@ -119,23 +194,27 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
             <div className="text-red-500 text-xs mt-1 mr-1">Failed to send</div>
           )}
 
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 items-center">
-            <Tooltip title="More options">
-              <Button type="text" shape="circle" size="small" icon={<MoreOutlined />} />
-            </Tooltip>
-            <Tooltip title="Reply">
-              <Button type="text" shape="circle" size="small" icon={<RollbackOutlined />} />
-            </Tooltip>
-            <Tooltip title="Add reaction">
-              <Button
-                type="text"
-                shape="circle"
-                size="small"
-                icon={<SmileOutlined />}
-                onClick={handleReactionClick}
-              />
-            </Tooltip>
-          </div>
+          {type !== "DELETED" && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 items-center">
+              <Dropdown menu={{ items: menuItems, onClick: handleMenuClick }} trigger={['click']} placement="bottomRight">
+                <Tooltip title="More options">
+                  <Button type="text" shape="circle" size="small" icon={<MoreOutlined />} />
+                </Tooltip>
+              </Dropdown>
+              <Tooltip title="Reply">
+                <Button type="text" shape="circle" size="small" icon={<RollbackOutlined />} />
+              </Tooltip>
+              <Tooltip title="Add reaction">
+                <Button
+                  type="text"
+                  shape="circle"
+                  size="small"
+                  icon={<SmileOutlined />}
+                  onClick={handleReactionClick}
+                />
+              </Tooltip>
+            </div>
+          )}
         </div>
         {/* Status Text */}
         {isCurrentUser && (status === "pending" || (status === "sent" && isLastMessage)) && (
@@ -151,11 +230,51 @@ const UserMessage = ({ content, isCurrentUser, userId, senderName: propSenderNam
         onReactionSelect={handleReactionSelect}
         position={reactionPickerPosition}
       />
+
+      <Modal
+        title="Who do you want to unsend this message for?"
+        open={isUnsendModalOpen}
+        onCancel={handleUnsendCancel}
+        footer={[
+          <Button key="cancel" onClick={handleUnsendCancel} style={{ width: '45%' }}>
+            Cancel
+          </Button>,
+          <Button key="remove" type="primary" onClick={handleUnsendRemove} style={{ width: '45%', backgroundColor: '#066CF6' }}>
+            Remove
+          </Button>,
+        ]}
+        centered
+        width={500}
+      >
+        <div className="mt-4 mb-2">
+          <Radio.Group onChange={(e) => setUnsendType(e.target.value)} value={unsendType}>
+            <div className="flex flex-col gap-4">
+              <Radio value="everyone" className="items-start">
+                <div className="flex flex-col gap-1 ml-2">
+                  <span className="font-semibold text-base">Unsend for everyone</span>
+                  <span className="text-gray-500 text-sm whitespace-normal">
+                    This message will be unsent for everyone in the chat. Others may have already seen or forwarded it. Unsent messages can still be included in reports.
+                  </span>
+                </div>
+              </Radio>
+              <Radio value="you" className="items-start">
+                <div className="flex flex-col gap-1 ml-2">
+                  <span className="font-semibold text-base">Unsend for you</span>
+                  <span className="text-gray-500 text-sm whitespace-normal">
+                    This will remove the message from your devices. Other chat members will still be able to see it.
+                  </span>
+                </div>
+              </Radio>
+            </div>
+          </Radio.Group>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 UserMessage.propTypes = {
+  messageId: PropTypes.string,
   content: PropTypes.string.isRequired,
   isCurrentUser: PropTypes.bool.isRequired,
   userId: PropTypes.string.isRequired,
@@ -163,7 +282,7 @@ UserMessage.propTypes = {
   senderAvatar: PropTypes.string,
   type: PropTypes.string,
   status: PropTypes.string,
-  timestamp: PropTypes.string,
+  timestamp: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   isLastMessage: PropTypes.bool,
 };
 

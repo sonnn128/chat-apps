@@ -19,6 +19,7 @@ import {
 } from "@ant-design/icons";
 
 const { Text } = Typography;
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 // A combined list of channels and friends. Clicking a friend opens/creates a DM channel.
 const ConversationList = ({ channels = [], friends = [] }) => {
@@ -139,13 +140,28 @@ const ConversationList = ({ channels = [], friends = [] }) => {
                   onClick={() => onSelectChannel(ch)}
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar size={36} src={ch.avatar}>{(ch.channelName || "#")[0]}</Avatar>
+                    <div className="relative">
+                      <Avatar size={36} src={ch.avatar || DEFAULT_AVATAR} />
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
                     <div className="flex flex-col overflow-hidden">
                       <Text style={{ fontWeight: 500 }} ellipsis>{ch.channelName || "Channel"}</Text>
                       <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>
                         {(() => {
                           if (!ch.messages || ch.messages.length === 0) return "No messages";
                           const lastMsg = ch.messages[ch.messages.length - 1];
+
+                          if (lastMsg.type === 'DELETED') {
+                            if (lastMsg.userId === userId) return "You deleted a message";
+
+                            let name = lastMsg.senderName;
+                            if (!name && ch.participants) {
+                              const p = ch.participants.find(p => p.userId === lastMsg.userId);
+                              if (p) name = p.firstname || p.name;
+                            }
+                            const displayName = name ? name.split(' ').pop() : 'User';
+                            return `${displayName} deleted a message`;
+                          }
 
                           let prefix = "";
 
@@ -161,9 +177,8 @@ const ConversationList = ({ channels = [], friends = [] }) => {
                                 if (p) name = p.firstname || p.name;
                               }
                               if (name) {
-                                // Get first name only to keep it short
-                                const firstName = name.split(' ')[0];
-                                prefix = `${firstName}: `;
+                                // Use full name
+                                prefix = `${name}: `;
                               }
                             }
                           }
@@ -210,7 +225,7 @@ const ConversationList = ({ channels = [], friends = [] }) => {
             <motion.div key={item.key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <List.Item onClick={() => handleSelectFriend(f)} className="rounded-lg px-2 py-2 hover:bg-gray-100 cursor-pointer">
                 <List.Item.Meta
-                  avatar={<Avatar size={36} src={f.avatar}>{f.firstname?.charAt(0)?.toUpperCase() || "U"}</Avatar>}
+                  avatar={<Avatar size={36} src={f.avatar || DEFAULT_AVATAR} />}
                   title={<Text style={{ fontWeight: 500 }}>{`${f.firstname || ""} ${f.lastname || ""}`}</Text>}
                   description={<Text type="secondary">{f.email || "Friend"}</Text>}
                 />

@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setCurrentFriend } from "@/stores/slices/friendshipSlice";
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const { Text, Paragraph } = Typography;
 
@@ -49,9 +50,7 @@ const FriendList = () => {
               >
                 <List.Item.Meta
                   avatar={
-                    <Avatar size={36} src={friend.avatar}>
-                      {friend.firstname?.charAt(0)?.toUpperCase() || "U"}
-                    </Avatar>
+                    <Avatar size={36} src={friend.avatar || DEFAULT_AVATAR} />
                   }
                   title={
                     <Text style={{ fontWeight: 500, color: "#050505" }}>

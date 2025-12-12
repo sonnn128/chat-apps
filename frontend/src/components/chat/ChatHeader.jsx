@@ -8,6 +8,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const ChatHeader = ({ title: propTitle }) => {
   const currentChannel = useSelector((state) => state.channel.currentChannel);
@@ -55,9 +56,10 @@ const ChatHeader = ({ title: propTitle }) => {
     <>
       <div className="p-3 border-b flex items-center justify-between bg-white">
         <div className="flex items-center">
-          <Avatar size={40} src={avatarSrc} style={{ cursor: "pointer" }}>
-            {!avatarSrc && avatarText}
-          </Avatar>
+          <div className="relative">
+            <Avatar size={40} src={avatarSrc || DEFAULT_AVATAR} style={{ cursor: "pointer" }} />
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+          </div>
           <div className="ml-3">
             <Typography.Text strong className="text-lg text-gray-900">
               {displayName}

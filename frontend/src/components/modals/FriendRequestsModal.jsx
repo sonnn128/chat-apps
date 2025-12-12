@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal, Button, Typography, List, Avatar } from "antd";
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const { Title, Text } = Typography;
 
@@ -14,7 +15,7 @@ const FriendRequestsModal = ({ open, onClose, requests, onAccept, onReject }) =>
           Close
         </Button>,
       ]}
-      bodyStyle={{ maxHeight: "400px", overflowY: "auto", paddingTop: 0 }}
+      styles={{ body: { maxHeight: "400px", overflowY: "auto", paddingTop: 0 } }}
     >
       {requests?.length ? (
         <List
@@ -45,9 +46,7 @@ const FriendRequestsModal = ({ open, onClose, requests, onAccept, onReject }) =>
             >
               <List.Item.Meta
                 avatar={
-                  <Avatar src={request.requesterAvatar}>
-                    {request.requesterFirstname?.charAt(0).toUpperCase() || "U"}
-                  </Avatar>
+                  <Avatar src={request.requesterAvatar || DEFAULT_AVATAR} />
                 }
                 title={`${request.requesterFirstname} ${request.requesterLastname}`}
                 description={request.requesterEmail}

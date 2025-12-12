@@ -10,22 +10,18 @@ export const fetchCreateChannel = createAsyncThunk(
   }
 );
 
-export const fetchAllChannels = createAsyncThunk(
+export const fetchAllChannels = createAsyncThunk( 
   "channels/fetchAllChannels",
   async (_, { rejectWithValue }) => {
     try {
-      console.log("📋 ChannelMiddleware: Fetching all channels...");
       const res = await channelService.getChannels();
       
       if (res.success) {
-        console.log("✅ ChannelMiddleware: Channels fetched successfully:", res.data?.length || 0, "channels");
         return res.data;
       } else {
-        console.error("❌ ChannelMiddleware: Failed to fetch channels:", res.message);
         return rejectWithValue(res.message);
       }
     } catch (error) {
-      console.error("❌ ChannelMiddleware: Error fetching channels:", error);
       return rejectWithValue(error.message);
     }
   }

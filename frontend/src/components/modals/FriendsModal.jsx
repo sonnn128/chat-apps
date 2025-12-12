@@ -4,6 +4,7 @@ import { Modal, Typography, Button, Avatar, List, Popconfirm } from "antd";
 import { setCurrentFriend, unfriendUser } from "@/stores/slices/friendshipSlice";
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
 import { fetchGetOrCreateDirectChannel } from "@/stores/middlewares/channelMiddleware";
+import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const { Title, Text } = Typography;
 
@@ -39,7 +40,7 @@ const FriendsModal = ({ open, onClose }) => {
         </Button>,
       ]}
       title={<Title level={5}>Your Friends</Title>}
-      bodyStyle={{ maxHeight: "400px", overflowY: "auto", paddingTop: 0 }}
+      styles={{ body: { maxHeight: "400px", overflowY: "auto", paddingTop: 0 } }}
     >
       {friends?.length > 0 ? (
         <List
@@ -72,7 +73,7 @@ const FriendsModal = ({ open, onClose }) => {
               ]}
             >
               <List.Item.Meta
-                avatar={<Avatar src={friend.avatar || ""} />}
+                avatar={<Avatar src={friend.avatar || DEFAULT_AVATAR} />}
                 title={
                   <Text strong>
                     {`${friend.firstname || ""} ${friend.lastname || ""}`}

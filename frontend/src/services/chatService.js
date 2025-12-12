@@ -1,5 +1,5 @@
 import { getAuthHeaders } from "@/utils/authUtils";
-import { post, get } from "@/utils/httpRequest";
+import { post, get, del } from "@/utils/httpRequest";
 
 const CHAT_API = "/messages";
 
@@ -17,9 +17,13 @@ const getChannelMessages = async (channelId, params = {}) => {
   return get(url, { headers: getAuthHeaders() });
 };
 
+const deleteMessage = async (channelId, messageId) =>
+  del(`${CHAT_API}/${channelId}/${messageId}`, { headers: getAuthHeaders() });
+
 const chatService = {
   sendChannelMessage,
   getChannelMessages,
+  deleteMessage,
 };
 
 export default chatService;
