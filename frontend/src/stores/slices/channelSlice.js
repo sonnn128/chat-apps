@@ -233,6 +233,29 @@ const channelSlice = createSlice({
       }
     },
     
+    // Handle notification when channel details are updated (e.g. name change)
+    receiveChannelUpdatedNotification: (state, action) => {
+        const event = action.payload;
+        // event has channelId, newChannelName, updaterId, updatedAt
+        
+        // Update in channels list
+        const channelIndex = state.channels.findIndex(ch => ch.id === event.channelId);
+        if (channelIndex !== -1) {
+            state.channels[channelIndex] = {
+                ...state.channels[channelIndex],
+                channelName: event.newChannelName
+            };
+        }
+        
+        // Update current channel if matches
+        if (state.currentChannel && state.currentChannel.id === event.channelId) {
+            state.currentChannel = {
+                ...state.currentChannel,
+                channelName: event.newChannelName
+            };
+        }
+    },
+    
     // Message cache actions
     cacheChannelMessages: (state, action) => {
       const { channelId, messages } = action.payload;
@@ -635,6 +658,7 @@ export const {
   setCurrentChannel,
   receiveMessage,
   receiveChannelAddedNotification,
+  receiveChannelUpdatedNotification,
   cacheChannelMessages,
   addPendingMessage,
 } = channelSlice.actions;

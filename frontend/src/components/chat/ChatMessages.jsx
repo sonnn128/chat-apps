@@ -9,7 +9,6 @@ const ChatMessages = () => {
   const user = useSelector((state) => state.auth.user);
   const { currentChannelId } = useSelector((state) => state.channel);
 
-  // Use hybrid message strategy (WebSocket + Historical)
   const {
     messages: messagesOfCurrentChannel,
     isLoading,
@@ -22,7 +21,6 @@ const ChatMessages = () => {
   const prevLastMessageIdRef = useRef(null);
   const isFirstLoadRef = useRef(true);
 
-  // Handle scroll positioning
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container || !messagesEndRef.current) return;
@@ -33,19 +31,15 @@ const ChatMessages = () => {
     const lastMessage = messagesOfCurrentChannel[currentLength - 1];
     const lastMessageId = lastMessage?.key?.messageId || lastMessage?.id;
 
-    // 1. Initial Load: Scroll to bottom
     if (isFirstLoadRef.current && currentLength > 0) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
       isFirstLoadRef.current = false;
       prevLastMessageIdRef.current = lastMessageId;
     }
-    // 2. Updates
     else if (currentLength > prevLength) {
-      // Check if the last message ID has changed
       const isMessageAddedAtBottom = lastMessageId !== prevLastMessageIdRef.current;
 
       if (isMessageAddedAtBottom) {
-        // Scroll to bottom if user is near bottom OR it's their own message
         const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
         const isOwnMessage = lastMessage?.userId === user?.data?.id;
 
@@ -53,26 +47,35 @@ const ChatMessages = () => {
           messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
       }
-      // If message added at top (history), do nothing (browser maintains scroll position relative to content usually, or we might need to adjust if it jumps)
     }
 
     prevMessagesLengthRef.current = currentLength;
     prevLastMessageIdRef.current = lastMessageId;
   }, [messagesOfCurrentChannel, user?.data?.id]);
 
-  // Infinite scroll handler
   const handleScroll = useCallback((e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
 
-    // Load more messages when user scrolls to top
     if (scrollTop === 0 && !isLoading) {
-      console.log("📜 User scrolled to top, loading more messages...");
       loadMoreMessages();
     }
   }, [isLoading, loadMoreMessages]);
 
-  const renderMessage = (message, isLastMessage) => {
+  const renderMessage = (message, isLastInSequence, isFirstInSequence) => {
     const isCurrentUser = user?.data?.id === message.userId;
+
+    const commonProps = {
+      messageId: message.key.messageId,
+      content: message.content,
+      isCurrentUser,
+      userId: message.userId,
+      senderName: message.senderName,
+      senderAvatar: message.senderAvatar,
+      timestamp: message.timestamp || message.key.timestamp,
+      isLastMessage: isLastInSequence,
+      showName: isFirstInSequence,
+      showAvatar: isLastInSequence,
+    };
 
     switch (message.type) {
       case "CHAT":
@@ -80,21 +83,7 @@ const ChatMessages = () => {
       case "VIDEO":
       case "FILE":
       case "DELETED":
-        return (
-          <UserMessage
-            key={message.key.messageId}
-            messageId={message.key.messageId}
-            content={message.content}
-            isCurrentUser={isCurrentUser}
-            userId={message.userId}
-            senderName={message.senderName}
-            senderAvatar={message.senderAvatar}
-            type={message.type}
-            status={message.status}
-            timestamp={message.timestamp || message.key.timestamp}
-            isLastMessage={isLastMessage}
-          />
-        );
+        return <UserMessage key={message.key.messageId} {...commonProps} type={message.type} status={message.status} />;
       case "EMOJI":
         return (
           <EmojiMessage
@@ -118,21 +107,14 @@ const ChatMessages = () => {
             senderAvatar={message.senderAvatar}
             type={message.type}
             timestamp={message.timestamp || message.key.timestamp}
-          /> // NoticeMessage might not need messageId for now
+          />
         );
       default:
-        console.log("Unknown message type:", message.type);
-
         return (
           <UserMessage
             key={message.key.messageId}
-            messageId={message.key.messageId}
-            content={message.content}
-            isCurrentUser={isCurrentUser}
-            userId={message.userId}
+            {...commonProps}
             status={message.status}
-            timestamp={message.timestamp || message.key.timestamp}
-            isLastMessage={isLastMessage}
           />
         );
     }
@@ -144,7 +126,6 @@ const ChatMessages = () => {
       className="flex-1 p-4 overflow-y-auto bg-gray-50"
       onScroll={handleScroll}
     >
-      {/* Loading indicator at top */}
       {isLoading && (
         <div className="flex justify-center py-2">
           <div className="text-sm text-gray-500">
@@ -156,7 +137,6 @@ const ChatMessages = () => {
         </div>
       )}
 
-      {/* Empty state */}
       {!isLoading && messagesOfCurrentChannel.length === 0 && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-500">
@@ -167,8 +147,13 @@ const ChatMessages = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-2">
-        {messagesOfCurrentChannel.map((message, index) => renderMessage(message, index === messagesOfCurrentChannel.length - 1))}
+      <div className="flex flex-col gap-1">
+        {messagesOfCurrentChannel.map((message, index) => {
+          const isFirstInSequence = index === 0 || messagesOfCurrentChannel[index - 1].userId !== message.userId;
+          const isLastInSequence = index === messagesOfCurrentChannel.length - 1 || messagesOfCurrentChannel[index + 1].userId !== message.userId;
+
+          return renderMessage(message, isLastInSequence, isFirstInSequence);
+        })}
         <div ref={messagesEndRef} />
       </div>
     </div>

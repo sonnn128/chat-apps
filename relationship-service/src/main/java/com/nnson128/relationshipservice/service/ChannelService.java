@@ -12,6 +12,7 @@ import com.nnson128.relationshipservice.dto.response.AddPeopleResponse;
 import com.nnson128.relationshipservice.exception.ChannelNotFoundException;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload;
+import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelUpdatedPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.MembersAddedPayload;
 import com.nnson128.relationshipservice.model.channel.Channel;
 import com.nnson128.relationshipservice.model.membership.Membership;
@@ -649,5 +650,89 @@ public class ChannelService {
                 .build();
     }
 
-}
+    public ChannelResponse updateChannelName(UUID channelId, String newName, UUID requesterId) {
+        // 1. Check if channel exists
+        Channel channel = channelRepository.findById(channelId)
+                .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
 
+        // 2. Check if requester is a participant (and maybe ADMIN? For now just participant)
+        if (!isUserParticipant(channelId, requesterId)) {
+            throw new RuntimeException("User is not a member of this channel");
+        }
+
+        // 3. Update name
+        String oldName = channel.getChannelName();
+        channel.setChannelName(newName);
+        Channel savedChannel = channelRepository.save(channel);
+
+        // 4. Send notification if name changed
+        if (!Objects.equals(oldName, newName)) {
+            sendChannelNameChangedNotification(channelId, requesterId, oldName, newName);
+            produceChannelUpdatedEvent(savedChannel, requesterId);
+        }
+
+        // 5. Return response
+        List<UUID> memberIds = getParticipantIdsByChannelId(channelId);
+        List<ChannelParticipantResponse> participants = getChannelParticipants(channelId, memberIds);
+        
+        // Optimize: skip messages for now as frontend likely just updates header/sidebar
+        // List<ChannelMessageDto> messages = chatServiceClient.getChannelMessages(channelId);
+
+        return ChannelResponse.builder()
+                .id(savedChannel.getId())
+                .channelName(savedChannel.getChannelName())
+                .avatar(savedChannel.getAvatar())
+                .createdAt(savedChannel.getCreatedAt())
+                .messages(new ArrayList<>()) // Empty messages
+                .memberIds(memberIds)
+                .participants(participants)
+                .build();
+    }
+
+    private void sendChannelNameChangedNotification(UUID channelId, UUID requesterId, String oldName, String newName) {
+         try {
+            // Get user info
+            UserResponse requester = userServiceClient.getUserById(requesterId);
+            String requesterName = "A user";
+            if (requester != null) {
+                requesterName = requester.getFirstname() + " " + requester.getLastname();
+            }
+
+            String content = String.format("%s đã đổi tên đoạn chat thành \"%s\"", requesterName, newName);
+
+            SendMessageRequest messageRequest = SendMessageRequest.builder()
+                    .channelId(channelId)
+                    .content(content)
+                    .type(ChannelMessageType.NOTICE)
+                    .build();
+
+            chatServiceClient.sendMessage(requesterId, messageRequest);
+        } catch (Exception e) {
+            // Log error
+        }
+    }
+
+    private void produceChannelUpdatedEvent(Channel channel, UUID adminId) {
+        UserResponse admin = userServiceClient.getUserById(adminId);
+        String adminName = "A user";
+        if (admin != null) {
+            adminName = admin.getFirstname() + " " + admin.getLastname();
+        }
+
+        ChannelUpdatedPayload event = ChannelUpdatedPayload.builder()
+                .eventType(com.nnson128.chatapps_base.models.events.channel.ChannelEventType.CHANNEL_UPDATED)
+                .channelId(channel.getId())
+                .newChannelName(channel.getChannelName())
+                .updaterId(adminId)
+                .updaterName(adminName)
+                .updatedAt(java.time.LocalDateTime.now().toString())
+                .memberIds(getParticipantIdsByChannelId(channel.getId()))
+                .build();
+        
+        try {
+            messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, event);
+        } catch (Exception e) {
+            // Log error
+        }
+    }
+}

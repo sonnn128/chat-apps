@@ -254,4 +254,72 @@ public class AuthService {
         return UUID.fromString(idStr); // Convert string sang UUID
     }
 
+    // Forgot Password Logic
+    private final EmailService emailService; // Keep for now if used elsewhere or remove if unused, but Consumer uses it. Here we inject Producer.
+    private final com.nnson128.userservice.event.EmailProducer emailProducer;
+    private final com.nnson128.userservice.repository.PasswordResetTokenRepository tokenRepository;
+
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CommonException("User not found with email: " + email, HttpStatus.NOT_FOUND));
+
+        // Create token
+        String token = UUID.randomUUID().toString();
+        com.nnson128.userservice.model.PasswordResetToken resetToken = com.nnson128.userservice.model.PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(java.time.LocalDateTime.now().plusHours(1)) // 1 hour expiry
+                .build();
+
+        // Remove old tokens for this user
+        tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
+        tokenRepository.save(resetToken);
+
+        // Send Email Event to Kafka
+        String resetLink = "http://localhost:5173/reset-password?token=" + token;
+        
+        emailProducer.sendForgotPasswordEvent(com.nnson128.userservice.event.ForgotPasswordEvent.builder()
+                .email(user.getEmail())
+                .name(user.getFirstname())
+                .resetLink(resetLink)
+                .build());
+    }
+
+    public void resetPassword(String token, String newPassword) {
+        com.nnson128.userservice.model.PasswordResetToken resetToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new CommonException("Invalid token", HttpStatus.BAD_REQUEST));
+
+        if (resetToken.isExpired()) {
+            tokenRepository.delete(resetToken);
+            throw new CommonException("Token expired", HttpStatus.BAD_REQUEST);
+        }
+
+        User user = resetToken.getUser();
+
+        // Update Keycloak Password
+        String adminToken = identityClient.getClientToken(TokenExchangeParam.builder()
+                .grant_type("client_credentials")
+                .client_id(clientId)
+                .client_secret(clientSecret)
+                .scope("openid")
+                .build()).getAccessToken();
+
+        identityClient.resetPassword(
+                "Bearer " + adminToken,
+                user.getId().toString(),
+                Credential.builder()
+                        .type("password")
+                        .value(newPassword)
+                        .temporary(false)
+                        .build()
+        );
+
+        // Update Local DB Password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Consume Token
+        tokenRepository.delete(resetToken);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.nnson128.userservice.controller;
 
 import com.nnson128.chatapps_base.dto.res.ApiResponse;
+import com.nnson128.userservice.dto.request.ForgotPasswordRequest;
 import com.nnson128.userservice.dto.request.LoginRequest;
 import com.nnson128.userservice.dto.request.UserRegistrationRequest;
 import com.nnson128.userservice.dto.response.AuthResponse;
@@ -53,5 +54,23 @@ public class AuthController {
     @PostMapping("/introspect")
     public ResponseEntity<?> introspectToken(@RequestBody String token) {
         return ResponseEntity.ok(authService.introspectToken(token));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.builder()
+                .success(true)
+                .message("Password reset email sent")
+                .build());
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody com.nnson128.userservice.dto.request.ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.builder()
+                .success(true)
+                .message("Password successfully reset")
+                .build());
     }
 }

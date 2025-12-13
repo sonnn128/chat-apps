@@ -7,7 +7,7 @@ import AddMemberModal from "@/components/modals/AddMemberModal";
 import ChatInfoSidebar from "@/components/chat/ChatInfoSidebar";
 import WelcomeState from "@/components/chat/WelcomeState";
 import { websocketService } from "@/utils/ws";
-import { receiveMessage, addChannel, receiveChannelAddedNotification } from "@/stores/slices/channelSlice";
+import { receiveMessage, addChannel, receiveChannelAddedNotification, receiveChannelUpdatedNotification } from "@/stores/slices/channelSlice";
 import { receiveFriendRequest, receiveFriendRequestAccepted, receiveFriendRequestRejected } from "@/stores/slices/friendshipSlice";
 import { fetchPendingRequests, fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
 import { successToast } from "@/utils/toast";
@@ -66,7 +66,6 @@ const ChatSection = () => {
                     }
                 } else if (message.eventType === "MESSAGE_SENT") {
                     if (message.type === "NOTICE" && message.content && message.content.includes("đã thêm")) {
-                        console.log("📨 ChatSection: Notice message about adding people to channel:", message.content);
                         dispatch(receiveMessage(message));
                     } else {
                         dispatch(receiveMessage(message));
@@ -80,6 +79,11 @@ const ChatSection = () => {
                         successToast(`You've been added to channel "${message.channelName}"! 🎉`);
                     } else {
                     }
+                } else if (message.eventType === "CHANNEL_UPDATED") {
+                    dispatch(receiveChannelUpdatedNotification(message));
+                } else if (message.eventType === "CALL_SIGNAL") {
+                    const event = new CustomEvent("CALL_SIGNAL_RECEIVED", { detail: message });
+                    window.dispatchEvent(event);
                 } else if (message.key && message.key.channelId) {
                     dispatch(receiveMessage(message));
                 } else if (message.requesterId && message.friendId && !message.eventType) {
@@ -144,7 +148,7 @@ const ChatSection = () => {
                 } />
                 <div className="flex-1 overflow-hidden flex flex-col">
                     {currentChannelId ? (
-                        <ChatMessages />
+                        <ChatMessages key={currentChannelId} />
                     ) : (
                         <div className="flex items-center justify-center h-full text-gray-500">
                             Select a chat to start messaging

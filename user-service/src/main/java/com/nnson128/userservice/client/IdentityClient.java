@@ -27,4 +27,11 @@ public interface IdentityClient {
             @RequestHeader("authorization") String token,
             @RequestBody UserCreationParam param);
 
+    @org.springframework.web.bind.annotation.PutMapping(value = "/admin/realms/chat-apps/users/{userId}/reset-password",
+            consumes = "application/json")
+    ResponseEntity<?> resetPassword(
+            @RequestHeader("authorization") String token,
+            @org.springframework.web.bind.annotation.PathVariable("userId") String userId,
+            @RequestBody com.nnson128.userservice.dto.identity.Credential credential);
+
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   Form,
@@ -8,12 +8,10 @@ import {
   Checkbox,
   Card,
   Typography,
-  Row, // Keep for the remember/forgot section if desired, or remove
-  Col, // Keep for the remember/forgot section if desired, or remove
+  Row,
+  Col,
 } from "antd";
-// EyeOutlined and EyeInvisibleOutlined are automatically handled by Input.Password
-// so direct import might not be needed unless you customize iconRender heavily.
-// For default behavior, they are not needed.
+
 import { loginUser } from "@/stores/middlewares/authMiddleware";
 import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
 import { successToast } from "@/utils/toast";
@@ -24,7 +22,7 @@ function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [form] = Form.useForm(); // Optional: if you need to interact with form instance
+  const [form] = Form.useForm();
 
   const handleSubmit = async (values) => {
     setIsLoading(true);
@@ -116,9 +114,9 @@ function Login() {
                 </Form.Item>
               </Col>
               <Col>
-                <Link href="/forgot-password" disabled={isLoading}>
+                <RouterLink to="/forgot-password" style={{ color: '#1677ff' }}>
                   Quên mật khẩu?
-                </Link>
+                </RouterLink>
               </Col>
             </Row>
           </Form.Item>

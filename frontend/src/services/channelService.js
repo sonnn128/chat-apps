@@ -28,6 +28,9 @@ const getOrCreateDirectChannel = async (friendId) =>
 const updateChannelAvatar = async (channelId, avatarUrl) =>
   patch(`${CHANNEL_API}/${channelId}/avatar`, { avatarUrl }, { headers: getAuthHeaders() });
 
+const updateChannelName = async (channelId, channelName) =>
+  patch(`${CHANNEL_API}/${channelId}/name`, { channelName }, { headers: getAuthHeaders() });
+
 const channelService = {
   createChannel,
   getChannels,
@@ -36,7 +39,8 @@ const channelService = {
   addPeopleToChannel,
   deleteChannel,
   getOrCreateDirectChannel,
-  updateChannelAvatar
+  updateChannelAvatar,
+  updateChannelName
 };
 
 export default channelService;

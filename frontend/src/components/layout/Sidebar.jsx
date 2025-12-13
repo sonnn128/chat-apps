@@ -199,10 +199,10 @@ const Sidebar = () => {
       initial={{ x: -300 }}
       animate={{ x: 0 }}
       transition={{ type: "spring", stiffness: 100 }}
-      className="w-[420px] bg-white border-r flex flex-col"
+      className="w-[420px] bg-white flex flex-col"
     >
       {/* HEADER */}
-      <div className="flex items-center justify-between p-3 border-b bg-white">
+      <div className="flex items-center justify-between p-3 bg-white">
         <Title level={4} className="!m-0 !text-[#050505]">
           Messenger
         </Title>
@@ -231,7 +231,7 @@ const Sidebar = () => {
       </div>
 
       {/* SEARCH */}
-      <div className="p-3 border-b bg-white">
+      <div className="p-3 bg-white">
         <form onSubmit={handleSearchSubmit}>
           <Input
             placeholder="Tìm kiếm bằng số điện thoại"

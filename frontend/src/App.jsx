@@ -13,7 +13,11 @@ import Login from "@/pages/Login";
 import Main from "@/pages/Main";
 import Register from "@/pages/Register";
 import Settings from "@/pages/Settings";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import AvatarDebug from "@/components/AvatarDebug";
+import { CallProvider } from "@/context/CallContext";
+import CallModal from "@/components/modals/CallModal";
 
 function App() {
   const dispatch = useDispatch();
@@ -50,19 +54,24 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={user ? <Main /> : <Navigate to="/login" />} />
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-      <Route
-        path="/register"
-        element={!user ? <Register /> : <Navigate to="/login" />}
-      />
-      <Route
-        path="/settings"
-        element={user ? <Settings /> : <Navigate to="/login" />}
-      />
-      <Route path="/debug/avatar" element={<AvatarDebug />} />
-    </Routes>
+    <CallProvider>
+      <CallModal />
+      <Routes>
+        <Route path="/" element={user ? <Main /> : <Navigate to="/login" />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+        <Route
+          path="/register"
+          element={!user ? <Register /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/settings"
+          element={user ? <Settings /> : <Navigate to="/login" />}
+        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/debug/avatar" element={<AvatarDebug />} />
+      </Routes>
+    </CallProvider>
   );
 }
 

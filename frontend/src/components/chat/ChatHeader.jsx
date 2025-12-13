@@ -10,7 +10,11 @@ import {
 import { useSelector } from "react-redux";
 import { DEFAULT_AVATAR } from "@/utils/constants";
 
+import { useCall } from "@/context/CallContext";
+import { message } from "antd";
+
 const ChatHeader = ({ title: propTitle }) => {
+  const { callUser } = useCall();
   const currentChannel = useSelector((state) => state.channel.currentChannel);
   const currentFriend = useSelector((state) => state.friendship.currentFriend);
   const user = useSelector((state) => state.auth.user?.data);
@@ -52,9 +56,48 @@ const ChatHeader = ({ title: propTitle }) => {
     avatarText = currentChannel.channelName.charAt(0) || avatarText;
   }
 
+  const handleCall = (video) => {
+    console.log("handleCall triggered. Video:", video);
+    console.log("Current Channel:", currentChannel);
+    console.log("Current Friend:", currentFriend);
+    console.log("User:", user);
+
+    let targetId = null;
+    let channelId = currentChannel?.id;
+
+    if (currentFriend) {
+      targetId = currentFriend.id || currentFriend.friendId;
+    } else if (currentChannel) {
+      // Try participants first
+      if (currentChannel.participants && currentChannel.participants.length === 2) {
+        const other = currentChannel.participants.find((p) => (p.userId || p.id) !== user?.id);
+        targetId = other?.userId || other?.id;
+      }
+      // Fallback to memberIds if participants not populated
+      else if (currentChannel.memberIds && currentChannel.memberIds.length === 2) {
+        const otherId = currentChannel.memberIds.find(id => id !== user?.id);
+        targetId = otherId;
+      }
+    }
+
+    console.log("Derived targetId:", targetId);
+
+    if (targetId) {
+      callUser(targetId, channelId, video);
+    } else {
+      if (currentChannel && currentChannel.participants && currentChannel.participants.length > 2) {
+        message.warning("Group calling is not supported yet.");
+      } else {
+        message.error("Cannot call: User not found or invalid channel.");
+      }
+      console.warn("Cannot call: No target user found or group call not supported");
+    }
+  };
+
   return (
     <>
-      <div className="p-3 border-b flex items-center justify-between bg-white">
+      <div className="p-3 flex items-center justify-between bg-white">
+        {/* ... (left side content same as before) */}
         <div className="flex items-center">
           <div className="relative">
             <Avatar size={40} src={avatarSrc || DEFAULT_AVATAR} style={{ cursor: "pointer" }} />
@@ -70,10 +113,10 @@ const ChatHeader = ({ title: propTitle }) => {
 
         <Space>
           <Tooltip title="Call">
-            <Button icon={<PhoneOutlined />} />
+            <Button icon={<PhoneOutlined />} onClick={() => handleCall(false)} />
           </Tooltip>
           <Tooltip title="Video Call">
-            <Button icon={<VideoCameraOutlined />} />
+            <Button icon={<VideoCameraOutlined />} onClick={() => handleCall(true)} />
           </Tooltip>
         </Space>
       </div>

@@ -147,4 +147,23 @@ public class ChannelController {
         
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{channelId}/name")
+    public ResponseEntity<ApiResponse<ChannelResponse>> updateChannelName(
+            @PathVariable UUID channelId,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        String channelName = request.get("channelName");
+        
+        ChannelResponse updatedChannel = channelService.updateChannelName(channelId, channelName, userId);
+        
+        ApiResponse<ChannelResponse> response = ApiResponse.<ChannelResponse>builder()
+                .success(true)
+                .message("Channel name updated successfully")
+                .data(updatedChannel)
+                .build();
+        
+        return ResponseEntity.ok(response);
+    }
 }

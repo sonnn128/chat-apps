@@ -9,11 +9,21 @@ import { DEFAULT_AVATAR } from "@/utils/constants";
 import chatService from "@/services/chatService";
 import { useSelector } from "react-redux";
 
-const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: propSenderName, senderAvatar: propSenderAvatar, type = "CHAT", status = "sent", timestamp, isLastMessage }) => {
+const UserMessage = ({
+  messageId,
+  content,
+  isCurrentUser,
+  userId,
+  senderName: propSenderName,
+  senderAvatar: propSenderAvatar,
+  type = "CHAT",
+  status = "sent",
+  timestamp,
+  isLastMessage,
+  showName = true,
+  showAvatar = true
+}) => {
   // DEBUG LOG
-  if (content === "") {
-    console.log("UserMessage DEBUG:", { messageId, type, content, isCurrentUser });
-  }
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
@@ -23,7 +33,6 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
   const [isUnsendModalOpen, setIsUnsendModalOpen] = useState(false);
   const [unsendType, setUnsendType] = useState('everyone');
 
-  // Get real-time user info - but only if props not provided
   const { userInfo, loading } = useUserInfo(userId && !propSenderName ? userId : null);
   const senderName = propSenderName || (userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...');
   const senderAvatar = propSenderAvatar || userInfo?.avatarUrl || null;
@@ -32,7 +41,7 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
     const rect = event.currentTarget.getBoundingClientRect();
     setReactionPickerPosition({
       x: rect.left,
-      y: rect.top - 320, // Position above the button
+      y: rect.top - 320,
     });
     setShowReactionPicker(true);
   };
@@ -45,12 +54,11 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
     if (e.key === 'unsend') {
       setIsUnsendModalOpen(true);
     }
-    // Handle other actions here if needed
   };
 
   const handleUnsendCancel = () => {
     setIsUnsendModalOpen(false);
-    setUnsendType('everyone'); // Reset to default
+    setUnsendType('everyone');
   };
 
   const handleUnsendRemove = async () => {
@@ -58,14 +66,11 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
     if (unsendType === 'everyone') {
       try {
         await chatService.deleteMessage(currentChannelId, messageId);
-        // Optimistic update could be done here, or wait for socket event
       } catch (error) {
         console.error("Failed to unsend message", error);
-        // Show error toast?
       }
     } else {
       // "For you" logic (local delete) - TO BE IMPLEMENTED
-      console.log("Unsend for you not implemented yet");
     }
     setIsUnsendModalOpen(false);
   };
@@ -155,17 +160,23 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
   return (
     <div className={`flex items-start ${isCurrentUser ? "justify-end" : ""}`}>
       {!isCurrentUser && (
-        <Avatar
-          size={32}
-          style={{ marginRight: 8 }}
-          src={senderAvatar}
-        >
-          {senderName[0] || "U"}
-        </Avatar>
+        <div style={{ marginRight: 8, width: 32, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {showAvatar ? (
+            <Avatar
+              size={32}
+              style={{ marginTop: showName ? 22 : 0 }}
+              src={senderAvatar}
+            >
+              {senderName[0] || "U"}
+            </Avatar>
+          ) : (
+            <div style={{ width: 32 }} />
+          )}
+        </div>
       )}
       <div className={isCurrentUser ? "flex flex-col items-end" : ""}>
-        {!isCurrentUser && (
-          <div className="text-xs font-semibold text-gray-700 mb-1" style={{ marginLeft: 4 }}>
+        {!isCurrentUser && showName && (
+          <div className="text-[11px] text-gray-500 mb-1" style={{ marginLeft: 4 }}>
             {senderName}
           </div>
         )}
@@ -178,8 +189,10 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
                 : "bg-[#F0F0F0] text-black p-2"
               } rounded-2xl max-w-xs user-message`}
             style={{
-              borderTopLeftRadius: isCurrentUser ? 16 : 4,
-              borderTopRightRadius: isCurrentUser ? 4 : 16,
+              borderTopLeftRadius: isCurrentUser ? 18 : (showName ? 18 : 4),
+              borderTopRightRadius: isCurrentUser ? (showName ? 18 : 4) : 18,
+              borderBottomLeftRadius: isCurrentUser ? 18 : (showAvatar ? 18 : 4),
+              borderBottomRightRadius: isCurrentUser ? (showAvatar ? 18 : 4) : 18,
               marginLeft: !isCurrentUser ? 4 : 0,
               marginRight: 0,
               opacity: status === "pending" ? 0.7 : 1,
@@ -216,7 +229,6 @@ const UserMessage = ({ messageId, content, isCurrentUser, userId, senderName: pr
             </div>
           )}
         </div>
-        {/* Status Text */}
         {isCurrentUser && (status === "pending" || (status === "sent" && isLastMessage)) && (
           <div className="text-xs text-gray-400 mt-1 mr-1">
             {status === "pending" ? "Sending..." : "Sent"}

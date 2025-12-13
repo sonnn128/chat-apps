@@ -179,7 +179,7 @@ const ChatInput = () => {
     <div className="relative flex flex-col">
       {/* File Preview Area */}
       {selectedFiles.length > 0 && (
-        <div className="flex gap-2 p-2 bg-gray-50 border-t overflow-x-auto">
+        <div className="flex gap-2 p-2 bg-gray-50 overflow-x-auto">
           {selectedFiles.map((file, index) => (
             <div key={index} className="relative group flex-shrink-0">
               {file.type === "IMAGE" ? (
@@ -214,7 +214,7 @@ const ChatInput = () => {
       )}
       <form
         onSubmit={handleSubmit}
-        className="p-3 border-t flex items-center gap-2 bg-white"
+        className="p-3 flex items-center gap-2 bg-white"
       >
         {/* Left side icons */}
         <div className="flex items-center gap-2">

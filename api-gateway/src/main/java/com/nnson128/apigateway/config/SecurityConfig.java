@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .pathMatchers("/v3/api-docs/**").permitAll()
                         .pathMatchers("/api/v1/auth/register").permitAll()
                         .pathMatchers("/api/v1/auth/login").permitAll()
+                        .pathMatchers("/api/v1/auth/forgot-password").permitAll()
+                        .pathMatchers("/api/v1/auth/reset-password").permitAll()
                         .pathMatchers("/api/v1/users/search/phone").permitAll()
                         .anyExchange().authenticated()
                 )

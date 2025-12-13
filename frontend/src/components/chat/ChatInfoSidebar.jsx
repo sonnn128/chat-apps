@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import ChannelMembers from "../ChannelMembers";
+import ChangeChatNameModal from "../modals/channeloptions/ChangeChatNameModal";
 import React, { useState, useRef } from "react";
 import { Avatar, message, Spin } from "antd";
 import { User, Bell, Search, ChevronRight, Lock, UserPlus, Edit3, Image as ImageIcon, Palette, Smile, Type } from "lucide-react";
@@ -10,6 +11,7 @@ const ChatInfoSidebar = () => {
   const { currentChannel, channels } = useSelector((state) => state.channel);
   const [showMembers, setShowMembers] = useState(false);
   const [showCustomizeChat, setShowCustomizeChat] = useState(false);
+  const [showChangeNameModal, setShowChangeNameModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const dispatch = useDispatch();
@@ -34,7 +36,6 @@ const ChatInfoSidebar = () => {
     } else if (key === "customizeChat") {
       setShowCustomizeChat(!showCustomizeChat);
     } else {
-      console.log(`Clicked on: ${key}`);
     }
   };
 
@@ -72,12 +73,33 @@ const ChatInfoSidebar = () => {
     }
   };
 
+  const handleChangeName = async (newName) => {
+    if (!newName || newName.trim() === "") return;
+
+    setLoading(true);
+    try {
+      const res = await channelService.updateChannelName(currentChannel.id, newName);
+      if (res.success) {
+        dispatch(updateChannel(res.data));
+        message.success("Channel name updated successfully");
+        setShowChangeNameModal(false);
+      } else {
+        message.error("Failed to update channel name");
+      }
+    } catch (error) {
+      console.error("Error updating channel name:", error);
+      message.error("An error occurred while updating channel name");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!currentChannel) {
-    return <div className="w-[420px] flex-shrink-0 bg-white border-l border-gray-200 h-full flex items-center justify-center">Select a channel</div>;
+    return <div className="w-[420px] flex-shrink-0 bg-white h-full flex items-center justify-center">Select a channel</div>;
   }
 
   return (
-    <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 border-l border-gray-200 flex flex-col h-full">
+    <div className="w-[420px] flex-shrink-0 bg-white text-gray-800 flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex flex-col items-center text-center">
           {loading ? (
@@ -142,7 +164,10 @@ const ChatInfoSidebar = () => {
 
               {item.key === "customizeChat" && showCustomizeChat && (
                 <div className="pl-4 pr-2 pb-2">
-                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                  <button
+                    className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700"
+                    onClick={() => setShowChangeNameModal(true)}
+                  >
                     <Edit3 size={18} className="text-gray-500" />
                     <span>Change chat name</span>
                   </button>
@@ -179,7 +204,21 @@ const ChatInfoSidebar = () => {
           ))}
         </div>
       </div>
-    </div>
+
+
+      {/* Change Name Modal */}
+      {
+        currentChannel && (
+          <ChangeChatNameModal
+            visible={showChangeNameModal}
+            onConfirm={handleChangeName}
+            onCancel={() => !loading && setShowChangeNameModal(false)}
+            currentName={currentChannel.channelName || ""}
+            loading={loading}
+          />
+        )
+      }
+    </div >
   );
 };
 

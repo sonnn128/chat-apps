@@ -5,10 +5,12 @@ import com.nnson128.chatapps_base.models.events.EventWrapper;
 import com.nnson128.chatapps_base.models.events.message.MessageEventType;
 import com.nnson128.chatapps_base.models.events.message.payloads.MessageSentPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload;
+import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelUpdatedPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.MembersAddedPayload;
 import com.nnson128.chatapps_base.models.events.friendship.payloads.FriendRequestSentPayload;
 import com.nnson128.chatapps_base.models.events.friendship.payloads.FriendRequestAcceptedPayload;
 import com.nnson128.chatapps_base.models.events.friendship.payloads.FriendRequestRejectedPayload;
+import com.nnson128.chatapps_base.models.events.call.payloads.CallSignalPayload;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
@@ -34,14 +36,11 @@ public class NotificationService {
         try {
             EventWrapper<?> wrapper = objectMapper.readValue(eventJson, EventWrapper.class);
             if (wrapper.getEventType() == null) {
-                System.out.println("⚠️ NotificationService: Event has no eventType");
                 return;
             }
 
             processEvent(wrapper.getEventType(), wrapper.getPayload());
         } catch (Exception e) {
-            System.out.println("❌ NotificationService: Error processing notification: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -50,14 +49,11 @@ public class NotificationService {
         try {
             EventWrapper<?> wrapper = objectMapper.readValue(eventJson, EventWrapper.class);
             if (wrapper.getEventType() == null) {
-                System.out.println("⚠️ NotificationService: Friendship event has no eventType");
                 return;
             }
 
             processEvent(wrapper.getEventType(), wrapper.getPayload());
         } catch (Exception e) {
-            System.out.println("❌ NotificationService: Error processing friendship event: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -68,6 +64,9 @@ public class NotificationService {
                 break;
             case "CHANNEL_CREATED":
                 handleNewChannel(convertPayload(payloadData, ChannelCreatedPayload.class));
+                break;
+            case "CHANNEL_UPDATED":
+                handleChannelUpdated(convertPayload(payloadData, ChannelUpdatedPayload.class));
                 break;
             case "MEMBERS_ADDED_TO_CHANNEL":
                 handleMembersAddedToChannel(convertPayload(payloadData, MembersAddedPayload.class));
@@ -81,8 +80,10 @@ public class NotificationService {
             case "FRIEND_REQUEST_REJECTED":
                 handleFriendRequestRejected(convertPayload(payloadData, FriendRequestRejectedPayload.class));
                 break;
+            case "CALL_SIGNAL":
+                handleCallSignal(convertPayload(payloadData, CallSignalPayload.class));
+                break;
             default:
-                System.out.println("⚠️ NotificationService: Unknown event type: " + eventType);
         }
     }
 
@@ -90,16 +91,14 @@ public class NotificationService {
         try {
             return objectMapper.convertValue(payloadData, targetClass);
         } catch (Exception e) {
-            System.out.println("❌ NotificationService: Failed to convert payload to " + targetClass.getSimpleName());
             return null;
         }
     }
 
+
     private void handleMessageEvent(MessageSentPayload event) {
         if (event == null) return;
-        
-        System.out.println("📨 NotificationService: handleMessageEvent - eventType=" + event.getEventType());
-        System.out.println("📨 NotificationService: recipientIds=" + event.getRecipientIds());
+
         
         // Convert MessageSentPayload to map with nested key structure for frontend compatibility
         Map<String, Object> key = new HashMap<>();
@@ -115,8 +114,7 @@ public class NotificationService {
         wrapper.put("senderName", event.getSenderName());
         wrapper.put("senderAvatar", event.getSenderAvatar());
         wrapper.put("timestamp", event.getTimestamp() != null ? event.getTimestamp().toEpochMilli() : 0);
-        
-        System.out.println("📨 NotificationService: About to call pushToUsers with " + (event.getRecipientIds() != null ? event.getRecipientIds().size() : 0) + " recipients");
+
         pushToUsers(event.getRecipientIds(), wrapper);
     }
 
@@ -144,25 +142,36 @@ public class NotificationService {
         if (event == null) return;
         pushToUsers(List.of(event.getRecipientId()), event);
     }
+    
+    private void handleChannelUpdated(ChannelUpdatedPayload event) {
+        if (event == null) return;
+        pushToUsers(event.getMemberIds(), event);
+    }
+
+    private void handleCallSignal(CallSignalPayload event) {
+        if (event == null || event.getSenderId() == null) return;
+        
+        // Determine the target: if sender is caller, target is callee; otherwise target is caller.
+        UUID targetId = event.getSenderId().equals(event.getCallerId()) ? event.getCalleeId() : event.getCallerId();
+        
+        if (targetId != null) {
+            pushToUsers(List.of(targetId), event);
+        }
+    }
+
 
     private void pushToUsers(List<UUID> userIds, Object payload) {
         if (userIds == null || userIds.isEmpty()) {
-            System.out.println("⚠️ NotificationService: No userIds to push to");
             return;
         }
 
-        System.out.println("🔔 NotificationService: Pushing to " + userIds.size() + " users: " + userIds);
         final String destination = "/queue/notifications";
         Object messagePayload = createMessageWithEventType(payload);
 
         userIds.forEach(userId -> {
             try {
-                System.out.println("📤 NotificationService: Sending to user " + userId + " at destination " + destination);
                 messagingTemplate.convertAndSendToUser(userId.toString(), destination, messagePayload);
-                System.out.println("✅ NotificationService: Successfully sent to user " + userId);
             } catch (Exception e) {
-                System.out.println("❌ NotificationService: Failed to send to user " + userId + ": " + e.getMessage());
-                e.printStackTrace();
             }
         });
     }
@@ -177,6 +186,8 @@ public class NotificationService {
                 messageMap.put("eventType", "MESSAGE_SENT");
             } else if (payload instanceof ChannelCreatedPayload) {
                 messageMap.put("eventType", "CHANNEL_CREATED");
+            } else if (payload instanceof ChannelUpdatedPayload) {
+                messageMap.put("eventType", "CHANNEL_UPDATED");
             } else if (payload instanceof MembersAddedPayload) {
                 messageMap.put("eventType", "MEMBERS_ADDED_TO_CHANNEL");
             } else if (payload instanceof FriendRequestSentPayload) {
@@ -185,6 +196,8 @@ public class NotificationService {
                 messageMap.put("eventType", "FRIEND_REQUEST_ACCEPTED");
             } else if (payload instanceof FriendRequestRejectedPayload) {
                 messageMap.put("eventType", "FRIEND_REQUEST_REJECTED");
+            } else if (payload instanceof CallSignalPayload) {
+                messageMap.put("eventType", "CALL_SIGNAL");
             }
 
             // Now convert field names from snake_case to camelCase for frontend
@@ -196,7 +209,6 @@ public class NotificationService {
 
             return transformedMap;
         } catch (Exception e) {
-            System.out.println("⚠️ NotificationService: Error creating message with event type: " + e.getMessage());
             return payload;
         }
     }
