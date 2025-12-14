@@ -3,6 +3,7 @@ package com.nnson128.chatservice.service;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
+import com.nnson128.chatapps_base.exception.CommonException;
 import com.nnson128.chatapps_base.models.events.EventWrapper;
 import com.nnson128.chatapps_base.models.events.message.MessageEventType;
 import com.nnson128.chatapps_base.models.events.message.payloads.MessageSentPayload;
@@ -18,6 +19,7 @@ import com.nnson128.chatservice.model.ChannelMessageKey;
 import com.nnson128.chatservice.model.ChannelMessageType;
 import com.nnson128.chatservice.repository.ChannelMessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -36,7 +38,6 @@ public class ChannelMessageService {
     private final ChannelServiceClient channelServiceClient;
     private final UserServiceClient userServiceClient;
     private final MessageProducerService messageProducerService;
-    private final ObjectMapper objectMapper;
 
     public List<ChannelMessage> getAllMessagesOfChannel(UUID channelId) {
         return channelMessageRepository.findAllByKeyChannelIdOrderByKeyMessageIdAsc(channelId);
@@ -45,21 +46,21 @@ public class ChannelMessageService {
     public ChannelMessage sendMessage(SendMessageRequest request, UUID senderId) {
 
         ChannelMessage messageToSave = ChannelMessage.builder()
-                .key(ChannelMessageKey.builder()
-                        .channelId(request.getChannelId())
-                        .messageId(Uuids.timeBased())
-                        .build())
-                .userId(senderId)
-                .content(request.getContent())
-                .type(request.getType() != null ? request.getType() : ChannelMessageType.CHAT)
-                .timestamp(Instant.now())
-                .timestamp(Instant.now())
-                .build();
+            .key(ChannelMessageKey.builder()
+                .channelId(request.getChannelId())
+                .messageId(Uuids.timeBased())
+                .build())
+            .userId(senderId)
+            .content(request.getContent())
+            .type(request.getType() != null ? request.getType() : ChannelMessageType.CHAT)
+            .timestamp(Instant.now())
+            .timestamp(Instant.now())
+            .build();
 
         // Check if user is participant of the channel
         ApiResponse<Boolean> isParticipant = channelServiceClient.checkUserIsParticipant(request.getChannelId(), senderId);
         if (isParticipant == null || !Boolean.TRUE.equals(isParticipant.getData())) {
-            throw new com.nnson128.chatapps_base.exception.CommonException("User is not a participant of this channel", org.springframework.http.HttpStatus.FORBIDDEN);
+            throw new CommonException("User is not a participant of this channel", HttpStatus.FORBIDDEN);
         }
 
         // Save to channel_message table
@@ -67,7 +68,7 @@ public class ChannelMessageService {
 
         // Send notification to all channel members (including sender for multi-tab scenarios)
         ApiResponse<List<UUID>> response = channelServiceClient
-                .getParticipantIdsByChannelId(savedMessage.getKey().getChannelId());
+            .getParticipantIdsByChannelId(savedMessage.getKey().getChannelId());
 
         List<UUID> allRecipientIds = response.getData();
 
@@ -76,26 +77,26 @@ public class ChannelMessageService {
 
         // Create MessageSentPayload - include all channel members
         MessageSentPayload event = MessageSentPayload.builder()
-                .eventType(MessageEventType.MESSAGE_SENT)
-                .eventId(UUID.randomUUID().toString())
-                .timestamp(savedMessage.getTimestamp())
-                .messageId(savedMessage.getKey().getMessageId().toString())
-                .channelId(savedMessage.getKey().getChannelId().toString())
-                .type(savedMessage.getType() != null ? savedMessage.getType().name() : null)
-                .content(savedMessage.getContent())
-                .userId(savedMessage.getUserId())
-                .senderName(senderInfo.name())
-                .senderAvatar(senderInfo.avatar())
-                .recipientIds(allRecipientIds)
-                .build();
+            .eventType(MessageEventType.MESSAGE_SENT)
+            .eventId(UUID.randomUUID().toString())
+            .timestamp(savedMessage.getTimestamp())
+            .messageId(savedMessage.getKey().getMessageId().toString())
+            .channelId(savedMessage.getKey().getChannelId().toString())
+            .type(savedMessage.getType() != null ? savedMessage.getType().name() : null)
+            .content(savedMessage.getContent())
+            .userId(savedMessage.getUserId())
+            .senderName(senderInfo.name())
+            .senderAvatar(senderInfo.avatar())
+            .recipientIds(allRecipientIds)
+            .build();
 
         // Wrap event
         EventWrapper<?> wrapper = EventWrapper.builder()
-                .eventType("MESSAGE_SENT")
-                .eventId(event.getEventId())
-                .timestamp(java.time.LocalDateTime.now())
-                .payload(event)
-                .build();
+            .eventType("MESSAGE_SENT")
+            .eventId(event.getEventId())
+            .timestamp(java.time.LocalDateTime.now())
+            .payload(event)
+            .build();
 
         try {
             messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, MessageEventType.MESSAGE_SENT.name(), wrapper, null, null);
@@ -110,50 +111,50 @@ public class ChannelMessageService {
         // 1. Find the message
         ChannelMessage message = channelMessageRepository.findById(
                 ChannelMessageKey.builder()
-                        .channelId(channelId)
-                        .messageId(messageId)
-                        .build())
-                .orElseThrow(() -> new com.nnson128.chatapps_base.exception.CommonException("Message not found", org.springframework.http.HttpStatus.NOT_FOUND));
+                    .channelId(channelId)
+                    .messageId(messageId)
+                    .build())
+            .orElseThrow(() -> new CommonException("Message not found", HttpStatus.NOT_FOUND));
 
         // 2. Validate ownership
         if (!message.getUserId().equals(userId)) {
-            throw new com.nnson128.chatapps_base.exception.CommonException("You can only delete your own messages", org.springframework.http.HttpStatus.FORBIDDEN);
+            throw new CommonException("You can only delete your own messages", HttpStatus.FORBIDDEN);
         }
 
         // 3. Update message status
         message.setType(ChannelMessageType.DELETED);
         message.setContent(""); // Optional: clear content or keep it for audit? Clearing it for privacy.
-        
+
         ChannelMessage savedMessage = channelMessageRepository.save(message);
 
         // 4. Send notification (Event Sourcing)
         // Re-fetch participants to broadcast the update
         ApiResponse<List<UUID>> response = channelServiceClient
-                .getParticipantIdsByChannelId(channelId);
+            .getParticipantIdsByChannelId(channelId);
 
         List<UUID> allRecipientIds = response.getData();
         SenderInfo senderInfo = getSenderInfo(userId);
 
         MessageSentPayload event = MessageSentPayload.builder()
-                .eventType(MessageEventType.MESSAGE_SENT) // Reusing SENT event, frontend filters by type='DELETED' is one way, or use MESSAGE_UPDATED if available
-                .eventId(UUID.randomUUID().toString())
-                .timestamp(message.getTimestamp())
-                .messageId(messageId.toString())
-                .channelId(channelId.toString())
-                .type("DELETED") // Explicitly set type to DELETED
-                .content("")
-                .userId(userId)
-                .senderName(senderInfo.name())
-                .senderAvatar(senderInfo.avatar())
-                .recipientIds(allRecipientIds)
-                .build();
+            .eventType(MessageEventType.MESSAGE_SENT) // Reusing SENT event, frontend filters by type='DELETED' is one way, or use MESSAGE_UPDATED if available
+            .eventId(UUID.randomUUID().toString())
+            .timestamp(message.getTimestamp())
+            .messageId(messageId.toString())
+            .channelId(channelId.toString())
+            .type("DELETED") // Explicitly set type to DELETED
+            .content("")
+            .userId(userId)
+            .senderName(senderInfo.name())
+            .senderAvatar(senderInfo.avatar())
+            .recipientIds(allRecipientIds)
+            .build();
 
         EventWrapper<?> wrapper = EventWrapper.builder()
-                .eventType("MESSAGE_SENT")
-                .eventId(event.getEventId())
-                .timestamp(java.time.LocalDateTime.now())
-                .payload(event)
-                .build();
+            .eventType("MESSAGE_SENT")
+            .eventId(event.getEventId())
+            .timestamp(java.time.LocalDateTime.now())
+            .payload(event)
+            .build();
 
         try {
             messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, MessageEventType.MESSAGE_SENT.name(), wrapper, null, null);
@@ -174,18 +175,18 @@ public class ChannelMessageService {
             return new HashMap<>();
         }
         return channelIds.stream()
-                .collect(Collectors.toMap(
-                        channelId -> channelId,
-                        channelId -> {
-                            try {
-                                List<ChannelMessage> messages = getAllMessagesOfChannel(channelId);
-                                return messages.stream()
-                                        .map(this::convertToDto)
-                                        .collect(Collectors.toList());
-                            } catch (Exception e) {
-                                return List.of();
-                            }
-                        }));
+            .collect(Collectors.toMap(
+                channelId -> channelId,
+                channelId -> {
+                    try {
+                        List<ChannelMessage> messages = getAllMessagesOfChannel(channelId);
+                        return messages.stream()
+                            .map(this::convertToDto)
+                            .collect(Collectors.toList());
+                    } catch (Exception e) {
+                        return List.of();
+                    }
+                }));
     }
 
     /**
@@ -200,17 +201,17 @@ public class ChannelMessageService {
         SenderInfo senderInfo = getSenderInfo(message.getUserId());
 
         return ChannelMessageDto.builder()
-                .key(ChannelMessageKeyDto.builder()
-                        .channelId(message.getKey().getChannelId())
-                        .messageId(message.getKey().getMessageId())
-                        .build())
-                .userId(message.getUserId())
-                .content(message.getContent())
-                .type(message.getType())
-                .timestamp(message.getTimestamp())
-                .senderName(senderInfo.name())
-                .senderAvatar(senderInfo.avatar())
-                .build();
+            .key(ChannelMessageKeyDto.builder()
+                .channelId(message.getKey().getChannelId())
+                .messageId(message.getKey().getMessageId())
+                .build())
+            .userId(message.getUserId())
+            .content(message.getContent())
+            .type(message.getType())
+            .timestamp(message.getTimestamp())
+            .senderName(senderInfo.name())
+            .senderAvatar(senderInfo.avatar())
+            .build();
     }
 
     /**

@@ -11,7 +11,6 @@ import org.springframework.lang.NonNull;
 import java.util.List;
 
 @Configuration
-@Profile("!ws-only")
 public class CassandraConfiguration extends AbstractCassandraConfiguration implements BeanClassLoaderAware {
     private static String orDefault(String value, String def) {
         return (value == null || value.isBlank()) ? def : value;
@@ -19,15 +18,17 @@ public class CassandraConfiguration extends AbstractCassandraConfiguration imple
 
     String host = orDefault(System.getenv("CASSANDRA_HOST"), "127.0.0.1");
     int port = Integer.parseInt(orDefault(System.getenv("CASSANDRA_PORT"), "9042"));
+
     @Override
     @NonNull
     protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
         CreateKeyspaceSpecification specification = CreateKeyspaceSpecification.createKeyspace("chatapps")
-                .with(KeyspaceOption.DURABLE_WRITES, true)
-                .withSimpleReplication(1)
-                .ifNotExists(true);
+            .with(KeyspaceOption.DURABLE_WRITES, true)
+            .withSimpleReplication(1)
+            .ifNotExists(true);
         return List.of(specification);
     }
+
     @Override
     @NonNull
     protected String getKeyspaceName() {

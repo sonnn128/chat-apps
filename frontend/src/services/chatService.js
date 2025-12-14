@@ -20,10 +20,14 @@ const getChannelMessages = async (channelId, params = {}) => {
 const deleteMessage = async (channelId, messageId) =>
   del(`${CHAT_API}/${channelId}/${messageId}`, { headers: getAuthHeaders() });
 
+const getLinkPreview = async (url) =>
+  post(`${CHAT_API}/link-preview`, { url }, { headers: getAuthHeaders() });
+
 const chatService = {
   sendChannelMessage,
   getChannelMessages,
   deleteMessage,
+  getLinkPreview,
 };
 
 export default chatService;

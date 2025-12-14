@@ -19,7 +19,7 @@ public class SecurityUtils {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) return List.of();
         return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
+            .map(GrantedAuthority::getAuthority)
+            .toList();
     }
 }

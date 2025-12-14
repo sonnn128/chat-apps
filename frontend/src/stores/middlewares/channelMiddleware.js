@@ -49,6 +49,21 @@ export const fetchDeleteChannel = createAsyncThunk(
   async (channelId) => await channelService.deleteChannel(channelId)
 );
 
+export const fetchChannelById = createAsyncThunk(
+  "channels/fetchChannelById",
+  async (channelId) => {
+    console.log("🔍 channelMiddleware: fetchChannelById called for:", channelId);
+    try {
+      const res = await channelService.getChannelById(channelId);
+      console.log("✅ channelMiddleware: fetchChannelById response:", res);
+      return res.data;
+    } catch (error) {
+      console.error("❌ channelMiddleware: fetchChannelById error:", error);
+      throw error;
+    }
+  }
+);
+
 export const fetchGetOrCreateDirectChannel = createAsyncThunk(
   "channels/fetchGetOrCreateDirectChannel",
   async (friendId) => {

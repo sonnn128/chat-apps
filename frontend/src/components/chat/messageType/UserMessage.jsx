@@ -3,6 +3,7 @@ import { Button, Tooltip, Dropdown, Modal, Radio } from "antd";
 import { MoreOutlined, RollbackOutlined, SmileOutlined, FileOutlined, DownloadOutlined, DeleteOutlined, ShareAltOutlined, PushpinOutlined, FlagOutlined } from "@ant-design/icons";
 import Avatar from "antd/es/avatar/Avatar";
 import ReactionPicker from "../ReactionPicker";
+import LinkPreview from "../LinkPreview";
 import PropTypes from "prop-types";
 import { useUserInfo } from "@/hooks/useUserInfo";
 import { DEFAULT_AVATAR } from "@/utils/constants";
@@ -153,7 +154,28 @@ const UserMessage = ({
           return <span>Invalid file data</span>;
         }
       default:
-        return <p className="text-sm mb-0">{content}</p>;
+        // Check if content contains a URL for CHAT messages
+        if (type === "CHAT" && content) {
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const urls = content.match(urlRegex);
+          
+          if (urls && urls.length > 0) {
+            // If content is just a URL (with or without whitespace), show preview only
+            const trimmedContent = content.trim();
+            if (urls[0] === trimmedContent) {
+              return <LinkPreview url={urls[0]} isCurrentUser={isCurrentUser} />;
+            }
+            
+            // If content has text + URL, show text + preview
+            return (
+              <div className="space-y-2 max-w-sm">
+                <p className="text-sm mb-0 leading-normal">{content}</p>
+                <LinkPreview url={urls[0]} isCurrentUser={isCurrentUser} />
+              </div>
+            );
+          }
+        }
+        return <p className="text-sm mb-0 leading-normal break-words">{content}</p>;
     }
   };
 
@@ -184,9 +206,13 @@ const UserMessage = ({
           <div
             className={`${["IMAGE", "VIDEO", "DELETED"].includes(type)
               ? ""
-              : isCurrentUser
-                ? "bg-[#066CF6] text-white p-2"
-                : "bg-[#F0F0F0] text-black p-2"
+              : isCurrentUser && type === "CHAT" && !(content?.match(/(https?:\/\/[^\s]+)/g))
+                ? "bg-[#066CF6] text-white px-4 py-2"
+                : isCurrentUser && type === "CHAT"
+                ? "bg-transparent p-0"
+                : type === "CHAT"
+                ? "bg-[#E4E6EB] text-black px-4 py-2"
+                : "bg-[#E4E6EB] text-black p-3"
               } rounded-2xl max-w-xs user-message`}
             style={{
               borderTopLeftRadius: isCurrentUser ? 18 : (showName ? 18 : 4),

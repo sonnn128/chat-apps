@@ -1,11 +1,14 @@
 package com.nnson128.presenceservice.service;
 
+import com.nnson128.chatapps_base.constants.KafkaTopics;
 import com.nnson128.chatapps_base.models.events.user.UserEventType;
 import com.nnson128.chatapps_base.models.events.user.payloads.UserStatusChangedPayload;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PresenceEventConsumer {
@@ -17,9 +20,9 @@ public class PresenceEventConsumer {
      * Spring Boot will automatically parse JSON payload to UserStatusChangedPayload.
      */
     @KafkaListener(
-            topics = "#{T(com.nnson128.chatapps_base.constants.KafkaTopics).USER_STATUS_CHANGED}",
-            groupId = "presence-service-group",
-            containerFactory = "kafkaListenerContainerFactory"
+        topics = KafkaTopics.USER_STATUS_CHANGED,
+        groupId = "presence-service-group",
+        containerFactory = "kafkaListenerContainerFactory"
     )
     public void handleUserStatusChanged(UserStatusChangedPayload event) {
         try {
@@ -37,7 +40,7 @@ public class PresenceEventConsumer {
             }
 
         } catch (Exception ex) {
-            // Log error if needed
+            log.error(ex.getMessage(), ex);
         }
     }
 }

@@ -46,7 +46,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
-
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 1
+      password:
 eureka:
   client:
     serviceUrl:

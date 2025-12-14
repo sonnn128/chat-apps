@@ -6,6 +6,7 @@ import {
   addPeopleToChannel,
   sendChannelMessage,
   fetchDeleteChannel,
+  fetchChannelById,
 } from "@/stores/middlewares/channelMiddleware";
 
 const initialState = {
@@ -236,22 +237,35 @@ const channelSlice = createSlice({
     // Handle notification when channel details are updated (e.g. name change)
     receiveChannelUpdatedNotification: (state, action) => {
         const event = action.payload;
-        // event has channelId, newChannelName, updaterId, updatedAt
+        // event has channelId, newChannelName, updaterId, updatedAt, and possibly other fields
         
         // Update in channels list
         const channelIndex = state.channels.findIndex(ch => ch.id === event.channelId);
         if (channelIndex !== -1) {
+            // Update only the fields that are present in the event
+            const updates = {};
+            if (event.newChannelName) updates.channelName = event.newChannelName;
+            if (event.channelName) updates.channelName = event.channelName;
+            if (event.avatar) updates.avatar = event.avatar;
+            if (event.avatarUrl) updates.avatar = event.avatarUrl;
+            
             state.channels[channelIndex] = {
                 ...state.channels[channelIndex],
-                channelName: event.newChannelName
+                ...updates
             };
         }
         
         // Update current channel if matches
         if (state.currentChannel && state.currentChannel.id === event.channelId) {
+            const updates = {};
+            if (event.newChannelName) updates.channelName = event.newChannelName;
+            if (event.channelName) updates.channelName = event.channelName;
+            if (event.avatar) updates.avatar = event.avatar;
+            if (event.avatarUrl) updates.avatar = event.avatarUrl;
+            
             state.currentChannel = {
                 ...state.currentChannel,
-                channelName: event.newChannelName
+                ...updates
             };
         }
     },
@@ -642,6 +656,34 @@ const channelSlice = createSlice({
           state.messagesOfCurrentChannel = [];
         }
 
+      })
+      .addCase(fetchChannelById.fulfilled, (state, action) => {
+        // Update channel in list with fresh data from API
+        const updatedChannel = action.payload;
+        console.log("📥 channelSlice: fetchChannelById.fulfilled - Updated channel:", updatedChannel);
+        const channelIndex = state.channels.findIndex(ch => ch.id === updatedChannel.id);
+        
+        if (channelIndex !== -1) {
+          console.log("✅ channelSlice: Updating channel in list at index:", channelIndex);
+          // Update channel in list
+          state.channels[channelIndex] = {
+            ...state.channels[channelIndex],
+            ...updatedChannel
+          };
+        } else {
+          console.warn("⚠️ channelSlice: Channel not found in list for ID:", updatedChannel.id);
+        }
+        
+        // Update current channel if it matches
+        if (state.currentChannel && state.currentChannel.id === updatedChannel.id) {
+          console.log("✅ channelSlice: Updating currentChannel");
+          state.currentChannel = {
+            ...state.currentChannel,
+            ...updatedChannel
+          };
+        } else {
+          console.warn("⚠️ channelSlice: currentChannel doesn't match or not set");
+        }
       })
       ;
   },

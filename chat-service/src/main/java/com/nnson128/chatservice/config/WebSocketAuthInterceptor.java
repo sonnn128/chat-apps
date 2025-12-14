@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.nnson128.chatservice.client.PresenceServiceClient;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+
 import java.util.Map;
 
 @Component

@@ -10,10 +10,10 @@ import java.util.UUID;
 
 @FeignClient(name = "user-service", url = "${user-service.url}")
 public interface UserServiceClient {
-    
+
     @GetMapping("/api/v1/users/internal/{userId}")
     UserResponse getUserById(@PathVariable("userId") UUID userId);
-    
+
     @GetMapping("/api/v1/users/batch")
     List<UserResponse> getUsersByIds(@PathVariable("userIds") List<UUID> userIds);
 }

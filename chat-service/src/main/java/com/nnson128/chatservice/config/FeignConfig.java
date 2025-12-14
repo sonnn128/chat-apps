@@ -17,13 +17,11 @@ public class FeignConfig {
         return new RequestInterceptor() {
             @Override
             public void apply(RequestTemplate template) {
-                // Lấy request hiện tại từ RequestContextHolder
                 ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
                 if (attributes != null) {
                     HttpServletRequest request = attributes.getRequest();
                     String auth = request.getHeader("Authorization");
                     if (auth != null && !auth.isEmpty()) {
-                        // Forward Authorization header so downstream services can validate the JWT
                         template.header("Authorization", auth);
                     }
                 }
@@ -31,4 +29,3 @@ public class FeignConfig {
         };
     }
 }
-

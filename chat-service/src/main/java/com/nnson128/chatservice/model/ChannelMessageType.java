@@ -10,5 +10,3 @@ public enum ChannelMessageType {
     FILE,
     DELETED
 }
-
-

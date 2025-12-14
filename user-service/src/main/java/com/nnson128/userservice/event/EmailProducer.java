@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EmailProducer {
 
-    private final KafkaTemplate<String,String> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private static final String TOPIC = "forgot-password-emails";
 

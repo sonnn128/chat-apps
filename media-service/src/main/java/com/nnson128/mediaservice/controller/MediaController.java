@@ -23,22 +23,22 @@ public class MediaController {
         try {
             UploadResponse response = mediaService.uploadFile(file);
             return ResponseEntity.ok(ApiResponse.<UploadResponse>builder()
-                    .success(true)
-                    .message("File uploaded successfully")
-                    .data(response)
-                    .build());
+                .success(true)
+                .message("File uploaded successfully")
+                .data(response)
+                .build());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<UploadResponse>builder()
-                            .success(false)
-                            .message("Failed to upload file: " + e.getMessage())
-                            .build());
+                .body(ApiResponse.<UploadResponse>builder()
+                    .success(false)
+                    .message("Failed to upload file: " + e.getMessage())
+                    .build());
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.<UploadResponse>builder()
-                            .success(false)
-                            .message(e.getMessage())
-                            .build());
+                .body(ApiResponse.<UploadResponse>builder()
+                    .success(false)
+                    .message(e.getMessage())
+                    .build());
         }
     }
 
@@ -47,16 +47,16 @@ public class MediaController {
         try {
             String url = mediaService.getFileUrl(publicId);
             return ResponseEntity.ok(ApiResponse.<String>builder()
-                    .success(true)
-                    .message("File URL retrieved successfully")
-                    .data(url)
-                    .build());
+                .success(true)
+                .message("File URL retrieved successfully")
+                .data(url)
+                .build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<String>builder()
-                            .success(false)
-                            .message("Failed to get file URL: " + e.getMessage())
-                            .build());
+                .body(ApiResponse.<String>builder()
+                    .success(false)
+                    .message("Failed to get file URL: " + e.getMessage())
+                    .build());
         }
     }
 
@@ -65,15 +65,15 @@ public class MediaController {
         try {
             mediaService.deleteFile(publicId);
             return ResponseEntity.ok(ApiResponse.<Void>builder()
-                    .success(true)
-                    .message("File deleted successfully")
-                    .build());
+                .success(true)
+                .message("File deleted successfully")
+                .build());
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<Void>builder()
-                            .success(false)
-                            .message("Failed to delete file: " + e.getMessage())
-                            .build());
+                .body(ApiResponse.<Void>builder()
+                    .success(false)
+                    .message("Failed to delete file: " + e.getMessage())
+                    .build());
         }
     }
 }

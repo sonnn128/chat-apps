@@ -76,6 +76,12 @@
 			<artifactId>chatapps-base</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<!-- Jsoup for HTML parsing -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.16.1</version>
+		</dependency>
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

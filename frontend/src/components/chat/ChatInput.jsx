@@ -12,6 +12,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { sendChannelMessage } from "@/stores/middlewares/channelMiddleware";
 import { addPendingMessage } from "@/stores/slices/channelSlice";
+import LinkPreviewComposer from "./LinkPreviewComposer";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
@@ -19,6 +20,7 @@ const ChatInput = () => {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [detectedUrl, setDetectedUrl] = useState(null);
   const { currentChannelId } = useSelector((state) => state.channel);
   const dispatch = useDispatch();
   const emojiPickerRef = useRef(null);
@@ -26,6 +28,21 @@ const ChatInput = () => {
 
   const { user } = useSelector((state) => state.auth);
   const userId = user?.data?.id;
+
+  // Detect URLs in message
+  useEffect(() => {
+    if (message.trim()) {
+      const urlRegex = /(https?:\/\/[^\s]+)/;
+      const match = message.match(urlRegex);
+      if (match && match[0]) {
+        setDetectedUrl(match[0]);
+      } else {
+        setDetectedUrl(null);
+      }
+    } else {
+      setDetectedUrl(null);
+    }
+  }, [message]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -177,9 +194,25 @@ const ChatInput = () => {
 
   return (
     <div className="relative flex flex-col">
+      {/* Link Preview Area */}
+      {detectedUrl && (
+        <div className="p-3 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <span className="text-xs text-gray-600 font-medium">Link Preview</span>
+          </div>
+          <LinkPreviewComposer
+            url={detectedUrl}
+            onRemove={() => {
+              setMessage(message.replace(detectedUrl, '').trim());
+              setDetectedUrl(null);
+            }}
+          />
+        </div>
+      )}
+
       {/* File Preview Area */}
       {selectedFiles.length > 0 && (
-        <div className="flex gap-2 p-2 bg-gray-50 overflow-x-auto">
+        <div className="flex gap-2 p-2 bg-gray-50 overflow-x-auto border-b border-gray-200">
           {selectedFiles.map((file, index) => (
             <div key={index} className="relative group flex-shrink-0">
               {file.type === "IMAGE" ? (

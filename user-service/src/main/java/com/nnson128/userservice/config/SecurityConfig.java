@@ -43,23 +43,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/register",
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password",
-                                "/api/v1/users/search/phone",
-                                "/api/v1/users/*",
-                                "/actuator/health",
-                                "/actuator/info",
-                                "/api/v1/users/internal/*")
-                        .permitAll()
-                        .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                );
+            .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/api/v1/auth/register",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/forgot-password",
+                    "/api/v1/auth/reset-password",
+                    "/api/v1/users/search/phone",
+                    "/api/v1/users/*",
+                    "/actuator/health",
+                    "/actuator/info",
+                    "/api/v1/users/internal/*")
+                .permitAll()
+                .anyRequest().authenticated())
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+            );
 
         return http.build();
     }
@@ -81,14 +81,12 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>();
-            // realm_access.roles
             Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
             if (realmAccess != null && realmAccess.get("roles") instanceof Iterable) {
                 for (Object r : (Iterable<?>) realmAccess.get("roles")) {
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + r.toString()));
                 }
             }
-            // resource_access.<client>.roles
             Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
             if (resourceAccess != null) {
                 for (Map.Entry<String, Object> entry : resourceAccess.entrySet()) {
@@ -100,12 +98,12 @@ public class SecurityConfig {
                                 authorities.add(new SimpleGrantedAuthority("ROLE_" + r.toString()));
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             return authorities;
         });
         return converter;
     }
-
 }

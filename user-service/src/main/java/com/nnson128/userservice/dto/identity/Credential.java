@@ -14,4 +14,3 @@ public class Credential {
     private String value;
     private boolean temporary;
 }
-

@@ -9,7 +9,7 @@ import org.springframework.data.cassandra.repository.config.EnableCassandraRepos
 @EnableFeignClients
 @EnableCassandraRepositories
 public class ChatServiceApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(ChatServiceApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ChatServiceApplication.class, args);
+    }
 }

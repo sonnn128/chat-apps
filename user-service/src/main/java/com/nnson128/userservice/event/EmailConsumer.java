@@ -22,16 +22,16 @@ public class EmailConsumer {
         try {
             ForgotPasswordEvent event = objectMapper.readValue(eventJson, ForgotPasswordEvent.class);
             log.info("Received forgot password event for email: {}", event.getEmail());
-            
+
             Context context = new Context();
             context.setVariable("name", event.getName());
             context.setVariable("resetLink", event.getResetLink());
-            
+
             emailService.sendHtmlMessage(
-                    event.getEmail(),
-                    "Password Reset Request",
-                    "password-reset",
-                    context
+                event.getEmail(),
+                "Password Reset Request",
+                "password-reset",
+                context
             );
         } catch (JsonProcessingException e) {
             log.error("Error deserializing forgot password event", e);

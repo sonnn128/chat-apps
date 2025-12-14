@@ -24,10 +24,10 @@ public class MeController {
     public ResponseEntity<ApiResponse<UserResponse>> getUserProfile(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt != null ? jwt.getSubject() : null;
         return ResponseEntity.ok().body(ApiResponse.<UserResponse>builder()
-                .message("User profile")
-                .success(true)
-                .data(meService.getUserProfile(UUID.fromString(userId)))
-                .build());
+            .message("User profile")
+            .success(true)
+            .data(meService.getUserProfile(UUID.fromString(userId)))
+            .build());
     }
 
     @PutMapping

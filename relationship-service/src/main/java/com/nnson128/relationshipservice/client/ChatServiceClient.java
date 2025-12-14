@@ -24,7 +24,7 @@ public interface ChatServiceClient {
 
     @PostMapping("/api/v1/messages/internal")
     ChannelMessageDto sendMessage(
-            @RequestParam("userId") UUID userId,
-            @RequestBody SendMessageRequest request
+        @RequestParam("userId") UUID userId,
+        @RequestBody SendMessageRequest request
     );
 }

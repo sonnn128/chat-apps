@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import Sidebar from "@/components/layout/Sidebar";
 import ChatSection from "@/components/layout/ChatSection";

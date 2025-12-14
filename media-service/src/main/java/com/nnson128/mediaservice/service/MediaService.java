@@ -24,7 +24,7 @@ public class MediaService {
     public UploadResponse uploadFile(MultipartFile file) throws IOException {
         // Validate Cloudinary credentials
         validateCloudinaryCredentials();
-        
+
         // Validate file
 
         // Generate unique filename
@@ -34,11 +34,11 @@ public class MediaService {
 
         // Upload to Cloudinary
         Map<String, Object> uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        PUBLIC_ID_KEY, fileName,
-                        "resource_type", RESOURCE_TYPE_AUTO
-                )
+            file.getBytes(),
+            ObjectUtils.asMap(
+                PUBLIC_ID_KEY, fileName,
+                "resource_type", RESOURCE_TYPE_AUTO
+            )
         );
 
         // Determine media type
@@ -89,25 +89,25 @@ public class MediaService {
     private UploadResponse createDemoResponse(MultipartFile file) {
         String publicId = "demo_" + UUID.randomUUID().toString();
         String secureUrl = "https://via.placeholder.com/300x300?text=Demo+Image";
-        
-        
+
+
         UploadResponse response = new UploadResponse();
         response.setPublicId(publicId);
         response.setSecureUrl(secureUrl);
         response.setMediaType(determineMediaType(file.getContentType()));
-        
+
         return response;
     }
 
 
     private boolean isValidContentType(String contentType) {
         return contentType.startsWith("image/") ||
-               contentType.startsWith("video/") ||
-               contentType.startsWith("audio/") ||
-               contentType.equals("application/pdf") ||
-               contentType.equals("application/msword") ||
-               contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
-               contentType.equals("text/plain");
+            contentType.startsWith("video/") ||
+            contentType.startsWith("audio/") ||
+            contentType.equals("application/pdf") ||
+            contentType.equals("application/msword") ||
+            contentType.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
+            contentType.equals("text/plain");
     }
 
     private String getFileExtension(String fileName) {

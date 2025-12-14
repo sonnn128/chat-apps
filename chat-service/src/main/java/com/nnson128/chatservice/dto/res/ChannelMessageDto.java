@@ -25,14 +25,14 @@ public class ChannelMessageDto {
 
     public static ChannelMessageDto from(ChannelMessage channelMessage) {
         return ChannelMessageDto.builder()
-                .key(ChannelMessageKeyDto.builder()
-                        .channelId(channelMessage.getKey().getChannelId())
-                        .messageId(channelMessage.getKey().getMessageId())
-                        .build())
-                .userId(channelMessage.getUserId())
-                .content(channelMessage.getContent())
-                .type(channelMessage.getType())
-                .timestamp(channelMessage.getTimestamp())
-                .build();
+            .key(ChannelMessageKeyDto.builder()
+                .channelId(channelMessage.getKey().getChannelId())
+                .messageId(channelMessage.getKey().getMessageId())
+                .build())
+            .userId(channelMessage.getUserId())
+            .content(channelMessage.getContent())
+            .type(channelMessage.getType())
+            .timestamp(channelMessage.getTimestamp())
+            .build();
     }
 }

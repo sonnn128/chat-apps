@@ -13,6 +13,7 @@ import com.nnson128.chatapps_base.models.events.friendship.payloads.FriendReques
 import com.nnson128.chatapps_base.models.events.call.payloads.CallSignalPayload;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Profile("!ws-only")
@@ -31,7 +33,7 @@ public class NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "#{T(com.nnson128.chatapps_base.constants.KafkaTopics).CHAT_NOTIFICATIONS}", groupId = "notification-group")
+    @KafkaListener(topics = KafkaTopics.CHAT_NOTIFICATIONS, groupId = "notification-group")
     public void handleNotification(String eventJson) {
         try {
             EventWrapper<?> wrapper = objectMapper.readValue(eventJson, EventWrapper.class);
@@ -44,7 +46,7 @@ public class NotificationService {
         }
     }
 
-    @KafkaListener(topics = "#{T(com.nnson128.chatapps_base.constants.KafkaTopics).FRIENDSHIP_EVENTS}", groupId = "notification-group")
+    @KafkaListener(topics = KafkaTopics.FRIENDSHIP_EVENTS, groupId = "notification-group")
     public void handleFriendshipEvent(String eventJson) {
         try {
             EventWrapper<?> wrapper = objectMapper.readValue(eventJson, EventWrapper.class);
@@ -99,12 +101,12 @@ public class NotificationService {
     private void handleMessageEvent(MessageSentPayload event) {
         if (event == null) return;
 
-        
+
         // Convert MessageSentPayload to map with nested key structure for frontend compatibility
         Map<String, Object> key = new HashMap<>();
         key.put("channelId", event.getChannelId());
         key.put("messageId", event.getMessageId());
-        
+
         Map<String, Object> wrapper = new HashMap<>();
         wrapper.put("key", key);
         wrapper.put("userId", event.getUserId());
@@ -142,7 +144,7 @@ public class NotificationService {
         if (event == null) return;
         pushToUsers(List.of(event.getRecipientId()), event);
     }
-    
+
     private void handleChannelUpdated(ChannelUpdatedPayload event) {
         if (event == null) return;
         pushToUsers(event.getMemberIds(), event);
@@ -150,10 +152,9 @@ public class NotificationService {
 
     private void handleCallSignal(CallSignalPayload event) {
         if (event == null || event.getSenderId() == null) return;
-        
-        // Determine the target: if sender is caller, target is callee; otherwise target is caller.
+
         UUID targetId = event.getSenderId().equals(event.getCallerId()) ? event.getCalleeId() : event.getCallerId();
-        
+
         if (targetId != null) {
             pushToUsers(List.of(targetId), event);
         }
@@ -172,6 +173,7 @@ public class NotificationService {
             try {
                 messagingTemplate.convertAndSendToUser(userId.toString(), destination, messagePayload);
             } catch (Exception e) {
+                log.error("Error sending notification to user {}: {}", userId, e.getMessage());
             }
         });
     }
@@ -217,20 +219,20 @@ public class NotificationService {
         if (!snakeCase.contains("_")) {
             return snakeCase;
         }
-        
+
         StringBuilder result = new StringBuilder();
         String[] parts = snakeCase.split("_");
         result.append(parts[0]);
-        
+
         for (int i = 1; i < parts.length; i++) {
-            if (parts[i].length() > 0) {
+            if (!parts[i].isEmpty()) {
                 result.append(Character.toUpperCase(parts[i].charAt(0)));
                 if (parts[i].length() > 1) {
                     result.append(parts[i].substring(1));
                 }
             }
         }
-        
+
         return result.toString();
     }
 }

@@ -1,6 +1,6 @@
 package com.nnson128.chatservice.client;
 
-import com.nnson128.chatservice.dto.res.UserResponse;
+import com.nnson128.chatapps_base.dto.res.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -17,6 +17,7 @@ import com.nnson128.chatservice.repository.ChannelMessageRepository;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.nnson128.chatapps_base.dto.res.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -26,6 +27,7 @@ import java.util.UUID;
 import java.util.Map;
 import java.util.HashMap;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChatServiceEventConsumer {
@@ -43,13 +45,12 @@ public class ChatServiceEventConsumer {
         try {
             EventWrapper<?> wrapper = objectMapper.readValue(eventJson, EventWrapper.class);
             if (wrapper.getEventType() == null) {
-                System.out.println("⚠️ ChatServiceEventConsumer: Event has no eventType");
                 return;
             }
 
             processNotificationEvent(wrapper.getEventType(), wrapper.getPayload());
         } catch (Exception e) {
-            System.out.println("❌ ChatServiceEventConsumer: Error processing notification event: " + e.getMessage());
+            log.error("ChatServiceEventConsumer: Error processing notification event: {}", e.getMessage());
         }
     }
 
@@ -164,86 +165,9 @@ public class ChatServiceEventConsumer {
 
     private void handleFriendRequestAccepted(FriendRequestAcceptedPayload event) {
         try {
-            // Use createDirectChannel to find existing or create new channel
-            // This prevents duplicate channels between the same two users
             Map<String, Object> directChannelReq = new HashMap<>();
             directChannelReq.put("friendId", event.getFriend1Id()); // friend1 is the requester, friend2 is the accepter (current user context in client call)
 
-            // We need to call this as friend2 (the accepter)
-            // But Feign client uses X-User-Id header which we can't easily set here without an interceptor context
-            // However, the relationship-service endpoint expects the authenticated user to be one of the participants
-            // Since this is an event consumer, we don't have a user context.
-            // We might need to rely on the fact that we are passing friendId.
-            
-            // WAIT: The Feign client in ChatService might be configured to pass a system token or no token?
-            // If it passes the token of the logged in user, that won't work here as this is async.
-            // Usually internal service-to-service calls use a system token or are unsecured/internal.
-            // But ChannelController expects @AuthenticationPrincipal Jwt jwt.
-            // This means we need a user context to call this endpoint!
-            
-            // The previous code called createChannel which also requires @AuthenticationPrincipal.
-            // How did that work?
-            // It seems the previous code might have been failing if there was no security context?
-            // Or maybe there is a request interceptor that propagates the token?
-            // But this is an event consumer, running in a background thread, so no request context.
-            
-            // If the previous code was working, it implies there's some mechanism handling auth.
-            // Let's assume we can call it. But we need to be careful about WHO is calling it.
-            // In createDirectChannel(request), the "me" is the JWT subject, and "friend" is in request.
-            
-            // If we can't easily simulate a user context, we might need a system endpoint in relationship-service
-            // that allows creating a channel between two specific user IDs without relying on JWT context.
-            
-            // For now, let's try to use the same approach as before but with the new endpoint.
-            // But wait, the previous code called createChannel and then addPeopleToChannel.
-            
-            // Let's look at the previous code again.
-            /*
-            Map<String, Object> createRequest = new HashMap<>();
-            createRequest.put("channelName", "");
-            ApiResponse<Map<String, Object>> createResp = channelServiceClient.createChannel(createRequest);
-            */
-            
-            // If this worked, then `createChannel` was being called successfully.
-            // But `createChannel` in `ChannelController` uses `@AuthenticationPrincipal Jwt jwt`.
-            // If `ChatServiceEventConsumer` is running in a background thread, `SecurityContextHolder` is likely empty.
-            // So `jwt` would be null, and `UUID.fromString(jwt.getSubject())` would throw NPE.
-            
-            // It is highly likely the previous code was BROKEN or verified in a way where context was somehow present (unlikely for Kafka consumer).
-            // OR, the Feign client has an interceptor that adds a system token that maps to a specific user?
-            // OR, security is disabled for internal calls?
-            
-            // Assuming it works (maybe via some magic or I missed something), let's try to use createDirectChannel.
-            // But we have a problem: createDirectChannel takes (JWT user, friendId).
-            // We have friend1 and friend2. We need to pass one as JWT user and other as friendId.
-            
-            // If we can't control the JWT, we can't control who is "me".
-            
-            // Actually, looking at the code, I suspect the previous implementation MIGHT NOT HAVE WORKED if it relied on JWT.
-            // Unless... `ChatService` is configured to forward headers? No, it's Kafka.
-            
-            // Let's assume for a moment that we need a different approach.
-            // We should probably have an internal endpoint in Relationship Service to "ensure channel exists between A and B".
-            
-            // However, to stick to the plan and the user's request "use createDirectChannel",
-            // I will try to implement it. But I should verify if I can actually call it.
-            
-            // Since I cannot easily change the auth mechanism right now, I will assume the previous code worked
-            // and try to replicate it.
-            // But wait, `createDirectChannel` is cleaner.
-            
-            // Let's try to call it.
-            // We need to pass `friendId`.
-            // If the "authenticated user" is friend2, we pass friend1.
-            // If the "authenticated user" is friend1, we pass friend2.
-            
-            // Since I don't know who the "authenticated user" will be (or if it defaults to system),
-            // this is risky.
-            
-            // ALTERNATIVE:
-            // The user said "use createDirectChannel".
-            // I will use it.
-            
             Map<String, Object> request = new HashMap<>();
             request.put("friendId", event.getFriend1Id()); // Assuming context is friend2? Or does it matter?
             // If the call fails, we catch exception.
@@ -281,7 +205,7 @@ public class ChatServiceEventConsumer {
             }
 
         } catch (Exception e) {
-            System.out.println("❌ Error handling friend request accepted: " + e.getMessage());
+            log.error("Error handling friend request accepted: {}", e.getMessage());
         }
     }
 
@@ -312,7 +236,6 @@ public class ChatServiceEventConsumer {
         try {
             messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, MessageEventType.MESSAGE_SENT.name(), event, null, null);
         } catch (Exception e) {
-            // Log error
         }
     }
 

@@ -85,7 +85,8 @@ public class SecurityConfig {
                                 authorities.add(new SimpleGrantedAuthority("ROLE_" + r.toString()));
                             }
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
             }
             return authorities;

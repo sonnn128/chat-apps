@@ -3,8 +3,7 @@ import { List, Avatar, Typography, Dropdown, Button } from "antd";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { setCurrentChannel } from "@/stores/slices/channelSlice";
-import { setCurrentFriend, removeCurrentFriend } from "@/stores/slices/friendshipSlice";
-import { fetchGetOrCreateDirectChannel, fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
+import { fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
 import {
   MoreOutlined,
   MailOutlined,
@@ -21,26 +20,13 @@ import {
 const { Text } = Typography;
 import { DEFAULT_AVATAR } from "@/utils/constants";
 
-// A combined list of channels and friends. Clicking a friend opens/creates a DM channel.
-const ConversationList = ({ channels = [], friends = [] }) => {
+// Display only direct message channels from friends
+const ConversationList = ({ channels = [] }) => {
   const dispatch = useDispatch();
   const userId = useSelector((state) => state.auth.user?.data?.id);
 
   const onSelectChannel = (channel) => {
     dispatch(setCurrentChannel(channel));
-    dispatch(removeCurrentFriend());
-  };
-
-  const handleSelectFriend = async (friend) => {
-    dispatch(setCurrentFriend(friend));
-
-    // Fetch or create direct channel with this friend
-    try {
-      const result = await dispatch(fetchGetOrCreateDirectChannel(friend.friendId)).unwrap();
-      dispatch(setCurrentChannel(result));
-    } catch (error) {
-      console.error("Failed to get or create direct channel:", error);
-    }
   };
 
   // Menu items for channel options
@@ -116,11 +102,8 @@ const ConversationList = ({ channels = [], friends = [] }) => {
     return items;
   };
 
-  // merge lists: channels first, then friends (friends appear as pseudo-channels)
-  const items = [
-    ...(channels || []).map((ch) => ({ type: "channel", key: ch.id, data: ch })),
-    ...(friends || []).map((f) => ({ type: "friend", key: f.friendId, data: f })),
-  ];
+  // Show all channels (both GROUP and DIRECT_MESSAGE)
+  const items = (channels || []).map((ch) => ({ type: "channel", key: ch.id, data: ch }));
 
   return (
     <div>
@@ -141,11 +124,43 @@ const ConversationList = ({ channels = [], friends = [] }) => {
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="relative">
-                      <Avatar size={36} src={ch.avatar || DEFAULT_AVATAR} />
+                      <Avatar size={36} src={(() => {
+                        // For direct channels, show other participant's avatar
+                        if (ch.channelType === 'DIRECT_MESSAGE' && ch.participants && ch.participants.length === 2) {
+                          const otherParticipant = ch.participants.find(p => (p.userId || p.id) !== userId);
+                          if (otherParticipant) {
+                            return otherParticipant.avatar || otherParticipant.avatarUrl || DEFAULT_AVATAR;
+                          }
+                        }
+                        // For group channels, show channel avatar
+                        return ch.avatar || DEFAULT_AVATAR;
+                      })()}>
+                        {(() => {
+                          if (ch.channelType === 'DIRECT_MESSAGE' && ch.participants && ch.participants.length === 2) {
+                            const otherParticipant = ch.participants.find(p => (p.userId || p.id) !== userId);
+                            if (otherParticipant) {
+                              return (otherParticipant.firstname || "U").charAt(0);
+                            }
+                          }
+                          return (ch.channelName || "C").charAt(0);
+                        })()}
+                      </Avatar>
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                     </div>
                     <div className="flex flex-col overflow-hidden">
-                      <Text style={{ fontWeight: 500 }} ellipsis>{ch.channelName || "Channel"}</Text>
+                      <Text style={{ fontWeight: 500 }} ellipsis>
+                        {(() => {
+                          // For direct channels, show other participant's name
+                          if (ch.channelType === 'DIRECT_MESSAGE' && ch.participants && ch.participants.length === 2) {
+                            const otherParticipant = ch.participants.find(p => (p.userId || p.id) !== userId);
+                            if (otherParticipant) {
+                              return `${otherParticipant.firstname || ""} ${otherParticipant.lastname || ""}`.trim();
+                            }
+                          }
+                          // For group channels, show channel name
+                          return ch.channelName || "Channel";
+                        })()}
+                      </Text>
                       <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>
                         {(() => {
                           if (!ch.messages || ch.messages.length === 0) return "No messages";
@@ -219,19 +234,6 @@ const ConversationList = ({ channels = [], friends = [] }) => {
               </motion.div>
             );
           }
-
-          const f = item.data;
-          return (
-            <motion.div key={item.key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <List.Item onClick={() => handleSelectFriend(f)} className="rounded-lg px-2 py-2 hover:bg-gray-100 cursor-pointer">
-                <List.Item.Meta
-                  avatar={<Avatar size={36} src={f.avatar || DEFAULT_AVATAR} />}
-                  title={<Text style={{ fontWeight: 500 }}>{`${f.firstname || ""} ${f.lastname || ""}`}</Text>}
-                  description={<Text type="secondary">{f.email || "Friend"}</Text>}
-                />
-              </List.Item>
-            </motion.div>
-          );
         }}
       />
     </div>

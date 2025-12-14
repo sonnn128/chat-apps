@@ -30,12 +30,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .setHandshakeHandler(new org.springframework.web.socket.server.support.DefaultHandshakeHandler())
-                .withSockJS()
-                .setHeartbeatTime(25000)
-                .setDisconnectDelay(5000)
-                .setStreamBytesLimit(128 * 1024)
-                .setHttpMessageCacheSize(1000);
+            .setAllowedOriginPatterns("*")
+            .setHandshakeHandler(new org.springframework.web.socket.server.support.DefaultHandshakeHandler())
+            .withSockJS()
+            .setHeartbeatTime(25000)
+            .setDisconnectDelay(5000)
+            .setStreamBytesLimit(128 * 1024)
+            .setHttpMessageCacheSize(1000);
     }
 }

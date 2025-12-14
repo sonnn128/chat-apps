@@ -23,20 +23,20 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok().body(ApiResponse.builder()
-                .message("Successfully logged in")
-                .success(true)
-                .data(authService.login(request))
-                .build());
+            .message("Successfully logged in")
+            .success(true)
+            .data(authService.login(request))
+            .build());
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegistrationRequest request) {
         UserResponse response = authService.register(request);
         return ResponseEntity.ok(ApiResponse.builder()
-                .message("Successfully logged in")
-                .success(true)
-                .data(response)
-                .build());
+            .message("Successfully logged in")
+            .success(true)
+            .data(response)
+            .build());
     }
 
     @PostMapping("/refresh")
@@ -60,17 +60,17 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         authService.forgotPassword(request.getEmail());
         return ResponseEntity.ok(ApiResponse.builder()
-                .success(true)
-                .message("Password reset email sent")
-                .build());
+            .success(true)
+            .message("Password reset email sent")
+            .build());
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody com.nnson128.userservice.dto.request.ResetPasswordRequest request) {
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.builder()
-                .success(true)
-                .message("Password successfully reset")
-                .build());
+            .success(true)
+            .message("Password successfully reset")
+            .build());
     }
 }

@@ -19,18 +19,18 @@ public class FeignConfig {
     @Bean
     public Request.Options requestOptions() {
         return new Request.Options(
-                5000, // connect timeout
-                10000, // read timeout
-                true // follow redirects
+            5000,
+            10000,
+            true
         );
     }
 
     @Bean
     public Retryer retryer() {
         return new Retryer.Default(
-                1000, // period
-                3000, // max period
-                3 // max attempts
+            1000,
+            3000,
+            3
         );
     }
 

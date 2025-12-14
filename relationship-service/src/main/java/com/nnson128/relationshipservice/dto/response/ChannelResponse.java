@@ -24,28 +24,31 @@ public class ChannelResponse {
     private List<ChannelParticipantResponse> participants; // Detailed participant info
     private ChannelMessageDto message; // Notice message for channel creation
     private MembershipRole role; // Current user's role in the channel
+    private String channelType; // Channel type (GROUP or DIRECT_MESSAGE)
 
     public static ChannelResponse from(Channel channel) {
         return ChannelResponse.builder()
-                .id(channel.getId())
-                .channelName(channel.getChannelName())
-                .avatar(channel.getAvatar())
-                .createdAt(channel.getCreatedAt())
-                .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list
-                .memberIds(List.<UUID>of()) // Initialize empty memberIds list
-                .build();
+            .id(channel.getId())
+            .channelName(channel.getChannelName())
+            .avatar(channel.getAvatar())
+            .createdAt(channel.getCreatedAt())
+            .channelType(channel.getChannelType())
+            .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list
+            .memberIds(List.<UUID>of()) // Initialize empty memberIds list
+            .build();
     }
 
     public static ChannelResponse fromChannelAndMessage(ChannelResponse channelResponse) {
         return ChannelResponse.builder()
-                .id(channelResponse.getId())
-                .channelName(channelResponse.getChannelName())
-                .avatar(channelResponse.getAvatar())
-                .createdBy(channelResponse.getCreatedBy())
-                .createdAt(channelResponse.getCreatedAt())
-                .messages(channelResponse.getMessages())
-                .memberIds(channelResponse.getMemberIds())
-                .build();
+            .id(channelResponse.getId())
+            .channelName(channelResponse.getChannelName())
+            .avatar(channelResponse.getAvatar())
+            .createdBy(channelResponse.getCreatedBy())
+            .createdAt(channelResponse.getCreatedAt())
+            .messages(channelResponse.getMessages())
+            .memberIds(channelResponse.getMemberIds())
+            .channelType(channelResponse.getChannelType())
+            .build();
     }
 
 }

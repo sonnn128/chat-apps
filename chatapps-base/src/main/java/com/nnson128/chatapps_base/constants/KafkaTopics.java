@@ -11,10 +11,10 @@ public class KafkaTopics {
     public static final String CHAT_NOTIFICATIONS = "chat.notifications";
     public static final String CHAT_CHANNEL_EVENTS = "chat.events.channel";
     public static final String FRIENDSHIP_EVENTS = "relationship.events.friendship";
-    
+
     // User status events
     public static final String USER_STATUS_CHANGED = "user.events.status";
-    
+
     // Legacy client connection events (kept for backwards compatibility)
     public static final String CLIENT_CONNECTED = "client.connected";
     public static final String CLIENT_DISCONNECTED = "client.disconnected";

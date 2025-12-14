@@ -3,6 +3,8 @@ package com.nnson128.relationshipservice.repository;
 import com.nnson128.relationshipservice.model.membership.Membership;
 import com.nnson128.relationshipservice.model.membership.MembershipKey;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,10 +16,13 @@ public interface MembershipRepository extends JpaRepository<Membership, Membersh
     List<Membership> findByMembershipKeyChannelId(UUID channelId);
     boolean existsByMembershipKeyChannelIdAndMembershipKeyUserId(UUID channelId, UUID userId);
     java.util.Optional<Membership> findByMembershipKeyChannelIdAndMembershipKeyUserId(UUID channelId, UUID userId);
+    void deleteByMembershipKeyChannelId(UUID channelId);
 
-    @org.springframework.data.jpa.repository.Query("SELECT m1.membershipKey.channelId FROM Membership m1 " +
+    @Query("SELECT m1.membershipKey.channelId FROM Membership m1 " +
            "JOIN Membership m2 ON m1.membershipKey.channelId = m2.membershipKey.channelId " +
+           "JOIN Channel c ON m1.membershipKey.channelId = c.id " +
            "WHERE m1.membershipKey.userId = :user1 AND m2.membershipKey.userId = :user2 " +
-           "AND (SELECT COUNT(m3) FROM Membership m3 WHERE m3.membershipKey.channelId = m1.membershipKey.channelId) = 2")
-    List<UUID> findDirectChannelIds(@org.springframework.data.repository.query.Param("user1") UUID user1, @org.springframework.data.repository.query.Param("user2") UUID user2);
+           "AND (SELECT COUNT(m3) FROM Membership m3 WHERE m3.membershipKey.channelId = m1.membershipKey.channelId) = 2 " +
+           "AND c.channelType = 'DIRECT_MESSAGE'")
+    List<UUID> findDirectChannelIds(@org.springframework.data.repository.query.Param("user1") UUID user1, @Param("user2") UUID user2);
 }

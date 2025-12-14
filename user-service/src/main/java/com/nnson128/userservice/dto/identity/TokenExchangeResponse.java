@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class TokenExchangeResponse {
     private String accessToken;
-    private Long expiresIn; // Changed from String to Long
-    private String refreshToken; // Keycloak usually returns 'refresh_token', not 'refresh_expires_in' for the token itself
+    private Long expiresIn;
+    private String refreshToken;
     private String tokenType;
     private String idToken;
     private String scope;

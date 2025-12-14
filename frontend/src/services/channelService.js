@@ -22,8 +22,11 @@ const addMembersToChannel = async (channelId, userIds) =>
 const addPeopleToChannel = async (channelId, memberIds) =>
   post(`${CHANNEL_API}/${channelId}/add-people`, {memberIds}, { headers: getAuthHeaders() });
 
-const getOrCreateDirectChannel = async (friendId) =>
-  post(`${CHANNEL_API}/direct`, { friendId }, { headers: getAuthHeaders() });
+const getOrCreateDirectChannel = async (friendId) => {
+  // Note: Sorting of UUIDs is handled on the backend
+  // The backend will ensure consistent channel creation regardless of parameter order
+  return post(`${CHANNEL_API}/direct`, { friendId }, { headers: getAuthHeaders() });
+};
 
 const updateChannelAvatar = async (channelId, avatarUrl) =>
   patch(`${CHANNEL_API}/${channelId}/avatar`, { avatarUrl }, { headers: getAuthHeaders() });

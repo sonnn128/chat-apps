@@ -153,10 +153,22 @@ const Sidebar = () => {
   // Filter local list (nếu chưa dùng backend)
   const filteredChannels = useMemo(() => {
     if (!searchTerm) return channels;
-    return channels.filter((channel) =>
-      (channel.channelName || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [channels, searchTerm]);
+    return channels.filter((channel) => {
+      // For group channels, filter by channelName
+      if (channel.channelType !== 'DIRECT_MESSAGE' && channel.channelName) {
+        return channel.channelName.toLowerCase().includes(searchTerm.toLowerCase());
+      }
+      // For direct channels, filter by participant names
+      if (channel.channelType === 'DIRECT_MESSAGE' && channel.participants && channel.participants.length === 2) {
+        const otherParticipant = channel.participants.find(p => p.userId !== user?.id);
+        if (otherParticipant) {
+          const fullName = `${otherParticipant.firstname || ""} ${otherParticipant.lastname || ""}`.toLowerCase();
+          return fullName.includes(searchTerm.toLowerCase());
+        }
+      }
+      return false;
+    });
+  }, [channels, searchTerm, user?.id]);
 
   const filteredFriends = useMemo(() => {
     if (!searchTerm) return friends;
@@ -403,7 +415,7 @@ const Sidebar = () => {
               )}
             </div>
 
-            <ConversationList channels={filteredChannels} friends={filteredFriends} />
+            <ConversationList channels={filteredChannels} />
           </>
         )}
       </div>

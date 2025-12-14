@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import ChannelMembers from "../ChannelMembers";
 import ChangeChatNameModal from "../modals/channeloptions/ChangeChatNameModal";
+import MediaFilesLinksModal from "../modals/MediaFilesLinksModal";
 import React, { useState, useRef } from "react";
 import { Avatar, message, Spin } from "antd";
 import { User, Bell, Search, ChevronRight, Lock, UserPlus, Edit3, Image as ImageIcon, Palette, Smile, Type } from "lucide-react";
@@ -9,12 +10,31 @@ import { updateChannel } from "@/stores/slices/channelSlice";
 
 const ChatInfoSidebar = () => {
   const { currentChannel, channels } = useSelector((state) => state.channel);
+  const user = useSelector((state) => state.auth.user?.data);
   const [showMembers, setShowMembers] = useState(false);
   const [showCustomizeChat, setShowCustomizeChat] = useState(false);
   const [showChangeNameModal, setShowChangeNameModal] = useState(false);
+  const [showMediaFilesLinksModal, setShowMediaFilesLinksModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const dispatch = useDispatch();
+
+  // Determine display name for header
+  let displayName = currentChannel?.channelName || "Channel Name";
+  let displayAvatar = currentChannel?.avatar;
+  
+  // For direct message channels (1-1), show other participant's name and avatar
+  if (currentChannel?.channelType === 'DIRECT_MESSAGE' && 
+      currentChannel.participants && 
+      currentChannel.participants.length === 2) {
+    const otherParticipant = currentChannel.participants.find(
+      (p) => (p.userId || p.id) !== (user?.id)
+    );
+    if (otherParticipant) {
+      displayName = `${otherParticipant.firstname || ""} ${otherParticipant.lastname || ""}`.trim() || "User";
+      displayAvatar = otherParticipant.avatar || otherParticipant.avatarUrl;
+    }
+  }
 
   const menuItems = [
     { label: "Chat info", key: "chatInfo" },
@@ -35,7 +55,8 @@ const ChatInfoSidebar = () => {
       setShowMembers(!showMembers);
     } else if (key === "customizeChat") {
       setShowCustomizeChat(!showCustomizeChat);
-    } else {
+    } else if (key === "mediaFiles") {
+      setShowMediaFilesLinksModal(true);
     }
   };
 
@@ -104,17 +125,17 @@ const ChatInfoSidebar = () => {
         <div className="flex flex-col items-center text-center">
           {loading ? (
             <Spin size="large">
-              <Avatar size={80} src={currentChannel.avatar}>
-                {currentChannel.channelName ? currentChannel.channelName[0] : "C"}
+              <Avatar size={80} src={displayAvatar}>
+                {displayName ? displayName[0] : "C"}
               </Avatar>
             </Spin>
           ) : (
-            <Avatar size={80} src={currentChannel.avatar}>
-              {currentChannel.channelName ? currentChannel.channelName[0] : "C"}
+            <Avatar size={80} src={displayAvatar}>
+              {displayName ? displayName[0] : "C"}
             </Avatar>
           )}
           <h2 className="mt-4 text-xl font-bold text-gray-900">
-            {currentChannel.channelName || "Channel Name"}
+            {displayName}
           </h2>
           <p className="text-gray-500 text-sm">@channel_tag</p>
 
@@ -218,6 +239,12 @@ const ChatInfoSidebar = () => {
           />
         )
       }
+
+      {/* Media, Files and Links Modal */}
+      <MediaFilesLinksModal
+        visible={showMediaFilesLinksModal}
+        onClose={() => setShowMediaFilesLinksModal(false)}
+      />
     </div >
   );
 };

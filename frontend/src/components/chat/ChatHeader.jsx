@@ -42,18 +42,23 @@ const ChatHeader = ({ title: propTitle }) => {
   let avatarSrc = null;
   let avatarText = displayName[0] || "A";
 
-  if (currentChannel && currentChannel.avatar) {
-    avatarSrc = currentChannel.avatar;
-  } else if (currentFriend && currentFriend.avatar) {
+  if (currentFriend && currentFriend.avatar) {
     avatarSrc = currentFriend.avatar;
-  } else if (currentChannel && currentChannel.participants && currentChannel.participants.length === 2) {
-    const other = currentChannel.participants.find((p) => (p.userId || p.id) !== (user?.id));
-    if (other) {
-      avatarSrc = other.avatar || other.avatarUrl || null;
-      avatarText = (other.firstname || other.name || "").charAt(0) || avatarText;
+  } else if (currentChannel) {
+    // For direct message channels, prioritize other participant's avatar
+    if (currentChannel.channelType === 'DIRECT_MESSAGE' && currentChannel.participants && currentChannel.participants.length === 2) {
+      const other = currentChannel.participants.find((p) => (p.userId || p.id) !== (user?.id));
+      if (other) {
+        avatarSrc = other.avatar || other.avatarUrl || null;
+        avatarText = (other.firstname || other.name || "").charAt(0) || avatarText;
+      }
+    } else if (currentChannel.avatar) {
+      // For group channels or other types, use channel avatar
+      avatarSrc = currentChannel.avatar;
+      avatarText = (currentChannel.channelName || "").charAt(0) || avatarText;
+    } else if (currentChannel.channelName) {
+      avatarText = currentChannel.channelName.charAt(0) || avatarText;
     }
-  } else if (currentChannel && currentChannel.channelName) {
-    avatarText = currentChannel.channelName.charAt(0) || avatarText;
   }
 
   const handleCall = (video) => {

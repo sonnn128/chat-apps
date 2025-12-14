@@ -24,7 +24,14 @@ public class Channel {
     @Column(name = "avatar")
     private String avatar;
 
+    @Column(name = "channel_type", nullable = false)
+    @Builder.Default
+    private String channelType = "GROUP";
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static final String GROUP = "GROUP";
+    public static final String DIRECT_MESSAGE = "DIRECT_MESSAGE";
 }

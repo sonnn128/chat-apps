@@ -20,4 +20,3 @@ public class UserCreationParam {
     private String lastName;
     private List<Credential> credentials;
 }
-

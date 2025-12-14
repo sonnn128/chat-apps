@@ -10,6 +10,7 @@ import { websocketService } from "@/utils/ws";
 import { receiveMessage, addChannel, receiveChannelAddedNotification, receiveChannelUpdatedNotification } from "@/stores/slices/channelSlice";
 import { receiveFriendRequest, receiveFriendRequestAccepted, receiveFriendRequestRejected } from "@/stores/slices/friendshipSlice";
 import { fetchPendingRequests, fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
+import { fetchChannelById } from "@/stores/middlewares/channelMiddleware";
 import { successToast } from "@/utils/toast";
 
 const ChatSection = () => {
@@ -65,11 +66,34 @@ const ChatSection = () => {
                     } else {
                     }
                 } else if (message.eventType === "MESSAGE_SENT") {
-                    if (message.type === "NOTICE" && message.content && message.content.includes("đã thêm")) {
-                        dispatch(receiveMessage(message));
-                    } else {
-                        dispatch(receiveMessage(message));
+                    // Handle notice messages, including channel name changes
+                    if (message.type === "NOTICE" && message.content) {
+                        console.log("📌 ChatSection: NOTICE message received:", message);
+                        
+                        // Check if this is a channel name change notice
+                        // Pattern: "User đã đổi tên đoạn chat thành \"New Name\""
+                        const channelNameChangeMatch = message.content.match(/đã đổi tên đoạn chat thành "([^"]*)"/);
+                        
+                        if (channelNameChangeMatch && message.key?.channelId) {
+                            const newChannelName = channelNameChangeMatch[1];
+                            const channelId = message.key.channelId;
+                            
+                            console.log("✨ ChatSection: Channel name change detected:", {
+                                channelId,
+                                newChannelName,
+                                senderName: message.senderName
+                            });
+                            
+                            // Dispatch action to update the channel name in Redux
+                            dispatch(receiveChannelUpdatedNotification({
+                                channelId,
+                                newChannelName
+                            }));
+                        }
                     }
+                    
+                    // Always dispatch the message (notice or regular)
+                    dispatch(receiveMessage(message));
                 } else if (message.eventType === "CHANNEL_CREATED") {
                     dispatch(addChannel(message));
                 } else if (message.eventType === "MEMBERS_ADDED_TO_CHANNEL") {
@@ -80,6 +104,14 @@ const ChatSection = () => {
                     } else {
                     }
                 } else if (message.eventType === "CHANNEL_UPDATED") {
+                    console.log("📢 ChatSection: CHANNEL_UPDATED event received:", message);
+                    // Fetch updated channel details from API
+                    if (message.channelId) {
+                        console.log("🔄 ChatSection: Fetching channel by ID:", message.channelId);
+                        dispatch(fetchChannelById(message.channelId));
+                    } else {
+                        console.warn("⚠️ ChatSection: No channelId in CHANNEL_UPDATED message");
+                    }
                     dispatch(receiveChannelUpdatedNotification(message));
                 } else if (message.eventType === "CALL_SIGNAL") {
                     const event = new CustomEvent("CALL_SIGNAL_RECEIVED", { detail: message });
@@ -141,8 +173,11 @@ const ChatSection = () => {
                 <ChatHeader title={
                     // If a friend is selected, show their name
                     currentFriend ? `${currentFriend.firstname || ''} ${currentFriend.lastname || ''}` : (
-                        currentChannel && currentChannel.participants && currentChannel.participants.length === 2
-                            ? (currentChannel.participants.find(p => p.userId !== user?.data?.id)?.name || currentChannel.channelName || "Conversation")
+                        currentChannel && currentChannel.channelType === 'DIRECT_MESSAGE' && currentChannel.participants && currentChannel.participants.length === 2
+                            ? (() => {
+                                const otherParticipant = currentChannel.participants.find(p => p.userId !== user?.data?.id);
+                                return otherParticipant ? `${otherParticipant.firstname || ''} ${otherParticipant.lastname || ''}`.trim() : (currentChannel.channelName || "Conversation");
+                              })()
                             : (currentChannel?.channelName || "Channel")
                     )
                 } />

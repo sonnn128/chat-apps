@@ -22,13 +22,13 @@ public class AvatarController {
 
     @PostMapping("/{userId}/avatar")
     public ResponseEntity<ApiResponse<AvatarResponse>> uploadAvatar(
-            @PathVariable UUID userId,
-            @RequestParam("file") MultipartFile file) {
+        @PathVariable UUID userId,
+        @RequestParam("file") MultipartFile file) {
         try {
             // Validate file
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.<AvatarResponse>builder()
+                    .body(ApiResponse.<AvatarResponse>builder()
                         .success(false)
                         .message("File is empty")
                         .build());
@@ -46,10 +46,10 @@ public class AvatarController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.<AvatarResponse>builder()
-                            .success(false)
-                            .message("Failed to upload avatar: " + e.getMessage())
-                            .build());
+                .body(ApiResponse.<AvatarResponse>builder()
+                    .success(false)
+                    .message("Failed to upload avatar: " + e.getMessage())
+                    .build());
         }
     }
 
@@ -69,9 +69,9 @@ public class AvatarController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.<AvatarResponse>builder()
-                .success(false)
-                .message("Failed to delete avatar: " + e.getMessage())
-                .build());
+                    .success(false)
+                    .message("Failed to delete avatar: " + e.getMessage())
+                    .build());
         }
     }
 
@@ -88,9 +88,9 @@ public class AvatarController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.<String>builder()
-                .success(false)
-                .message("Failed to get avatar: " + e.getMessage())
-                .build());
+                    .success(false)
+                    .message("Failed to get avatar: " + e.getMessage())
+                    .build());
         }
     }
 }

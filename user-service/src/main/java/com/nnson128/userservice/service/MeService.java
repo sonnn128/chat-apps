@@ -19,13 +19,13 @@ public class MeService {
 
     public UserResponse getUserProfile(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CommonException(USER_NOT_FOUND_MESSAGE + userId, HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new CommonException(USER_NOT_FOUND_MESSAGE + userId, HttpStatus.NOT_FOUND));
         return UserResponse.fromUser(user);
     }
 
     public UserResponse updateUserProfile(UUID userId, User updateRequest) {
         User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new CommonException(USER_NOT_FOUND_MESSAGE + userId, HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new CommonException(USER_NOT_FOUND_MESSAGE + userId, HttpStatus.NOT_FOUND));
 
         // Only update firstname and lastname
         if (updateRequest.getFirstname() != null) {

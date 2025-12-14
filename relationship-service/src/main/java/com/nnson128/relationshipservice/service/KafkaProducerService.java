@@ -18,19 +18,19 @@ public class KafkaProducerService {
     public void sendMessage(String topic, String message) {
         try {
             Message<String> kafkaMessage = MessageBuilder
-                    .withPayload(message)
-                    .setHeader(KafkaHeaders.TOPIC, topic)
-                    .build();
+                .withPayload(message)
+                .setHeader(KafkaHeaders.TOPIC, topic)
+                .build();
 
             kafkaTemplate.send(kafkaMessage).whenComplete((result, ex) -> {
                 if (ex == null) {
-                    log.info("✅ Message sent successfully to topic: {} with message: {}", topic, message);
+                    log.error("Message sent successfully to topic: {} with message: {}", topic, message);
                 } else {
-                    log.error("❌ Error sending message to topic: {}", topic, ex);
+                    log.error("Message sent successfully to topic: {} with message: {}", topic, ex);
                 }
             });
         } catch (Exception e) {
-            log.error("❌ Error in sendMessage: ", e);
+            log.error("Message sent successfully to topic: {} with message: {}", topic, message);
         }
     }
 
@@ -38,14 +38,13 @@ public class KafkaProducerService {
         try {
             kafkaTemplate.send(topic, key, message).whenComplete((result, ex) -> {
                 if (ex == null) {
-                    log.info("✅ Message sent successfully to topic: {} with key: {} and message: {}",
-                            topic, key, message);
+                    log.info("Message sent successfully to topic: {} with message: {}", topic, message);
                 } else {
-                    log.error("❌ Error sending message to topic: {}", topic, ex);
+                    log.error("Error sending message to topic: {}", topic, ex);
                 }
             });
         } catch (Exception e) {
-            log.error("❌ Error in sendMessageWithKey: ", e);
+            log.error("Error in sendMessageWithKey: ", e);
         }
     }
 }

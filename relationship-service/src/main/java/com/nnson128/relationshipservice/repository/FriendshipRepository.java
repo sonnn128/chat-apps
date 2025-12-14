@@ -15,8 +15,8 @@ import java.util.UUID;
 public interface FriendshipRepository extends JpaRepository<Friendship, FriendshipKey> {
 
     List<Friendship> findByFriendshipKey_RequesterIdAndStatusOrFriendshipKey_FriendIdAndStatus(
-            UUID requesterId, FriendshipStatus status1,
-            UUID friendId, FriendshipStatus status2);
+        UUID requesterId, FriendshipStatus status1,
+        UUID friendId, FriendshipStatus status2);
 
     @Query("SELECT f FROM Friendship f WHERE f.friendshipKey.friendId = :friendId AND f.status = :status")
     List<Friendship> findByFriendIdAndStatus(UUID friendId, FriendshipStatus status);

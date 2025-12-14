@@ -23,13 +23,13 @@ public class UserResponse {
 
     public static UserResponse fromUser(User user) {
         return UserResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .firstname(user.getFirstname())
-                .lastname(user.getLastname())
-                .phone(user.getPhone())
-                .avatarUrl(user.getAvatarUrl())
-                .avatarPublicId(user.getAvatarPublicId())
-                .build();
+            .id(user.getId())
+            .email(user.getEmail())
+            .firstname(user.getFirstname())
+            .lastname(user.getLastname())
+            .phone(user.getPhone())
+            .avatarUrl(user.getAvatarUrl())
+            .avatarPublicId(user.getAvatarPublicId())
+            .build();
     }
 }

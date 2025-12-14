@@ -9,22 +9,17 @@ import org.springframework.security.oauth2.jwt.Jwt;
 
 @Configuration
 public class FeignConfig {
-    
+
     @Bean
     public Logger.Level feignLoggerLevel() {
-        return Logger.Level.FULL; // Full logging to debug user service calls
+        return Logger.Level.FULL;
     }
 
-    /**
-     * Feign request interceptor to propagate JWT token to internal service calls
-     */
     @Bean
     public RequestInterceptor feignRequestInterceptor() {
         return requestTemplate -> {
-            // Get JWT token from current security context
             var authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
-                // Add Authorization header with Bearer token
                 requestTemplate.header("Authorization", "Bearer " + jwt.getTokenValue());
             }
         };

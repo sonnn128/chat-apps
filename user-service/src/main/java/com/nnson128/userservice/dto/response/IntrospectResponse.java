@@ -20,10 +20,10 @@ public class IntrospectResponse {
     private Long exp;
     private Long iat;
     private String sub;
-    
+
     public static IntrospectResponse inactive() {
         return IntrospectResponse.builder()
-                .active(false)
-                .build();
+            .active(false)
+            .build();
     }
 }

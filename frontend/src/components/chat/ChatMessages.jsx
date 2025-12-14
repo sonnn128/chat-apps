@@ -147,7 +147,7 @@ const ChatMessages = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 px-2">
         {messagesOfCurrentChannel.map((message, index) => {
           const isFirstInSequence = index === 0 || messagesOfCurrentChannel[index - 1].userId !== message.userId;
           const isLastInSequence = index === messagesOfCurrentChannel.length - 1 || messagesOfCurrentChannel[index + 1].userId !== message.userId;

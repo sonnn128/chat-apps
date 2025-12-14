@@ -17,7 +17,7 @@ import java.util.UUID;
 public class ChannelMessageKey {
     @PrimaryKeyColumn(name = "channel_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID channelId;
+
     @PrimaryKeyColumn(name = "message_id", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
     private UUID messageId;
-
 }

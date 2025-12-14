@@ -30,7 +30,7 @@ spring:
       retries: 3
   security:
     oauth2:
-      resourceserver:
+      resource server:
         jwt:
           issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
 

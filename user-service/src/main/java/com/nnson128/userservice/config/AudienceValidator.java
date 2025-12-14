@@ -22,7 +22,6 @@ public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
         if (aud != null && aud.contains(audience)) {
             return OAuth2TokenValidatorResult.success();
         }
-        // some tokens may place azp or client_id instead
         Object azp = token.getClaim("azp");
         if (azp != null && azp.equals(audience)) {
             return OAuth2TokenValidatorResult.success();

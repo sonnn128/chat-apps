@@ -13,9 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UserResponse {
     private UUID id;
+    private String email;
     private String firstname;
     private String lastname;
-    private String email;
     private String avatarUrl;
     private String phone;
     private String avatarPublicId;

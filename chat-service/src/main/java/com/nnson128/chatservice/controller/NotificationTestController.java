@@ -19,9 +19,9 @@ public class NotificationTestController {
 
     @PostMapping("/test-send")
     public ResponseEntity<?> testSend(
-            @RequestParam UUID userId,
-            @RequestParam(required = false) UUID channelId,
-            @RequestParam(required = false) String content
+        @RequestParam UUID userId,
+        @RequestParam(required = false) UUID channelId,
+        @RequestParam(required = false) String content
     ) {
         try {
             Map<String, Object> payload = new HashMap<>();

@@ -60,29 +60,27 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new CommonException("Invalid credentials", HttpStatus.UNAUTHORIZED));
-
+            .orElseThrow(() -> new CommonException("Invalid credentials", HttpStatus.UNAUTHORIZED));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new CommonException("Invalid credentials", HttpStatus.UNAUTHORIZED);
         }
 
         return AuthResponse.builder()
-                .accessToken(getTokenFromKeycloak(request.getEmail(), request.getPassword()))
-                .user(UserResponse.fromUser(user))
-                .build();
-
+            .accessToken(getTokenFromKeycloak(request.getEmail(), request.getPassword()))
+            .user(UserResponse.fromUser(user))
+            .build();
     }
 
     public UserResponse register(UserRegistrationRequest request) {
         // 1. Normalize phone number
         String normalizedPhone = PhoneNumberUtils.normalizeVietnamesePhone(request.getPhone());
-        
+
         // 2. Validate phone number
         if (!PhoneNumberUtils.isValidVietnamesePhone(normalizedPhone)) {
             throw new CommonException("Invalid phone number format: " + request.getPhone(), HttpStatus.BAD_REQUEST);
         }
-        
+
         // 3. Check if user already exists
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
             throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.CONFLICT);
@@ -93,41 +91,41 @@ public class AuthService {
         });
 
         String token = identityClient.getClientToken(TokenExchangeParam.builder()
-                .grant_type("client_credentials")
-                .client_id(clientId)
-                .client_secret(clientSecret)
-                .scope("openid")
-                .build()).getAccessToken();
+            .grant_type("client_credentials")
+            .client_id(clientId)
+            .client_secret(clientSecret)
+            .scope("openid")
+            .build()).getAccessToken();
 
         //        call api create user in admin api
         var creationResponse = identityClient.createUser(
-                "Bearer " + token,
-                UserCreationParam.builder()
-                        .username(request.getUsername())
-                        .firstName(request.getFirstname())
-                        .lastName(request.getLastname())
-                        .email(request.getEmail())
-                        .enabled(true)
-                        .emailVerified(false)
-                        .credentials(List.of(Credential.builder()
-                                .type("password")
-                                .temporary(false)
-                                .value(request.getPassword())
-                                .build()))
-                        .build());
+            "Bearer " + token,
+            UserCreationParam.builder()
+                .username(request.getUsername())
+                .firstName(request.getFirstname())
+                .lastName(request.getLastname())
+                .email(request.getEmail())
+                .enabled(true)
+                .emailVerified(false)
+                .credentials(List.of(Credential.builder()
+                    .type("password")
+                    .temporary(false)
+                    .value(request.getPassword())
+                    .build()))
+                .build());
 
 //        get userid from keycloak response
         UUID userId = extractUserId(creationResponse);
 
         // 4. Create user in local database
         User newUser = User.builder()
-                .id(userId)
-                .firstname(request.getFirstname())
-                .lastname(request.getLastname())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phone(normalizedPhone) // Use normalized phone number
-                .build();
+            .id(userId)
+            .firstname(request.getFirstname())
+            .lastname(request.getLastname())
+            .email(request.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .phone(normalizedPhone) // Use normalized phone number
+            .build();
 
         User savedUser = userRepository.save(newUser);
 
@@ -155,11 +153,11 @@ public class AuthService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 Map<String, Object> tokenResponse = response.getBody();
                 return AuthResponse.builder()
-                        .accessToken((String) tokenResponse.get("access_token"))
-                        .refreshToken((String) tokenResponse.get("refresh_token"))
-                        .tokenType("Bearer")
-                        .expiresIn(((Number) tokenResponse.get("expires_in")).longValue())
-                        .build();
+                    .accessToken((String) tokenResponse.get("access_token"))
+                    .refreshToken((String) tokenResponse.get("refresh_token"))
+                    .tokenType("Bearer")
+                    .expiresIn(((Number) tokenResponse.get("expires_in")).longValue())
+                    .build();
             }
         } catch (Exception e) {
         }
@@ -210,14 +208,14 @@ public class AuthService {
 
                 if (active != null && active) {
                     return IntrospectResponse.builder()
-                            .active(true)
-                            .username((String) introspectData.get("preferred_username"))
-                            .userId(UUID.fromString((String) introspectData.get("sub")))
-                            .roles(Arrays.asList(((String) introspectData.get("realm_access")).split(",")))
-                            .exp(((Number) introspectData.get("exp")).longValue())
-                            .iat(((Number) introspectData.get("iat")).longValue())
-                            .sub((String) introspectData.get("sub"))
-                            .build();
+                        .active(true)
+                        .username((String) introspectData.get("preferred_username"))
+                        .userId(UUID.fromString((String) introspectData.get("sub")))
+                        .roles(Arrays.asList(((String) introspectData.get("realm_access")).split(",")))
+                        .exp(((Number) introspectData.get("exp")).longValue())
+                        .iat(((Number) introspectData.get("iat")).longValue())
+                        .sub((String) introspectData.get("sub"))
+                        .build();
                 }
             }
         } catch (Exception e) {
@@ -229,13 +227,13 @@ public class AuthService {
     private String getTokenFromKeycloak(String email, String password) {
 
         return identityClient.getUserToken(TokenExchangeParam.builder()
-                .grant_type("password")
-                .client_id(clientId)
-                .username(email)
-                .password(password)
-                .client_secret(clientSecret)
-                .scope("openid")
-                .build()).getAccessToken();
+            .grant_type("password")
+            .client_id(clientId)
+            .username(email)
+            .password(password)
+            .client_secret(clientSecret)
+            .scope("openid")
+            .build()).getAccessToken();
     }
 
     private void createUserInKeycloak(UserRegistrationRequest request) {
@@ -257,69 +255,59 @@ public class AuthService {
     // Forgot Password Logic
     private final EmailService emailService; // Keep for now if used elsewhere or remove if unused, but Consumer uses it. Here we inject Producer.
     private final com.nnson128.userservice.event.EmailProducer emailProducer;
-    private final com.nnson128.userservice.repository.PasswordResetTokenRepository tokenRepository;
+    private final PasswordResetTokenService passwordResetTokenService;
 
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new CommonException("User not found with email: " + email, HttpStatus.NOT_FOUND));
+            .orElseThrow(() -> new CommonException("User not found with email: " + email, HttpStatus.NOT_FOUND));
 
-        // Create token
-        String token = UUID.randomUUID().toString();
-        com.nnson128.userservice.model.PasswordResetToken resetToken = com.nnson128.userservice.model.PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(java.time.LocalDateTime.now().plusHours(1)) // 1 hour expiry
-                .build();
-
-        // Remove old tokens for this user
-        tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
-        tokenRepository.save(resetToken);
+        // Create token in Redis
+        String token = passwordResetTokenService.createToken(user.getId());
 
         // Send Email Event to Kafka
         String resetLink = "http://localhost:5173/reset-password?token=" + token;
-        
+
         emailProducer.sendForgotPasswordEvent(com.nnson128.userservice.event.ForgotPasswordEvent.builder()
-                .email(user.getEmail())
-                .name(user.getFirstname())
-                .resetLink(resetLink)
-                .build());
+            .email(user.getEmail())
+            .name(user.getFirstname())
+            .resetLink(resetLink)
+            .build());
     }
 
     public void resetPassword(String token, String newPassword) {
-        com.nnson128.userservice.model.PasswordResetToken resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new CommonException("Invalid token", HttpStatus.BAD_REQUEST));
+        UUID userId = passwordResetTokenService.validateToken(token);
 
-        if (resetToken.isExpired()) {
-            tokenRepository.delete(resetToken);
-            throw new CommonException("Token expired", HttpStatus.BAD_REQUEST);
+        if (userId == null) {
+            throw new CommonException("Invalid or expired token", HttpStatus.BAD_REQUEST);
         }
 
-        User user = resetToken.getUser();
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new CommonException("User not found", HttpStatus.NOT_FOUND));
 
         // Update Keycloak Password
         String adminToken = identityClient.getClientToken(TokenExchangeParam.builder()
-                .grant_type("client_credentials")
-                .client_id(clientId)
-                .client_secret(clientSecret)
-                .scope("openid")
-                .build()).getAccessToken();
+            .grant_type("client_credentials")
+            .client_id(clientId)
+            .client_secret(clientSecret)
+            .scope("openid")
+            .build()).getAccessToken();
 
         identityClient.resetPassword(
-                "Bearer " + adminToken,
-                user.getId().toString(),
-                Credential.builder()
-                        .type("password")
-                        .value(newPassword)
-                        .temporary(false)
-                        .build()
+            "Bearer " + adminToken,
+            user.getId().toString(),
+            Credential.builder()
+                .type("password")
+                .value(newPassword)
+                .temporary(false)
+                .build()
         );
 
         // Update Local DB Password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // Consume Token
-        tokenRepository.delete(resetToken);
+        // Consume Token (Optional regarding Redis TTL, but good for security)
+        passwordResetTokenService.deleteToken(token);
     }
 
 }

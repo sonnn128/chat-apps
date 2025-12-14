@@ -45,14 +45,14 @@ public class EmailService {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
-            
+
             helper.setFrom((fromEmail != null && !fromEmail.isEmpty()) ? fromEmail : "noreply@chatapp.com");
             helper.setTo(to);
             helper.setSubject(subject);
-            
+
             String htmlContent = templateEngine.process(templateName, context);
             helper.setText(htmlContent, true);
-            
+
             mailSender.send(mimeMessage);
             log.info("HTML Email sent to {}", to);
         } catch (MessagingException e) {

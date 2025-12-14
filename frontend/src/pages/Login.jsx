@@ -14,6 +14,7 @@ import {
 
 import { loginUser } from "@/stores/middlewares/authMiddleware";
 import { fetchAllChannels } from "@/stores/middlewares/channelMiddleware";
+import { fetchFriendList, fetchPendingRequests } from "@/stores/middlewares/friendShipMiddleware";
 import { successToast } from "@/utils/toast";
 
 const { Title, Text, Link } = Typography;

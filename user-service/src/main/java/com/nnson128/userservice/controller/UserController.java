@@ -42,20 +42,20 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> searchUserByPhone(@RequestParam("phone") String phone) {
         UserResponse user = userService.searchUserByPhone(phone);
         ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
-                .success(true)
-                .message("User found successfully")
-                .data(user)
-                .build();
+            .success(true)
+            .message("User found successfully")
+            .data(user)
+            .build();
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable UUID userId) {
         return ResponseEntity.ok().body(ApiResponse.<UserResponse>builder()
-                .message("User profile")
-                .success(true)
-                .data(userService.getUserProfile(userId))
-                .build());
+            .message("User profile")
+            .success(true)
+            .data(userService.getUserProfile(userId))
+            .build());
     }
 
     // Internal API for microservice communication (no ApiResponse wrapper)
@@ -70,9 +70,9 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteUserById(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .success(true)
-                .message("User has been deleted: " + id)
-                .build());
+            .success(true)
+            .message("User has been deleted: " + id)
+            .build());
     }
 
 }
