@@ -109,19 +109,23 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
       );
     }
 
-    if (friends?.length > 0) {
+    // Filter out friends who are already members
+    const availableFriends = friends?.filter(friend => !isAlreadyMember(friend.friendId)) || [];
+
+    if (availableFriends.length > 0) {
       return (
         <List
           itemLayout="horizontal"
-          dataSource={friends}
+          dataSource={availableFriends}
           renderItem={(friend) => {
-            const isMember = isAlreadyMember(friend.friendId);
             const isSelected = selectedFriends.includes(friend.friendId);
 
             return (
               <List.Item
                 key={friend.friendId}
-                className={`p-2 rounded-lg ${isMember ? 'bg-gray-100 opacity-60' : 'hover:bg-gray-50'}`}
+                className="p-2 rounded-lg hover:bg-gray-50"
+                onClick={() => handleFriendToggle(friend.friendId)}
+                style={{ cursor: 'pointer' }}
               >
                 <div className="flex items-center w-full">
                   <Avatar
@@ -130,24 +134,19 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
                   />
 
                   <div className="flex-1">
-                    <Text strong className={isMember ? 'text-gray-500' : ''}>
+                    <Text strong>
                       {friend.firstname} {friend.lastname}
                     </Text>
                     <br />
                     <Text type="secondary" className="text-sm">
                       {friend.email}
                     </Text>
-                    {isMember && (
-                      <Text type="secondary" className="text-xs block">
-                        (Đã có trong kênh)
-                      </Text>
-                    )}
                   </div>
 
                   <Checkbox
                     checked={isSelected}
-                    disabled={isMember}
                     onChange={() => handleFriendToggle(friend.friendId)}
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </div>
               </List.Item>

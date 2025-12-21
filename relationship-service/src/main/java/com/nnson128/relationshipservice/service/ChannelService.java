@@ -9,7 +9,7 @@ import com.nnson128.relationshipservice.dto.response.ChannelResponse;
 import com.nnson128.chatapps_base.dto.res.UserResponse;
 import com.nnson128.relationshipservice.dto.response.ChannelParticipantResponse;
 import com.nnson128.relationshipservice.dto.response.AddPeopleResponse;
-import com.nnson128.relationshipservice.exception.ChannelNotFoundException;
+import com.nnson128.chatapps_base.exception.ResourceNotFoundException;
 import com.nnson128.chatapps_base.constants.KafkaTopics;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelUpdatedPayload;
@@ -262,8 +262,6 @@ public class ChannelService {
         // Get all messages for all channels in one API call
         Map<UUID, List<ChannelMessageDto>> rawMessagesMap = chatServiceClient.getBatchChannelMessages(channelIds);
 
-        // Use ChannelMessageDto objects directly
-
         // Get all member IDs for all channels
         Map<UUID, List<UUID>> memberIdsMap = getMemberIdsForAllChannels(channelIds);
 
@@ -274,7 +272,6 @@ public class ChannelService {
             .map(channel -> {
                 List<ChannelMessageDto> channelMessages = rawMessagesMap.getOrDefault(channel.getId(), List.of());
                 List<UUID> channelMembers = memberIdsMap.getOrDefault(channel.getId(), List.of());
-
                 List<ChannelParticipantResponse> participants = getChannelParticipants(channel.getId(), channelMembers);
 
                 return ChannelResponse.builder()
@@ -288,14 +285,13 @@ public class ChannelService {
                     .role(channelRoles.get(channel.getId()))
                     .channelType(channel.getChannelType())
                     .build();
-            })
-            .collect(Collectors.toList());
+            }).collect(Collectors.toList());
     }
 
     public void deleteChannel(UUID channelId, UUID requesterId) {
         // 1. Check if channel exists
         if (!channelRepository.existsById(channelId)) {
-            throw new ChannelNotFoundException("Channel not found with id: " + channelId);
+            throw new ResourceNotFoundException("Channel not found with id: " + channelId);
         }
 
         // 2. Check if requester is ADMIN
@@ -320,7 +316,7 @@ public class ChannelService {
     public boolean isUserParticipant(UUID channelId, UUID userId) {
         // Check if channel exists
         if (!channelRepository.existsById(channelId)) {
-            throw new ChannelNotFoundException("Channel with id " + channelId + " not found");
+            throw new ResourceNotFoundException("Channel with id " + channelId + " not found");
         }
 
         return membershipRepository.existsByMembershipKeyChannelIdAndMembershipKeyUserId(channelId, userId);
@@ -329,7 +325,7 @@ public class ChannelService {
     public List<UUID> getParticipantIdsByChannelId(UUID channelId) {
         // Check if channel exists
         if (!channelRepository.existsById(channelId)) {
-            throw new ChannelNotFoundException("Channel with id " + channelId + " not found");
+            throw new ResourceNotFoundException("Channel with id " + channelId + " not found");
         }
 
         return membershipRepository.findByMembershipKeyChannelId(channelId).stream()
@@ -376,7 +372,7 @@ public class ChannelService {
 
         // Check if channel exists
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+            .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
         // Check if user is a member of the channel
         if (!isUserParticipant(channelId, addedByUserId)) {
@@ -557,7 +553,7 @@ public class ChannelService {
         if (!existingChannelIds.isEmpty()) {
             UUID channelId = existingChannelIds.get(0);
             Channel channel = channelRepository.findById(channelId)
-                .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+                .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
             // Get messages and members
             List<ChannelMessageDto> messages = chatServiceClient.getChannelMessages(channelId);
@@ -615,7 +611,7 @@ public class ChannelService {
     public ChannelResponse updateChannelAvatar(UUID channelId, String avatarUrl, UUID requesterId) {
         // 1. Check if channel exists
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+            .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
         // 2. Check if requester is a participant
         if (!isUserParticipant(channelId, requesterId)) {
@@ -626,14 +622,9 @@ public class ChannelService {
         channel.setAvatar(avatarUrl);
         Channel savedChannel = channelRepository.save(channel);
 
-        // 4. Return response
-        // We need to reconstruct the full response with participants etc.
         List<UUID> memberIds = getParticipantIdsByChannelId(channelId);
         List<ChannelParticipantResponse> participants = getChannelParticipants(channelId, memberIds);
 
-        // Get messages (optional, maybe not needed for just avatar update, but consistent with other methods)
-        // For efficiency, we might skip messages here if the frontend doesn't need them immediately
-        // But to be safe and consistent:
         List<ChannelMessageDto> messages = chatServiceClient.getChannelMessages(channelId);
 
         return ChannelResponse.builder()
@@ -650,7 +641,7 @@ public class ChannelService {
     public ChannelResponse updateChannelName(UUID channelId, String newName, UUID requesterId) {
         // 1. Check if channel exists
         Channel channel = channelRepository.findById(channelId)
-            .orElseThrow(() -> new ChannelNotFoundException("Channel not found with id: " + channelId));
+            .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
 
         // 2. Check if requester is a participant (and maybe ADMIN? For now just participant)
         if (!isUserParticipant(channelId, requesterId)) {

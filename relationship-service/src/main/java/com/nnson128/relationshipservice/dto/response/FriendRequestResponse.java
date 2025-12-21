@@ -1,6 +1,6 @@
 package com.nnson128.relationshipservice.dto.response;
 
-import com.nnson128.relationshipservice.model.Friendship;
+import com.nnson128.relationshipservice.model.friendship.Friendship;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

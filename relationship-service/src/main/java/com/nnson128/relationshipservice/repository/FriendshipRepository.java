@@ -1,8 +1,8 @@
 package com.nnson128.relationshipservice.repository;
 
-import com.nnson128.relationshipservice.model.Friendship;
-import com.nnson128.relationshipservice.model.FriendshipKey;
-import com.nnson128.relationshipservice.model.FriendshipStatus;
+import com.nnson128.relationshipservice.model.friendship.Friendship;
+import com.nnson128.relationshipservice.model.friendship.FriendshipKey;
+import com.nnson128.relationshipservice.model.friendship.FriendshipStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

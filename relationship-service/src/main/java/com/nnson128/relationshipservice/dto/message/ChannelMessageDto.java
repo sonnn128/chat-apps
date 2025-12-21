@@ -14,25 +14,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChannelMessageDto {
-    @JsonProperty("key")
     private ChannelMessageKeyDto key;
-
-    @JsonProperty("userId")
     private UUID userId;
-
-    @JsonProperty("content")
     private String content;
-
-    @JsonProperty("type")
     private ChannelMessageType type;
-
-    @JsonProperty("timestamp")
     private Instant timestamp;
-
-    @JsonProperty("senderName")
     private String senderName;
-
-    @JsonProperty("senderAvatar")
     private String senderAvatar;
 
     public static ChannelMessageDto createNoticeMessage(UUID channelId, UUID messageId, UUID userId, String content) {

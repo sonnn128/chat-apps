@@ -22,11 +22,11 @@ const ChatInfoSidebar = () => {
   // Determine display name for header
   let displayName = currentChannel?.channelName || "Channel Name";
   let displayAvatar = currentChannel?.avatar;
-  
+
   // For direct message channels (1-1), show other participant's name and avatar
-  if (currentChannel?.channelType === 'DIRECT_MESSAGE' && 
-      currentChannel.participants && 
-      currentChannel.participants.length === 2) {
+  if (currentChannel?.channelType === 'DIRECT_MESSAGE' &&
+    currentChannel.participants &&
+    currentChannel.participants.length === 2) {
     const otherParticipant = currentChannel.participants.find(
       (p) => (p.userId || p.id) !== (user?.id)
     );
@@ -42,7 +42,7 @@ const ChatInfoSidebar = () => {
     { label: "Chat members", key: "chatMembers" },
     { label: "Media, files and links", key: "mediaFiles" },
     { label: "Privacy & support", key: "privacySupport" },
-  ];
+  ].filter(item => item.key !== "chatMembers" || currentChannel?.channelType !== 'DIRECT_MESSAGE');
 
   const actionButtons = [
     { icon: <User size={20} />, label: "Profile" },

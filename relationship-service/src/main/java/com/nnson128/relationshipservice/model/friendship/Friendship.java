@@ -1,4 +1,4 @@
-package com.nnson128.relationshipservice.model;
+package com.nnson128.relationshipservice.model.friendship;
 
 import jakarta.persistence.*;
 import lombok.*;

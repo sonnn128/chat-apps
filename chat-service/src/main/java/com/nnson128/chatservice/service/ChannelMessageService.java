@@ -30,6 +30,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+
+import java.util.Collections;
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 public class ChannelMessageService {
@@ -167,26 +172,20 @@ public class ChannelMessageService {
      * Get messages for multiple channels in batch
      */
     public Map<UUID, List<ChannelMessageDto>> getBatchChannelMessages(List<UUID> channelIds) {
-        if (channelIds == null) {
-            return new HashMap<>();
-        }
-
-        if (channelIds.isEmpty()) {
-            return new HashMap<>();
-        }
         return channelIds.stream()
-            .collect(Collectors.toMap(
-                channelId -> channelId,
-                channelId -> {
-                    try {
-                        List<ChannelMessage> messages = getAllMessagesOfChannel(channelId);
-                        return messages.stream()
-                            .map(this::convertToDto)
-                            .collect(Collectors.toList());
-                    } catch (Exception e) {
-                        return List.of();
-                    }
-                }));
+            .collect(Collectors.toMap(channelId -> channelId, channelId -> {
+                // Get latest 30 messages (Newest First because of DESC clustering order)
+                List<ChannelMessage> messages = new ArrayList<>(
+                    channelMessageRepository.findByKeyChannelId(channelId, PageRequest.of(0, 30)).getContent()
+                );
+
+                // Reverse to get Oldest First (Chronological order)
+                Collections.reverse(messages);
+
+                return messages.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+            }));
     }
 
     /**

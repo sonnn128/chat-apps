@@ -3,7 +3,7 @@ package com.nnson128.relationshipservice.controller;
 import com.nnson128.chatapps_base.dto.res.ApiResponse;
 import com.nnson128.relationshipservice.dto.response.FriendRequestResponse;
 import com.nnson128.relationshipservice.dto.response.FriendResponse;
-import com.nnson128.relationshipservice.model.Friendship;
+import com.nnson128.relationshipservice.model.friendship.Friendship;
 import com.nnson128.relationshipservice.service.FriendshipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

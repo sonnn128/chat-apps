@@ -1,8 +1,4 @@
 services:
-  # Infrastructure Services (Kafka, Zookeeper, DBs...) giữ nguyên hoặc trỏ về external service
-  # Ở đây tôi giả định các service hạ tầng đã chạy hoặc dùng chung file base.
-  # Để đơn giản, file này sẽ tập trung vào các Microservices của chúng ta.
-  
   discovery-server:
     image: ${DOCKERHUB_USERNAME}/chatapps-discovery-server:latest
     ports:
