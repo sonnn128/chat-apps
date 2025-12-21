@@ -1,5 +1,5 @@
 server:
-  port: 9006
+  port: 9005
 spring:
   application:
     name: user-service
@@ -60,6 +60,9 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
+    nonSecurePort: 9005
+    metadata-map:
+      management.port: 9005
 
 keycloak:
   auth-server-url: http://${KEYCLOAK_HOST:localhost}:8080

@@ -138,6 +138,11 @@ services:
       - "6379:6379"
     volumes:
       - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   discovery-server:
     build:
@@ -176,9 +181,9 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     ports:
-      - "9006:9006"
+      - "9005:9005"
     env_file:
-      - ./.env.dev
+      - ./.env
     environment:
       MEDIA_SERVICE: media-service
       POSTGRES_HOST: postgres
@@ -186,6 +191,9 @@ services:
       KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
       MEDIA_SERVICE_URL: http://media-service:9004
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       postgres:
         condition: service_healthy
@@ -207,9 +215,9 @@ services:
     ports:
       - "9002:9002"
     env_file:
-      - ./.env.dev
+      - ./.env
     environment:
-      user-service.url: http://user-service:9006
+      user-service.url: http://user-service:9005
       relationship-service.url: http://relationship-service:9001
       CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
       CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
@@ -239,9 +247,9 @@ services:
     ports:
       - "9001:9001"
     env_file:
-      - ./.env.dev
+      - ./.env
     environment:
-      user-service.url: http://user-service:9006
+      user-service.url: http://user-service:9005
       chat-service.url: http://chat-service:9002
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -270,7 +278,7 @@ services:
     ports:
       - "9004:9004"
     env_file:
-      - ./.env.dev
+      - ./.env
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
@@ -292,13 +300,11 @@ services:
     ports:
       - "9006:9006"
     env_file:
-      - ./.env.dev
+      - ./.env
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
     depends_on:
       redis:
         condition: service_healthy
@@ -313,3 +319,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+      args:
+        VITE_REACT_APP_BASE_URL: ${VITE_REACT_APP_BASE_URL:-http://localhost:8888}
+    ports:
+      - "5173:5173"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy

@@ -42,6 +42,9 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
+    nonSecurePort: 9001
+    metadata-map:
+      management.port: 9001
 
 user-service:
   url: http://${USER_SERVICE:localhost}:9006

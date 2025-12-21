@@ -26,6 +26,9 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
+    nonSecurePort: 9004
+    metadata-map:
+      management.port: 9004
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:dswdadh2n}

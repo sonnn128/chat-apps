@@ -12,7 +12,7 @@ spring:
     consumer:
       group-id: notification-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: "*"
@@ -44,3 +44,6 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
+    nonSecurePort: 9006
+    metadata-map:
+      management.port: 9006

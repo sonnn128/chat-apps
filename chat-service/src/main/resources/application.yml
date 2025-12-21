@@ -60,6 +60,9 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
+    nonSecurePort: 9002
+    metadata-map:
+      management.port: 9002
 
 logging:
   level:

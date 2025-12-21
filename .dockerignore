@@ -1,0 +1,25 @@
+# Exclude data directories - these contain runtime database files
+data/
+
+# Exclude build artifacts for Java services
+**/target/
+
+# Exclude node_modules but allow them for services that need them
+frontend/node_modules/
+**/node_modules/
+
+# Exclude frontend build output
+frontend/dist/
+frontend/build/
+
+# Exclude Git
+.git/
+.gitignore
+
+# Exclude IDE files
+.idea/
+.vscode/
+*.iml
+
+# Exclude logs
+*.log
