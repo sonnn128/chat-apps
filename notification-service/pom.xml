@@ -10,9 +10,9 @@
         <relativePath />
     </parent>
     <groupId>com.nnson128</groupId>
-    <artifactId>presence-service</artifactId>
+    <artifactId>notification-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>presence-service</name>
+    <name>notification-service</name>
     <properties>
         <java.version>17</java.version>
         <spring-cloud.version>2023.0.2</spring-cloud.version>

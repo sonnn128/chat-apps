@@ -1,4 +1,4 @@
-package com.nnson128.presenceservice.config;
+package com.nnson128.notificationservice.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,6 +1,6 @@
-package com.nnson128.presenceservice.controller;
+package com.nnson128.notificationservice.controller;
 
-import com.nnson128.presenceservice.service.PresenceService;
+import com.nnson128.notificationservice.service.PresenceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

@@ -285,32 +285,31 @@ services:
       timeout: 5s
       retries: 30
 
-
-  # presence-service:
-  #   build:
-  #     context: .
-  #     dockerfile: ./presence-service/Dockerfile
-  #   ports:
-  #     - "9005:9005"
-  #   env_file:
-  #     - ./.env.dev
-  #   environment:
-  #     EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
-  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-  #     SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
-  #     SPRING_REDIS_HOST: redis
-  #     SPRING_REDIS_PORT: 6379
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     discovery-server:
-  #       condition: service_healthy
-  #     kafka:
-  #       condition: service_healthy
-  #     keycloak:
-  #       condition: service_healthy
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "curl -f http://localhost:9005/actuator/health || exit 1"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 10
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./notification-service/Dockerfile
+    ports:
+      - "9006:9006"
+    env_file:
+      - ./.env.dev
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9006/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10

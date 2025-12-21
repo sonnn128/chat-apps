@@ -36,6 +36,10 @@ spring:
           uri: lb://MEDIA-SERVICE
           predicates:
             - Path=/api/v1/media/**
+        - id: NOTIFICATION-SERVICE-PRESENCE
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/presence/**
         - id: CHAT-SERVICE-WS
           uri: lb://CHAT-SERVICE
           predicates:

@@ -1,4 +1,4 @@
-package com.nnson128.presenceservice.service;
+package com.nnson128.notificationservice.service;
 
 import com.nnson128.chatapps_base.constants.KafkaTopics;
 import com.nnson128.chatapps_base.models.events.user.UserEventType;
@@ -21,7 +21,7 @@ public class PresenceEventConsumer {
      */
     @KafkaListener(
         topics = KafkaTopics.USER_STATUS_CHANGED,
-        groupId = "presence-service-group",
+        groupId = "notification-service-group",
         containerFactory = "kafkaListenerContainerFactory"
     )
     public void handleUserStatusChanged(UserStatusChangedPayload event) {

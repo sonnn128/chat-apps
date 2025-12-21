@@ -1,4 +1,4 @@
-package com.nnson128.presenceservice.config;
+package com.nnson128.notificationservice.config;
 
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;

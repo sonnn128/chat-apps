@@ -1,4 +1,4 @@
-package com.nnson128.presenceservice.service;
+package com.nnson128.notificationservice.service;
 
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Service
 public class PresenceService {
@@ -56,7 +55,7 @@ public class PresenceService {
             Map<String, Object> entry = new HashMap<>();
             entry.put("userId", userId);
             entry.put("status", status);
-            if ("offline" .equals(status) && lastSeenObj != null) {
+            if ("offline".equals(status) && lastSeenObj != null) {
                 entry.put("lastSeen", lastSeenObj.toString());
             }
             out.add(entry);

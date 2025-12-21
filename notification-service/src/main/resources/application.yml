@@ -1,23 +1,23 @@
 server:
-  port: 9005
+  port: 9006
 
 spring:
   application:
-    name: presence-service
+    name: notification-service
   output:
     ansi:
       enabled: always
   kafka:
     bootstrap-servers: kafka:29092
     consumer:
-      group-id: presence-events
+      group-id: notification-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.StringDeserializer
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
-        spring.json.value.default.type: com.nnson128.presenceservice.kafka.dto.EventWrapper
+        spring.json.value.default.type: com.nnson128.notificationservice.kafka.dto.EventWrapper
 
   data:
     redis:
@@ -44,13 +44,3 @@ eureka:
     prefer-ip-address: true
     hostname: ${spring.application.name}
     instance-id: ${spring.application.name}
-
-
-app:
-  kafka:
-    topics:
-      user-online: 'chat-service.user-online.v1'
-      user-offline: 'chat-service.user-offline.v1'
-      new-message: 'chat-service.new-message.v1'
-      client-connected: 'chat-service.client-connected.v1'
-      client-disconnected: 'chat-service.client-disconnected.v1'
