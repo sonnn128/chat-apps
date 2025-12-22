@@ -2,7 +2,7 @@ import React from "react";
 import { Modal, Button } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 
-function DeleteChannelModal({ visible, onConfirm, onCancel, channelName }) {
+function DeleteChannelModal({ open, onConfirm, onCancel, channelName }) {
   return (
     <Modal
       title={
@@ -10,7 +10,7 @@ function DeleteChannelModal({ visible, onConfirm, onCancel, channelName }) {
           <DeleteOutlined style={{ marginRight: 8 }} /> Delete Channel
         </span>
       }
-      open={visible}
+      open={open}
       onCancel={onCancel}
       footer={[
         <Button key="cancel" onClick={onCancel}>

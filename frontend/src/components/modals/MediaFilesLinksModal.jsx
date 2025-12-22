@@ -3,7 +3,7 @@ import { Modal, Tabs, Empty, Spin, Image } from "antd";
 import { FileOutlined, LinkOutlined, PlayCircleOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 
-const MediaFilesLinksModal = ({ visible, onClose }) => {
+const MediaFilesLinksModal = ({ open: visible, onClose }) => {
   const { channels, currentChannelId } = useSelector((state) => state.channel);
   const currentChannel = channels.find((ch) => ch.id === currentChannelId);
   const [loading, setLoading] = useState(false);
@@ -94,11 +94,11 @@ const MediaFilesLinksModal = ({ visible, onClose }) => {
   return (
     <Modal
       title="Media, Files and Links"
-      visible={visible}
+      open={visible}
       onCancel={onClose}
-      width={700}
       footer={null}
-      bodyStyle={{ maxHeight: "600px", overflowY: "auto" }}
+      width={800}
+      styles={{ body: { maxHeight: "600px", overflowY: "auto" } }}
     >
       <Spin spinning={loading}>
         <Tabs

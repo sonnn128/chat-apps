@@ -9,6 +9,7 @@ import com.nnson128.userservice.dto.request.UserRegistrationRequest;
 import com.nnson128.userservice.dto.response.AuthResponse;
 import com.nnson128.userservice.dto.response.IntrospectResponse;
 import com.nnson128.userservice.dto.response.UserResponse;
+import com.nnson128.userservice.event.OtpEmailEvent;
 import com.nnson128.userservice.model.User;
 import com.nnson128.userservice.client.IdentityClient;
 import com.nnson128.userservice.repository.UserRepository;
@@ -256,24 +257,184 @@ public class AuthService {
     private final EmailService emailService; // Keep for now if used elsewhere or remove if unused, but Consumer uses it. Here we inject Producer.
     private final com.nnson128.userservice.event.EmailProducer emailProducer;
     private final PasswordResetTokenService passwordResetTokenService;
+    private final OtpService otpService;
 
+    /**
+     * Send OTP for forgot password
+     */
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new CommonException("User not found with email: " + email, HttpStatus.NOT_FOUND));
 
-        // Create token in Redis
-        String token = passwordResetTokenService.createToken(user.getId());
+        // Generate OTP and store in Redis
+        String otp = otpService.createForgotPasswordOtp(email);
 
-        // Send Email Event to Kafka
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
-
-        emailProducer.sendForgotPasswordEvent(com.nnson128.userservice.event.ForgotPasswordEvent.builder()
+        // Send OTP Email Event to Kafka
+        emailProducer.sendOtpEmailEvent(OtpEmailEvent.builder()
             .email(user.getEmail())
             .name(user.getFirstname())
-            .resetLink(resetLink)
+            .otp(otp)
+            .purpose("FORGOT_PASSWORD")
             .build());
     }
 
+    /**
+     * Reset password with OTP
+     */
+    public void resetPasswordWithOtp(String email, String otp, String newPassword) {
+        // Validate OTP
+        if (!otpService.validateForgotPasswordOtp(email, otp)) {
+            throw new CommonException("Invalid or expired OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new CommonException("User not found", HttpStatus.NOT_FOUND));
+
+        // Update Keycloak Password
+        String adminToken = identityClient.getClientToken(TokenExchangeParam.builder()
+            .grant_type("client_credentials")
+            .client_id(clientId)
+            .client_secret(clientSecret)
+            .scope("openid")
+            .build()).getAccessToken();
+
+        identityClient.resetPassword(
+            "Bearer " + adminToken,
+            user.getId().toString(),
+            Credential.builder()
+                .type("password")
+                .value(newPassword)
+                .temporary(false)
+                .build()
+        );
+
+        // Update Local DB Password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        // Delete OTP after successful reset
+        otpService.deleteForgotPasswordOtp(email);
+    }
+
+    /**
+     * Send OTP for registration - Validate email and phone first
+     */
+    public void sendRegistrationOtp(String email, String phone, String firstname) {
+        // 1. Normalize phone number
+        String normalizedPhone = PhoneNumberUtils.normalizeVietnamesePhone(phone);
+
+        // 2. Validate phone number format
+        if (!PhoneNumberUtils.isValidVietnamesePhone(normalizedPhone)) {
+            throw new CommonException("Invalid phone number format: " + phone, HttpStatus.BAD_REQUEST);
+        }
+
+        // 3. Check if email already exists
+        userRepository.findByEmail(email).ifPresent(user -> {
+            throw new CommonException("Email " + email + " is already in use.", HttpStatus.CONFLICT);
+        });
+
+        // 4. Check if phone already exists
+        userRepository.findByPhone(normalizedPhone).ifPresent(user -> {
+            throw new CommonException("Phone " + normalizedPhone + " is already in use.", HttpStatus.CONFLICT);
+        });
+
+        // 5. Generate OTP and store in Redis
+        String otp = otpService.createRegisterOtp(email);
+
+        // 6. Send OTP Email Event to Kafka
+        emailProducer.sendOtpEmailEvent(OtpEmailEvent.builder()
+            .email(email)
+            .name(firstname)
+            .otp(otp)
+            .purpose("REGISTRATION")
+            .build());
+    }
+
+    /**
+     * Verify registration OTP
+     */
+    public boolean verifyRegistrationOtp(String email, String otp) {
+        boolean isValid = otpService.validateRegisterOtp(email, otp);
+        if (isValid) {
+            // Delete OTP after successful verification
+            otpService.deleteRegisterOtp(email);
+        }
+        return isValid;
+    }
+
+    /**
+     * Register user with OTP verification
+     */
+    public UserResponse registerWithOtp(UserRegistrationRequest request, String otp) {
+        // 1. Verify OTP first
+        if (!otpService.validateRegisterOtp(request.getEmail(), otp)) {
+            throw new CommonException("Invalid or expired OTP", HttpStatus.BAD_REQUEST);
+        }
+
+        // 2. Normalize phone number
+        String normalizedPhone = PhoneNumberUtils.normalizeVietnamesePhone(request.getPhone());
+
+        // 3. Validate phone number
+        if (!PhoneNumberUtils.isValidVietnamesePhone(normalizedPhone)) {
+            throw new CommonException("Invalid phone number format: " + request.getPhone(), HttpStatus.BAD_REQUEST);
+        }
+
+        // 4. Check if user already exists
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            throw new CommonException("Email " + request.getEmail() + " is already in use.", HttpStatus.CONFLICT);
+        });
+
+        userRepository.findByPhone(normalizedPhone).ifPresent(user -> {
+            throw new CommonException("Phone " + normalizedPhone + " is already in use.", HttpStatus.CONFLICT);
+        });
+
+        String token = identityClient.getClientToken(TokenExchangeParam.builder()
+            .grant_type("client_credentials")
+            .client_id(clientId)
+            .client_secret(clientSecret)
+            .scope("openid")
+            .build()).getAccessToken();
+
+        // 5. Create user in Keycloak
+        var creationResponse = identityClient.createUser(
+            "Bearer " + token,
+            UserCreationParam.builder()
+                .username(request.getUsername())
+                .firstName(request.getFirstname())
+                .lastName(request.getLastname())
+                .email(request.getEmail())
+                .enabled(true)
+                .emailVerified(true) // Email verified via OTP
+                .credentials(List.of(Credential.builder()
+                    .type("password")
+                    .temporary(false)
+                    .value(request.getPassword())
+                    .build()))
+                .build());
+
+        UUID userId = extractUserId(creationResponse);
+
+        // 6. Create user in local database
+        User newUser = User.builder()
+            .id(userId)
+            .firstname(request.getFirstname())
+            .lastname(request.getLastname())
+            .email(request.getEmail())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .phone(normalizedPhone)
+            .build();
+
+        User savedUser = userRepository.save(newUser);
+
+        // 7. Delete OTP after successful registration
+        otpService.deleteRegisterOtp(request.getEmail());
+
+        return UserResponse.fromUser(savedUser);
+    }
+
+    /**
+     * Old reset password method (keep for backward compatibility if needed)
+     */
     public void resetPassword(String token, String newPassword) {
         UUID userId = passwordResetTokenService.validateToken(token);
 

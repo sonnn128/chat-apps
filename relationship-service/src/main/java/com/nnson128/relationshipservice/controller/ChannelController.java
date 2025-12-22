@@ -169,4 +169,54 @@ public class ChannelController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{channelId}/theme")
+    public ResponseEntity<ApiResponse<ChannelResponse>> updateChannelTheme(
+        @PathVariable UUID channelId,
+        @RequestBody Map<String, String> request,
+        @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        String themeColor = request.get("themeColor");
+        String themeGradient = request.get("themeGradient");
+
+        ChannelResponse updatedChannel = channelService.updateChannelTheme(channelId, themeColor, themeGradient, userId);
+
+        ApiResponse<ChannelResponse> response = ApiResponse.<ChannelResponse>builder()
+            .success(true)
+            .message("Channel theme updated successfully")
+            .data(updatedChannel)
+            .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{channelId}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> removeMemberFromChannel(
+        @PathVariable UUID channelId,
+        @PathVariable UUID memberId,
+        @AuthenticationPrincipal Jwt jwt) {
+        UUID requesterId = UUID.fromString(jwt.getSubject());
+        channelService.removeMemberFromChannel(channelId, memberId, requesterId);
+
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+            .success(true)
+            .message("Member removed from channel successfully")
+            .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{channelId}/read")
+    public ResponseEntity<ApiResponse<Void>> markChannelAsRead(
+        @PathVariable UUID channelId,
+        @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        channelService.markChannelAsRead(channelId, userId);
+
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+            .success(true)
+            .message("Channel marked as read")
+            .build();
+        return ResponseEntity.ok(response);
+    }
 }

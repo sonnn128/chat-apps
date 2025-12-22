@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import ChannelMembers from "../ChannelMembers";
 import ChangeChatNameModal from "../modals/channeloptions/ChangeChatNameModal";
 import MediaFilesLinksModal from "../modals/MediaFilesLinksModal";
+import ChannelThemeSelector from "../modals/ChannelThemeSelector";
 import React, { useState, useRef } from "react";
 import { Avatar, message, Spin } from "antd";
 import { User, Bell, Search, ChevronRight, Lock, UserPlus, Edit3, Image as ImageIcon, Palette, Smile, Type } from "lucide-react";
@@ -15,6 +16,7 @@ const ChatInfoSidebar = () => {
   const [showCustomizeChat, setShowCustomizeChat] = useState(false);
   const [showChangeNameModal, setShowChangeNameModal] = useState(false);
   const [showMediaFilesLinksModal, setShowMediaFilesLinksModal] = useState(false);
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
   const dispatch = useDispatch();
@@ -207,7 +209,10 @@ const ChatInfoSidebar = () => {
                     accept="image/*"
                     onChange={handlePhotoChange}
                   />
-                  <button className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700">
+                  <button
+                    className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 rounded-lg text-sm text-gray-700"
+                    onClick={() => setShowThemeSelector(true)}
+                  >
                     <Palette size={18} className="text-gray-500" />
                     <span>Change theme</span>
                   </button>
@@ -231,7 +236,7 @@ const ChatInfoSidebar = () => {
       {
         currentChannel && (
           <ChangeChatNameModal
-            visible={showChangeNameModal}
+            open={showChangeNameModal}
             onConfirm={handleChangeName}
             onCancel={() => !loading && setShowChangeNameModal(false)}
             currentName={currentChannel.channelName || ""}
@@ -242,9 +247,18 @@ const ChatInfoSidebar = () => {
 
       {/* Media, Files and Links Modal */}
       <MediaFilesLinksModal
-        visible={showMediaFilesLinksModal}
+        open={showMediaFilesLinksModal}
         onClose={() => setShowMediaFilesLinksModal(false)}
       />
+
+      {/* Channel Theme Selector Modal */}
+      {currentChannel && (
+        <ChannelThemeSelector
+          open={showThemeSelector}
+          onClose={() => setShowThemeSelector(false)}
+          channel={currentChannel}
+        />
+      )}
     </div >
   );
 };

@@ -15,14 +15,26 @@ import { addPendingMessage } from "@/stores/slices/channelSlice";
 import LinkPreviewComposer from "./LinkPreviewComposer";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
+import { getChannelTheme, getThemeStyle } from "@/utils/channelThemes";
 
 const ChatInput = () => {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [detectedUrl, setDetectedUrl] = useState(null);
-  const { currentChannelId } = useSelector((state) => state.channel);
+  const { currentChannelId, currentChannel } = useSelector((state) => state.channel);
   const dispatch = useDispatch();
+
+  // Get channel theme
+  const channelTheme = getChannelTheme(currentChannel);
+  // Style cho background (Gradient hoặc Color)
+  const themeStyle = getThemeStyle(channelTheme);
+  // Style cho text/icon color (chỉ lấy color chính, nếu gradient thì lấy màu đầu tiên hoặc default)
+  const themeColor = channelTheme.type === 'gradient' ?
+    (channelTheme.gradient.match(/#[0-9a-fA-F]{6}/) ? channelTheme.gradient.match(/#[0-9a-fA-F]{6}/)[0] : '#0084ff')
+    : channelTheme.color;
+
+  const iconStyle = { color: themeColor };
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -257,7 +269,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<AudioOutlined />}
               onClick={handleVoiceMessage}
-              className="text-blue-500 hover:bg-blue-50 transition-colors"
+              className="hover:bg-gray-100 transition-colors"
+              style={iconStyle}
               size="large"
             />
           </Tooltip>
@@ -268,7 +281,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<PictureOutlined />}
               onClick={handleImageUpload}
-              className="text-blue-500 hover:bg-blue-50 transition-colors"
+              className="hover:bg-gray-100 transition-colors"
+              style={iconStyle}
               size="large"
             />
           </Tooltip>
@@ -279,7 +293,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<PlayCircleOutlined />}
               onClick={handleGIFClick}
-              className="text-blue-500 hover:bg-blue-50 transition-colors"
+              className="hover:bg-gray-100 transition-colors"
+              style={iconStyle}
               size="large"
             />
           </Tooltip>
@@ -290,7 +305,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<FileOutlined />}
               onClick={() => fileInputRef.current?.click()}
-              className="text-blue-500 hover:bg-blue-50 transition-colors"
+              className="hover:bg-gray-100 transition-colors"
+              style={iconStyle}
               size="large"
             />
           </Tooltip>
@@ -300,7 +316,6 @@ const ChatInput = () => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/*,video/*,.pdf,.doc,.docx,.txt"
           onChange={handleFileSelect}
           className="hidden"
         />
@@ -327,7 +342,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<SmileOutlined />}
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="text-blue-500 hover:bg-blue-50 transition-colors"
+              className="hover:bg-gray-100 transition-colors"
+              style={iconStyle}
               size="large"
             />
           </Tooltip>
@@ -338,7 +354,8 @@ const ChatInput = () => {
               shape="circle"
               icon={<SendOutlined />}
               htmlType="submit"
-              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+              className="hover:brightness-95 transition-all text-white border-none"
+              style={{ ...themeStyle, boxShadow: 'none' }}
               size="large"
             />
           </Tooltip>

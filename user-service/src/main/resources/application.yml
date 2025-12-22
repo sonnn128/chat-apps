@@ -55,14 +55,16 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka
   instance:
     prefer-ip-address: true
-    hostname: ${spring.application.name}
-    instance-id: ${spring.application.name}
-    nonSecurePort: 9005
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    nonSecurePort: ${server.port}
+    status-page-url: http://localhost:${server.port}/actuator/info
+    health-check-url: http://localhost:${server.port}/actuator/health
     metadata-map:
-      management.port: 9005
+      management.port: ${server.port}
 
 keycloak:
   auth-server-url: http://${KEYCLOAK_HOST:localhost}:8080
@@ -84,3 +86,13 @@ media:
     name: media-service
 media-service:
   url: http://${MEDIA_SERVICE:localhost}:9004
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always

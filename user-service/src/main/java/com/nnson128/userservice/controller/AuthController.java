@@ -73,4 +73,49 @@ public class AuthController {
             .message("Password successfully reset")
             .build());
     }
+
+    @PostMapping("/reset-password-otp")
+    public ResponseEntity<?> resetPasswordWithOtp(@Valid @RequestBody com.nnson128.userservice.dto.request.ResetPasswordWithOtpRequest request) {
+        authService.resetPasswordWithOtp(request.getEmail(), request.getOtp(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.builder()
+            .success(true)
+            .message("Password successfully reset with OTP")
+            .build());
+    }
+
+    @PostMapping("/send-registration-otp")
+    public ResponseEntity<?> sendRegistrationOtp(@Valid @RequestBody com.nnson128.userservice.dto.request.SendRegistrationOtpRequest request) {
+        authService.sendRegistrationOtp(request.getEmail(), request.getPhone(), request.getFirstname());
+        return ResponseEntity.ok(ApiResponse.builder()
+            .success(true)
+            .message("Registration OTP sent to email")
+            .build());
+    }
+
+    @PostMapping("/verify-registration-otp")
+    public ResponseEntity<?> verifyRegistrationOtp(@Valid @RequestBody com.nnson128.userservice.dto.request.VerifyOtpRequest request) {
+        boolean isValid = authService.verifyRegistrationOtp(request.getEmail(), request.getOtp());
+        if (isValid) {
+            return ResponseEntity.ok(ApiResponse.builder()
+                .success(true)
+                .message("OTP verified successfully")
+                .build());
+        } else {
+            return ResponseEntity.badRequest().body(ApiResponse.builder()
+                .success(false)
+                .message("Invalid or expired OTP")
+                .build());
+        }
+    }
+
+    @PostMapping("/register-with-otp")
+    public ResponseEntity<?> registerWithOtp(@Valid @RequestBody UserRegistrationRequest request, 
+                                              @RequestParam String otp) {
+        UserResponse response = authService.registerWithOtp(request, otp);
+        return ResponseEntity.ok(ApiResponse.builder()
+            .message("Registration successful")
+            .success(true)
+            .data(response)
+            .build());
+    }
 }

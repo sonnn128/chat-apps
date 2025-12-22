@@ -9,6 +9,10 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:chatapps}
     username: ${POSTGRES_USER:chatapps}
     password: ${POSTGRES_PASSWORD:chatapps}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -37,20 +41,16 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka
   instance:
-    prefer-ip-address: true
-    hostname: ${spring.application.name}
-    instance-id: ${spring.application.name}
-    nonSecurePort: 9001
+    prefer-ip-address: false
+    hostname: ${HOSTNAME:localhost}
+    instance-id: ${spring.application.name}:${server.port}
+    nonSecurePort: ${server.port}
+    status-page-url: http://${HOSTNAME:localhost}:${server.port}/actuator/info
+    health-check-url: http://${HOSTNAME:localhost}:${server.port}/actuator/health
     metadata-map:
-      management.port: 9001
-
-user-service:
-  url: http://${USER_SERVICE:localhost}:9006
-
-chat-service:
-  url: http://${CHAT_SERVICE:localhost}:9002
+      management.port: ${server.port}
 
 management:
   endpoints:

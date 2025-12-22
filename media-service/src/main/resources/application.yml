@@ -19,19 +19,31 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka
     register-with-eureka: true
     fetch-registry: true
   instance:
     prefer-ip-address: true
-    hostname: ${spring.application.name}
-    instance-id: ${spring.application.name}
-    nonSecurePort: 9004
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    nonSecurePort: ${server.port}
+    status-page-url: http://localhost:${server.port}/actuator/info
+    health-check-url: http://localhost:${server.port}/actuator/health
     metadata-map:
-      management.port: 9004
+      management.port: ${server.port}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:dswdadh2n}
   api-key: ${CLOUDINARY_API_KEY:741574128814778}
   api-secret: ${CLOUDINARY_API_SECRET:J9XuHektVDcN5CI_3_58RmDjSoE}
   secure: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always

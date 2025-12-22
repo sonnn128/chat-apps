@@ -34,6 +34,15 @@ const updateChannelAvatar = async (channelId, avatarUrl) =>
 const updateChannelName = async (channelId, channelName) =>
   patch(`${CHANNEL_API}/${channelId}/name`, { channelName }, { headers: getAuthHeaders() });
 
+const updateChannelTheme = async (channelId, themeColor, themeGradient) =>
+  patch(`${CHANNEL_API}/${channelId}/theme`, { themeColor, themeGradient }, { headers: getAuthHeaders() });
+
+const removeMember = async (channelId, memberId) =>
+  del(`${CHANNEL_API}/${channelId}/members/${memberId}`, { headers: getAuthHeaders() });
+
+const markAsRead = async (channelId) =>
+  post(`${CHANNEL_API}/${channelId}/read`, {}, { headers: getAuthHeaders() });
+
 const channelService = {
   createChannel,
   getChannels,
@@ -43,7 +52,10 @@ const channelService = {
   deleteChannel,
   getOrCreateDirectChannel,
   updateChannelAvatar,
-  updateChannelName
+  updateChannelName,
+  updateChannelTheme,
+  removeMember,
+  markAsRead
 };
 
 export default channelService;

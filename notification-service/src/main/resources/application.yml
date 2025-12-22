@@ -42,8 +42,10 @@ eureka:
       defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka
   instance:
     prefer-ip-address: true
-    hostname: ${spring.application.name}
-    instance-id: ${spring.application.name}
-    nonSecurePort: 9006
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    nonSecurePort: ${server.port}
+    status-page-url: http://localhost:${server.port}/actuator/info
+    health-check-url: http://localhost:${server.port}/actuator/health
     metadata-map:
-      management.port: 9006
+      management.port: ${server.port}

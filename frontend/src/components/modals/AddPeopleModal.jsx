@@ -3,13 +3,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { Modal, Button, Typography, List, Avatar, Checkbox, message } from "antd";
 import PropTypes from "prop-types";
 import { fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
-import { addPeopleToChannel } from "@/stores/middlewares/channelMiddleware";
+import { addPeopleToChannel, fetchChannelById } from "@/stores/middlewares/channelMiddleware";
 import { DEFAULT_AVATAR } from "@/utils/constants";
 
 const { Title, Text } = Typography;
 
 const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers = [] }) => {
   const dispatch = useDispatch();
+  const [messageApi, contextHolder] = message.useMessage();
   const { friends, loading } = useSelector((state) => state.friendship);
   const { channels } = useSelector((state) => state.channel);
   const [selectedFriends, setSelectedFriends] = useState([]);
@@ -18,6 +19,8 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
   // Get current channel data to display current members
   const currentChannel = channels.find(ch => ch.id === channelId);
   const currentChannelMembers = currentChannel?.participants || [];
+
+  // console.log("👥 AddPeopleModal members:", currentChannelMembers);
 
   // Fetch friends when modal opens
   useEffect(() => {
@@ -39,7 +42,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
 
   const handleSubmit = async () => {
     if (selectedFriends.length === 0) {
-      message.warning("Vui lòng chọn ít nhất một người để thêm vào kênh");
+      messageApi.warning("Vui lòng chọn ít nhất một người để thêm vào kênh");
       return;
     }
 
@@ -51,12 +54,13 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
       })).unwrap();
 
       if (result) {
-        message.success(`Đã thêm ${selectedFriends.length} người vào kênh`);
+        messageApi.success(`Đã thêm ${selectedFriends.length} người vào kênh`);
         setSelectedFriends([]);
+        // Refresh channel data was removed because endpoint does not exist
         onClose();
       }
     } catch (error) {
-      message.error("Có lỗi xảy ra khi thêm người vào kênh");
+      messageApi.error("Có lỗi xảy ra khi thêm người vào kênh");
       console.error("Error adding people to channel:", error);
     } finally {
       setIsSubmitting(false);
@@ -66,7 +70,7 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
   const isAlreadyMember = (friendId) => {
     // Check both currentMembers prop and currentChannelMembers from Redux
     return currentMembers.includes(friendId) ||
-      currentChannelMembers.some(member => member.userId === friendId);
+      currentChannelMembers.some(member => (member.userId || member.id) === friendId);
   };
 
   // Get member details for display
@@ -74,17 +78,18 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
     if (member.firstname && member.lastname) {
       return `${member.firstname} ${member.lastname}`;
     }
-    if (member.name && member.name !== `User ${member.userId.substring(0, 8)}`) {
+    if (member.name && member.name !== `User ${(member.userId || member.id)?.substring(0, 8)}`) {
       return member.name;
     }
-    return `User ${member.userId.substring(0, 8)}`;
+    return `User ${(member.userId || member.id)?.substring(0, 8)}`;
   };
 
   // Get member role display
   const getMemberRoleDisplay = (member) => {
     // Only show email if it's a real email (not generated)
+    const memberId = member.userId || member.id;
     const isRealEmail = member.email &&
-      member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
+      member.email !== `${memberId?.substring(0, 8) || 'unknown'}@example.com` &&
       member.email.includes('@') &&
       !member.email.includes('example.com');
 
@@ -164,55 +169,61 @@ const AddPeopleModal = ({ open, onClose, channelId, channelName, currentMembers 
   };
 
   return (
-    <Modal
-      open={open}
-      onCancel={onClose}
-      title={<Title level={5}>Thêm người vào kênh "{channelName}"</Title>}
-      footer={[
-        <Button key="cancel" onClick={onClose}>
-          Hủy
-        </Button>,
-        <Button
-          key="submit"
-          type="primary"
-          loading={isSubmitting}
-          onClick={handleSubmit}
-          disabled={selectedFriends.length === 0}
-        >
-          Thêm {selectedFriends.length > 0 ? `(${selectedFriends.length})` : ''}
-        </Button>,
-      ]}
-      styles={{ body: { maxHeight: "500px", overflowY: "auto", paddingTop: 0 } }}
-      width={600}
-    >
-      {/* Current Members Section */}
-      {currentChannelMembers.length > 0 && (
-        <div className="mb-4">
-          <Title level={5} className="mb-3">Thành viên hiện tại ({currentChannelMembers.length})</Title>
-          <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-gray-50">
-            {currentChannelMembers.map((member) => (
-              <div key={member.userId} className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded">
-                <Avatar size="small" src={member.avatar || DEFAULT_AVATAR} />
-                <div className="flex-1">
-                  <Text className="text-sm font-medium">{getMemberDisplayName(member)}</Text>
-                  {getMemberRoleDisplay(member) && (
-                    <Text type="secondary" className="text-xs block">
-                      {getMemberRoleDisplay(member)}
-                    </Text>
-                  )}
-                </div>
-              </div>
-            ))}
+    <>
+      {contextHolder}
+      <Modal
+        open={open}
+        onCancel={onClose}
+        title={<Title level={5}>Thêm người vào kênh "{channelName}"</Title>}
+        footer={[
+          <Button key="cancel" onClick={onClose}>
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={isSubmitting}
+            onClick={handleSubmit}
+            disabled={selectedFriends.length === 0}
+          >
+            Thêm {selectedFriends.length > 0 ? `(${selectedFriends.length})` : ''}
+          </Button>,
+        ]}
+        styles={{ body: { maxHeight: "500px", overflowY: "auto", paddingTop: 0 } }}
+        width={600}
+      >
+        {/* Current Members Section */}
+        {currentChannelMembers.length > 0 && (
+          <div className="mb-4">
+            <Title level={5} className="mb-3">Thành viên hiện tại ({currentChannelMembers.length})</Title>
+            <div className="max-h-32 overflow-y-auto border rounded-lg p-2 bg-gray-50">
+              {currentChannelMembers.map((member, index) => {
+                const uniqueKey = member.userId || member.id || `member-${index}`;
+                return (
+                  <div key={uniqueKey} className="flex items-center gap-2 py-1 px-2 hover:bg-gray-100 rounded">
+                    <Avatar size="small" src={member.avatar || DEFAULT_AVATAR} />
+                    <div className="flex-1">
+                      <Text className="text-sm font-medium">{getMemberDisplayName(member)}</Text>
+                      {getMemberRoleDisplay(member) && (
+                        <Text type="secondary" className="text-xs block">
+                          {getMemberRoleDisplay(member)}
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Friends to Add Section */}
-      <div>
-        <Title level={5} className="mb-3">Thêm bạn bè vào kênh</Title>
-        {renderFriendsList()}
-      </div>
-    </Modal>
+        {/* Friends to Add Section */}
+        <div>
+          <Title level={5} className="mb-3">Thêm bạn bè vào kênh</Title>
+          {renderFriendsList()}
+        </div>
+      </Modal>
+    </>
   );
 };
 

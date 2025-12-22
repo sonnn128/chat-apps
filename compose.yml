@@ -37,20 +37,6 @@ services:
     volumes:
       - ./data/kafka-data:/var/lib/kafka/
 
-      # kafka ui
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    depends_on:
-      - kafka
-      - zookeeper
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    restart: unless-stopped
-
 # postgres databases
   postgres:
     image: postgres:16-alpine
@@ -148,11 +134,10 @@ services:
     build:
       context: .
       dockerfile: ./discovery-server/Dockerfile
+    env_file:
+      - ./.env
     ports:
       - 8761:8761
-    environment:
-      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
-      - EUREKA_CLIENT_FETCH_REGISTRY=false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 20s
@@ -165,9 +150,14 @@ services:
       dockerfile: ./api-gateway/Dockerfile
     ports:
       - 8888:8888
+    # env_file:
+    #   - ./.env
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery-server:8761/eureka
+      - M2_HOME=/root/.m2
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/chat-apps
+      - EUREKA_HOST=discovery-server
+      - EUREKA_PORT=8761
+
     depends_on:
       discovery-server:
         condition: service_healthy      
@@ -175,25 +165,39 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
       interval: 20s
       timeout: 10s
-      retries: 5      
+      retries: 5
+            
   user-service:
     build:
       context: .
       dockerfile: ./user-service/Dockerfile
     ports:
       - "9005:9005"
-    env_file:
-      - ./.env
+    # env_file:
+    # kiểu inject này sai
+    #   - ./.env
     environment:
       MEDIA_SERVICE: media-service
       POSTGRES_HOST: postgres
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
-      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
-      MEDIA_SERVICE_URL: http://media-service:9004
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: chatapps
+      POSTGRES_USER: chatapps
+      POSTGRES_PASSWORD: chatapps
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USERNAME: sonvipkl04@gmail.com
+      MAIL_PASSWORD: "zmfw sgbw nowc pxvl"
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      KEYCLOAK_HOST: keycloak
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_HOST: discovery-server
+      EUREKA_PORT: 8761
+      EUREKA_INSTANCE_HOSTNAME: user-service
+      EUREKA_INSTANCE_STATUS_PAGE_URL: http://user-service:9005/actuator/info
+      EUREKA_INSTANCE_HEALTH_CHECK_URL: http://user-service:9005/actuator/health
     depends_on:
       postgres:
         condition: service_healthy
@@ -214,16 +218,20 @@ services:
       dockerfile: ./chat-service/Dockerfile
     ports:
       - "9002:9002"
-    env_file:
-      - ./.env
     environment:
       user-service.url: http://user-service:9005
       relationship-service.url: http://relationship-service:9001
-      CASSANDRA_HOST: ${CASSANDRA_HOST:-cassandra}
-      CASSANDRA_PORT: ${CASSANDRA_PORT:-9042}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_HOST: discovery-server
+      EUREKA_PORT: 8761
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      SPRING_CASSANDRA_CONTACT_POINTS: cassandra
+      SPRING_CASSANDRA_PORT: 9042
+      KEYCLOAK_HOST: keycloak
+      EUREKA_INSTANCE_HOSTNAME: chat-service
+      EUREKA_INSTANCE_STATUS_PAGE_URL: http://chat-service:9002/actuator/info
+      EUREKA_INSTANCE_HEALTH_CHECK_URL: http://chat-service:9002/actuator/health
+      
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -246,16 +254,28 @@ services:
       dockerfile: ./relationship-service/Dockerfile
     ports:
       - "9001:9001"
-    env_file:
-      - ./.env
     environment:
       user-service.url: http://user-service:9005
       chat-service.url: http://chat-service:9002
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_HOST: discovery-server
+      EUREKA_PORT: 8761
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: chatapps
+      POSTGRES_USER: chatapps
+      POSTGRES_PASSWORD: chatapps
+      KEYCLOAK_HOST: keycloak
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_INSTANCE_HOSTNAME: relationship-service
+      EUREKA_INSTANCE_STATUS_PAGE_URL: http://relationship-service:9001/actuator/info
+      EUREKA_INSTANCE_HEALTH_CHECK_URL: http://relationship-service:9001/actuator/health
       
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
         condition: service_healthy
       discovery-server:
@@ -277,11 +297,17 @@ services:
       dockerfile: ./media-service/Dockerfile
     ports:
       - "9004:9004"
-    env_file:
-      - ./.env
     environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_HOST: discovery-server
+      EUREKA_PORT: 8761
+      CLOUDINARY_CLOUD_NAME: dswdadh2n
+      CLOUDINARY_API_KEY: 741574128814778
+      CLOUDINARY_API_SECRET: J9XuHektVDcN5CI_3_58RmDjSoE
+      KEYCLOAK_HOST: keycloak
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      EUREKA_INSTANCE_HOSTNAME: media-service
+      EUREKA_INSTANCE_STATUS_PAGE_URL: http://media-service:9004/actuator/info
+      EUREKA_INSTANCE_HEALTH_CHECK_URL: http://media-service:9004/actuator/health
     depends_on:
       discovery-server:
         condition: service_healthy
@@ -299,12 +325,17 @@ services:
       dockerfile: ./notification-service/Dockerfile
     ports:
       - "9006:9006"
-    env_file:
-      - ./.env
     environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka
+      EUREKA_HOST: discovery-server
+      EUREKA_PORT: 8761
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_INSTANCE_HOSTNAME: notification-service
+      EUREKA_INSTANCE_STATUS_PAGE_URL: http://notification-service:9006/actuator/info
+      EUREKA_INSTANCE_HEALTH_CHECK_URL: http://notification-service:9006/actuator/health
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/chat-apps
+      KEYCLOAK_HOST: keycloak
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       redis:
         condition: service_healthy
@@ -319,6 +350,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      
   frontend:
     build:
       context: .

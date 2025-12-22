@@ -27,4 +27,10 @@ public class ChannelUpdatedPayload implements Serializable {
     
     @JsonProperty("member_ids")
     private java.util.List<java.util.UUID> memberIds;
+    
+    @JsonProperty("theme_color")
+    private String themeColor;
+    
+    @JsonProperty("theme_gradient")
+    private String themeGradient;
 }

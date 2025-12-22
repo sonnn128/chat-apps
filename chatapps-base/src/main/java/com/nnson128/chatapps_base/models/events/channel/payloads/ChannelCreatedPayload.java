@@ -31,6 +31,9 @@ public class ChannelCreatedPayload implements Serializable {
     @JsonProperty("channel_name")
     private String channelName;
 
+    @JsonProperty("channel_type")
+    private String channelType;
+
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
@@ -42,4 +45,33 @@ public class ChannelCreatedPayload implements Serializable {
 
     @JsonProperty("member_ids")
     private List<UUID> memberIds;
+
+    @JsonProperty("participants")
+    private List<ParticipantInfo> participants;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ParticipantInfo implements Serializable {
+        private static final long serialVersionUID = 1L;
+        
+        @JsonProperty("user_id")
+        private UUID userId;
+        
+        @JsonProperty("firstname")
+        private String firstname;
+        
+        @JsonProperty("lastname")
+        private String lastname;
+        
+        @JsonProperty("email")
+        private String email;
+        
+        @JsonProperty("avatar_url")
+        private String avatarUrl;
+        
+        @JsonProperty("role")
+        private String role;
+    }
 }

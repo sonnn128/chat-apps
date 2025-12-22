@@ -46,21 +46,23 @@ spring:
             - Path=/ws, /ws/**
   security:
     oauth2:
-      resourceserver:
+      resource server:
         jwt:
           issuer-uri: http://${KEYCLOAK_HOST:localhost}:8080/realms/chat-apps
 
 eureka:
-  instance:
-    hostname: ${spring.application.name}
-    instance-id: ${spring.application.name}
-    prefer-ip-address: true
-    nonSecurePort: 8888
-    metadata-map:
-      management.port: 8888
   client:
-    service-url:
-      defaultZone: http://${EUREKA_HOST:localhost}:8761/eureka/
+    serviceUrl:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
+    nonSecurePort: ${server.port}
+    status-page-url: http://localhost:${server.port}/actuator/info
+    health-check-url: http://localhost:${server.port}/actuator/health
+    metadata-map:
+      management.port: ${server.port}
 
 logging:
   level:
@@ -69,3 +71,13 @@ logging:
     reactor.netty.http.client.WebsocketClientOperations: OFF
     org.springframework.web.reactive.socket.adapter.ReactorNettyWebSocketSession: OFF
     io.netty.handler.codec.http.websocketx: ERROR
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always

@@ -71,3 +71,24 @@ export const fetchGetOrCreateDirectChannel = createAsyncThunk(
     return res.data;
   }
 );
+
+export const updateChannelTheme = createAsyncThunk(
+  "channels/updateChannelTheme",
+  async ({ channelId, themeColor, themeGradient }) => {
+    const res = await channelService.updateChannelTheme(channelId, themeColor, themeGradient);
+    return res.data;
+  }
+);
+
+export const removeMemberFromChannel = createAsyncThunk(
+  "channels/removeMemberFromChannel",
+  async ({ channelId, memberId }) => {
+    await channelService.removeMember(channelId, memberId);
+    return { channelId, memberId };
+  }
+);
+
+export const markChannelAsRead = createAsyncThunk(
+  "channels/markChannelAsRead",
+  async (channelId) => await channelService.markAsRead(channelId)
+);

@@ -2,7 +2,7 @@ import React from "react";
 import { Modal, Button } from "antd";
 import { LogoutOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 
-function LeaveGroupModal({ visible, onConfirm, onCancel, groupName }) {
+function LeaveGroupModal({ open, onConfirm, onCancel, groupName }) {
   return (
     <Modal
       title={
@@ -10,7 +10,7 @@ function LeaveGroupModal({ visible, onConfirm, onCancel, groupName }) {
           <ExclamationCircleOutlined style={{ marginRight: 8 }} /> Leave Group
         </span>
       }
-      open={visible}
+      open={open}
       onCancel={onCancel}
       footer={[
         <Button key="cancel" onClick={onCancel}>

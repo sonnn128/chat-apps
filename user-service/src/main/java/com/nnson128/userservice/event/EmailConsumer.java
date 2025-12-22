@@ -37,4 +37,36 @@ public class EmailConsumer {
             log.error("Error deserializing forgot password event", e);
         }
     }
+
+    @KafkaListener(topics = "otp-emails", groupId = "user-service-group")
+    public void handleOtpEmailEvent(String eventJson) {
+        try {
+            OtpEmailEvent event = objectMapper.readValue(eventJson, OtpEmailEvent.class);
+            log.info("Received OTP email event for email: {} with purpose: {}", event.getEmail(), event.getPurpose());
+
+            Context context = new Context();
+            context.setVariable("name", event.getName());
+            context.setVariable("otp", event.getOtp());
+            
+            String subject;
+            String template;
+            
+            if ("REGISTRATION".equals(event.getPurpose())) {
+                subject = "Email Verification - OTP Code";
+                template = "otp-registration";
+            } else {
+                subject = "Password Reset - OTP Code";
+                template = "otp-forgot-password";
+            }
+
+            emailService.sendHtmlMessage(
+                event.getEmail(),
+                subject,
+                template,
+                context
+            );
+        } catch (JsonProcessingException e) {
+            log.error("Error deserializing OTP email event", e);
+        }
+    }
 }

@@ -2,8 +2,8 @@ import React from "react";
 import { List, Avatar, Typography, Dropdown, Button } from "antd";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
-import { setCurrentChannel } from "@/stores/slices/channelSlice";
-import { fetchDeleteChannel } from "@/stores/middlewares/channelMiddleware";
+import { setCurrentChannel, markChannelAsReadLocal } from "@/stores/slices/channelSlice";
+import { fetchDeleteChannel, markChannelAsRead } from "@/stores/middlewares/channelMiddleware";
 import {
   MoreOutlined,
   MailOutlined,
@@ -27,6 +27,10 @@ const ConversationList = ({ channels = [] }) => {
 
   const onSelectChannel = (channel) => {
     dispatch(setCurrentChannel(channel));
+    if (channel.hasUnread) {
+      dispatch(markChannelAsReadLocal(channel.id));
+      dispatch(markChannelAsRead(channel.id));
+    }
   };
 
   // Menu items for channel options
@@ -148,7 +152,7 @@ const ConversationList = ({ channels = [] }) => {
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                     </div>
                     <div className="flex flex-col overflow-hidden">
-                      <Text style={{ fontWeight: 500 }} ellipsis>
+                      <Text style={{ fontWeight: ch.hasUnread ? 700 : 500 }} ellipsis>
                         {(() => {
                           // For direct channels, show other participant's name
                           if (ch.channelType === 'DIRECT_MESSAGE' && ch.participants && ch.participants.length === 2) {
@@ -161,7 +165,15 @@ const ConversationList = ({ channels = [] }) => {
                           return ch.channelName || "Channel";
                         })()}
                       </Text>
-                      <Text type="secondary" style={{ fontSize: '12px' }} ellipsis>
+                      <Text
+                        type={ch.hasUnread ? undefined : "secondary"}
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: ch.hasUnread ? 600 : 400,
+                          color: ch.hasUnread ? '#1890ff' : undefined
+                        }}
+                        ellipsis
+                      >
                         {(() => {
                           if (!ch.messages || ch.messages.length === 0) return "No messages";
                           const lastMsg = ch.messages[ch.messages.length - 1];
@@ -179,12 +191,14 @@ const ConversationList = ({ channels = [] }) => {
                           }
 
                           let prefix = "";
+                          const isDirectChannel = ch.channelType === 'DIRECT_MESSAGE';
 
                           // Only add prefix if NOT a notice
                           if (lastMsg.type !== 'NOTICE') {
                             if (lastMsg.userId === userId) {
                               prefix = "You: ";
-                            } else {
+                            } else if (!isDirectChannel) {
+                              // Only show sender name in GROUP channels, not in DIRECT channels
                               let name = lastMsg.senderName;
                               // Fallback to finding name in participants if senderName is missing
                               if (!name && ch.participants) {
@@ -211,6 +225,13 @@ const ConversationList = ({ channels = [] }) => {
                     </div>
                   </div>
 
+                  {/* Unread Indicator */}
+                  {ch.hasUnread && (
+                    <div className="flex-shrink-0 ml-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    </div>
+                  )}
+
                   {/* Options Menu Trigger - Visible on Hover */}
                   <div
                     className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 bg-gray-100 rounded-full shadow-sm"
@@ -236,7 +257,7 @@ const ConversationList = ({ channels = [] }) => {
           }
         }}
       />
-    </div>
+    </div >
   );
 };
 

@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Input } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
-function ChangeChatNameModal({ visible, onConfirm, onCancel, currentName, loading }) {
+function ChangeChatNameModal({ open, onConfirm, onCancel, currentName, loading }) {
     const [name, setName] = useState(currentName);
 
     useEffect(() => {
         setName(currentName);
-    }, [currentName, visible]);
+    }, [currentName, open]);
 
     return (
         <Modal
@@ -16,7 +16,7 @@ function ChangeChatNameModal({ visible, onConfirm, onCancel, currentName, loadin
                     <EditOutlined style={{ marginRight: 8 }} /> Change Chat Name
                 </span>
             }
-            open={visible}
+            open={open}
             onCancel={onCancel}
             footer={[
                 <Button key="cancel" onClick={onCancel}>

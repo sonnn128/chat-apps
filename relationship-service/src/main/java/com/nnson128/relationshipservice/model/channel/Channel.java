@@ -24,6 +24,12 @@ public class Channel {
     @Column(name = "avatar")
     private String avatar;
 
+    @Column(name = "theme_color")
+    private String themeColor; // Hex color for single color theme (e.g., "#0084FF")
+
+    @Column(name = "theme_gradient")
+    private String themeGradient; // Gradient definition (e.g., "linear-gradient(135deg, #667eea 0%, #764ba2 100%)")
+
     @Column(name = "channel_type", nullable = false)
     @Builder.Default
     private String channelType = "GROUP";

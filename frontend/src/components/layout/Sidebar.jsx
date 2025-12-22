@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Input, Button, Tooltip, Badge, Space, Typography } from "antd";
+import { Input, Button, Tooltip, Badge, Space, Typography, theme } from "antd";
 import {
   SettingOutlined,
   TeamOutlined,
@@ -34,6 +34,7 @@ const { Title } = Typography;
 
 const Sidebar = () => {
   const dispatch = useDispatch();
+  const { token } = theme.useToken();
   const { friends, pendingRequests, sentRequests } = useSelector(
     (state) => state.friendship
   );
@@ -211,10 +212,10 @@ const Sidebar = () => {
       initial={{ x: -300 }}
       animate={{ x: 0 }}
       transition={{ type: "spring", stiffness: 100 }}
-      className="w-[420px] bg-white flex flex-col"
+      className="w-[420px] flex flex-col"
+      style={{ backgroundColor: token.colorBgContainer }}
     >
-      {/* HEADER */}
-      <div className="flex items-center justify-between p-3 bg-white">
+      <div className="flex items-center justify-between p-3" style={{ backgroundColor: token.colorBgContainer }}>
         <Title level={4} className="!m-0 !text-[#050505]">
           Messenger
         </Title>
@@ -242,8 +243,7 @@ const Sidebar = () => {
         </Space>
       </div>
 
-      {/* SEARCH */}
-      <div className="p-3 bg-white">
+      <div className="p-3" style={{ backgroundColor: token.colorBgContainer }}>
         <form onSubmit={handleSearchSubmit}>
           <Input
             placeholder="Tìm kiếm bằng số điện thoại"

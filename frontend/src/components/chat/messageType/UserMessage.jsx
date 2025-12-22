@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Tooltip, Dropdown, Modal, Radio } from "antd";
+import { Button, Tooltip, Dropdown, Modal, Radio, Image } from "antd";
 import { MoreOutlined, RollbackOutlined, SmileOutlined, FileOutlined, DownloadOutlined, DeleteOutlined, ShareAltOutlined, PushpinOutlined, FlagOutlined } from "@ant-design/icons";
 import Avatar from "antd/es/avatar/Avatar";
 import ReactionPicker from "../ReactionPicker";
@@ -9,6 +9,7 @@ import { useUserInfo } from "@/hooks/useUserInfo";
 import { DEFAULT_AVATAR } from "@/utils/constants";
 import chatService from "@/services/chatService";
 import { useSelector } from "react-redux";
+import { getChannelTheme, getThemeStyle } from "@/utils/channelThemes";
 
 const UserMessage = ({
   messageId,
@@ -24,19 +25,58 @@ const UserMessage = ({
   showName = true,
   showAvatar = true
 }) => {
-  // DEBUG LOG
+
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionPickerPosition, setReactionPickerPosition] = useState({ x: 0, y: 0 });
-  const { currentChannelId } = useSelector((state) => state.channel);
+  const { currentChannelId, currentChannel } = useSelector((state) => state.channel);
+
+  // Get channel theme
+  const channelTheme = getChannelTheme(currentChannel);
+  const themeStyle = getThemeStyle(channelTheme);
+
+  // Debug log for theme
+  // if (isCurrentUser && type === "CHAT") {
+  //   console.log(`[Msg ${messageId}] Theme Applied:`, { themeId: channelTheme.id, style: themeStyle });
+  // }
+
+  // Debug log for theme
+  // if (isCurrentUser && type === "CHAT") {
+  //   console.log(`[Msg ${messageId}] Theme Applied:`, themeStyle);
+  // }
 
   // Unsend Modal state
   const [isUnsendModalOpen, setIsUnsendModalOpen] = useState(false);
   const [unsendType, setUnsendType] = useState('everyone');
 
-  const { userInfo, loading } = useUserInfo(userId && !propSenderName ? userId : null);
-  const senderName = propSenderName || (userInfo ? `${userInfo.firstname} ${userInfo.lastname}` : 'Loading...');
-  const senderAvatar = propSenderAvatar || userInfo?.avatarUrl || null;
+  // Logic resolve sender name
+  // 1. Try to find in channel participants (First priority - most up to date from channel context)
+  const participant = currentChannel?.participants?.find(p => (p.userId || p.id) === userId);
+
+  // 2. Check validity of propSenderName. Some backends return "Unknown User" as a string.
+  const isPropNameValid = propSenderName && propSenderName !== "Unknown User" && propSenderName !== "Unknown";
+
+  // 3. Determine if we need to fetch user info (if not found in participants and prop invalid)
+  const skipFetch = !!participant || isPropNameValid;
+  const { userInfo, loading } = useUserInfo(userId && !skipFetch ? userId : null);
+
+  // 4. Final resolve
+  let senderName = "Unknown User";
+
+  if (isPropNameValid) {
+    senderName = propSenderName;
+  } else if (participant) {
+    senderName = participant.name || `${participant.firstname || ''} ${participant.lastname || ''}`.trim();
+  } else if (userInfo) {
+    senderName = `${userInfo.firstname} ${userInfo.lastname}`;
+  } else if (loading) {
+    senderName = "Loading...";
+  }
+
+  // Avatar resolution
+  let senderAvatar = propSenderAvatar;
+  if (!senderAvatar && participant) senderAvatar = participant.avatar || participant.avatarUrl;
+  if (!senderAvatar && userInfo) senderAvatar = userInfo.avatarUrl;
 
   const handleReactionClick = (event) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -112,11 +152,13 @@ const UserMessage = ({
         );
       case "IMAGE":
         return (
-          <img
+          <Image
             src={content}
             alt="Sent image"
             className="max-w-xs rounded-lg cursor-pointer"
-            onClick={() => window.open(content, "_blank")}
+            preview={{
+              mask: null
+            }}
           />
         );
       case "VIDEO":
@@ -158,14 +200,14 @@ const UserMessage = ({
         if (type === "CHAT" && content) {
           const urlRegex = /(https?:\/\/[^\s]+)/g;
           const urls = content.match(urlRegex);
-          
+
           if (urls && urls.length > 0) {
             // If content is just a URL (with or without whitespace), show preview only
             const trimmedContent = content.trim();
             if (urls[0] === trimmedContent) {
               return <LinkPreview url={urls[0]} isCurrentUser={isCurrentUser} />;
             }
-            
+
             // If content has text + URL, show text + preview
             return (
               <div className="space-y-2 max-w-sm">
@@ -207,12 +249,12 @@ const UserMessage = ({
             className={`${["IMAGE", "VIDEO", "DELETED"].includes(type)
               ? ""
               : isCurrentUser && type === "CHAT" && !(content?.match(/(https?:\/\/[^\s]+)/g))
-                ? "bg-[#066CF6] text-white px-4 py-2"
+                ? "text-white px-4 py-2"
                 : isCurrentUser && type === "CHAT"
-                ? "bg-transparent p-0"
-                : type === "CHAT"
-                ? "bg-[#E4E6EB] text-black px-4 py-2"
-                : "bg-[#E4E6EB] text-black p-3"
+                  ? "bg-transparent p-0"
+                  : type === "CHAT"
+                    ? "bg-[#E4E6EB] text-black px-4 py-2"
+                    : "bg-[#E4E6EB] text-black p-3"
               } rounded-2xl max-w-xs user-message`}
             style={{
               borderTopLeftRadius: isCurrentUser ? 18 : (showName ? 18 : 4),
@@ -222,9 +264,12 @@ const UserMessage = ({
               marginLeft: !isCurrentUser ? 4 : 0,
               marginRight: 0,
               opacity: status === "pending" ? 0.7 : 1,
-              backgroundColor: type === "DELETED" ? "transparent" : undefined,
+              backgroundColor: type === "DELETED" ? "transparent" :
+                (isCurrentUser && type === "CHAT" && !(content?.match(/(https?:\/\/[^\s]+)/g)) ? undefined : undefined),
               border: type === "DELETED" ? "1px solid #ccc" : undefined,
               padding: type === "DELETED" ? "8px 12px" : undefined,
+              // Apply theme style for sent messages
+              ...(isCurrentUser && type === "CHAT" && !(content?.match(/(https?:\/\/[^\s]+)/g)) ? themeStyle : {}),
             }}
           >
             {renderContent()}

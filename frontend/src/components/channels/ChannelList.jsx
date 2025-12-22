@@ -222,7 +222,7 @@ function ChannelList({ channels }) {
 
       {/* Sử dụng DeleteChannelModal */}
       <DeleteChannelModal
-        visible={isDeleteChannelModalVisible}
+        open={isDeleteChannelModalVisible}
         onConfirm={handleDeleteChannelConfirm}
         onCancel={handleDeleteChannelCancel}
         channelName={selectedChannelToDelete?.channelName}
@@ -230,7 +230,7 @@ function ChannelList({ channels }) {
 
       {/* Sử dụng LeaveGroupModal */}
       <LeaveGroupModal
-        visible={isLeaveGroupModalVisible}
+        open={isLeaveGroupModalVisible}
         onConfirm={handleLeaveGroupConfirm}
         onCancel={handleLeaveGroupCancel}
         groupName={selectedChannelToLeave?.channelName}

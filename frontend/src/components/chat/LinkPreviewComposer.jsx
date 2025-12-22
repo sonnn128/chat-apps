@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Skeleton, Button } from "antd";
 import { CloseOutlined, GlobalOutlined } from "@ant-design/icons";
+import { post } from "@/utils/httpRequest";
+import { getAuthHeaders } from "@/utils/authUtils";
 
 const LinkPreviewComposer = ({ url, onRemove }) => {
   const [preview, setPreview] = useState(null);
@@ -15,24 +17,12 @@ const LinkPreviewComposer = ({ url, onRemove }) => {
         setError(false);
         setImageError(false);
 
-        const response = await fetch("/api/link-preview", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ url }),
-          timeout: 10000,
-        });
+        const data = await post("/messages/link-preview", { url }, { headers: getAuthHeaders() });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (Object.keys(data).length === 0) {
-            setError(true);
-          } else {
-            setPreview(data);
-          }
-        } else {
+        if (Object.keys(data).length === 0) {
           setError(true);
+        } else {
+          setPreview(data);
         }
       } catch (err) {
         console.error("Failed to fetch link preview:", err);

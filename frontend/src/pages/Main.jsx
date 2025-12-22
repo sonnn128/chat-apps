@@ -1,11 +1,13 @@
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { theme } from "antd";
 import Sidebar from "@/components/layout/Sidebar";
 import ChatSection from "@/components/layout/ChatSection";
 import { websocketService } from "@/utils/ws";
 
 function Main() {
   const dispatch = useDispatch();
+  const { token } = theme.useToken();
 
   useEffect(() => {
     console.log("🚀 Main: Application initialized");
@@ -18,7 +20,10 @@ function Main() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans antialiased overflow-hidden">
+    <div
+      className="flex h-screen font-sans antialiased overflow-hidden"
+      style={{ backgroundColor: token.colorBgLayout }}
+    >
       <Sidebar />
       <div className="flex-1 flex overflow-hidden">
         <ChatSection />

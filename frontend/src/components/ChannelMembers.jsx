@@ -1,18 +1,49 @@
 import React, { useState } from "react";
 import { Avatar } from "antd";
-import { UserPlus } from "lucide-react";
-import { useSelector } from "react-redux";
+import { UserPlus, Trash2 } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
 import AddPeopleModal from "./modals/AddPeopleModal";
+import { Modal } from "antd";
+import { removeMemberFromChannel } from "@/stores/middlewares/channelMiddleware";
 
 const ChannelMembers = () => {
   const { currentChannel } = useSelector((state) => state.channel);
+  const user = useSelector((state) => state.auth.user?.data);
+  const dispatch = useDispatch();
+  const [modal, contextHolder] = Modal.useModal(); // Add hook
   const [isAddPeopleModalOpen, setIsAddPeopleModalOpen] = useState(false);
-  
+
+  const isAdmin = currentChannel?.role === "ADMIN";
+
   const channelParticipants = currentChannel?.participants || [];
+
+  const handleRemoveMember = (memberId, memberName) => {
+    console.log("🛑 handleRemoveMember called with:", { memberId, memberName });
+    if (!memberId) {
+      console.error("❌ Cannot remove member: ID is undefined!");
+      return;
+    }
+    modal.confirm({ // Use modal instance
+      title: `Remove ${memberName}?`,
+      content: 'Are you sure you want to remove this member from the channel?',
+      okText: 'Remove',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk() {
+        dispatch(removeMemberFromChannel({ channelId: currentChannel.id, memberId }));
+      },
+    });
+  };
 
   return (
     <div className="pl-4 pr-2 pb-2">
-      {channelParticipants.map((member) => {
+      {contextHolder} {/* Render contextHolder */}
+      {channelParticipants.map((member, index) => {
+        // Fix: Support both id and userId fields
+        const memberId = member.userId || member.id;
+        const uniqueKey = memberId || `participant-${index}`;
+        if (!memberId) console.warn("⚠️ Member key/id missing:", member);
+
         // Format ngày tháng năm
         const formattedDate = member.joinedAt
           ? new Date(member.joinedAt).toLocaleDateString("vi-VN")
@@ -23,20 +54,20 @@ const ChannelMembers = () => {
           if (member.firstname && member.lastname) {
             return `${member.firstname} ${member.lastname}`;
           }
-          if (member.name && member.name !== `User ${member.userId.substring(0, 8)}`) {
+          if (member.name && member.name !== `User ${memberId.substring(0, 8)}`) {
             return member.name;
           }
-          return `User ${member.userId.substring(0, 8)}`;
+          return `User ${memberId.substring(0, 8)}`;
         };
 
         // Get role display with email
         const getRoleDisplay = (member) => {
           // Only show email if it's a real email (not generated)
-          const isRealEmail = member.email && 
-                             member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
-                             member.email.includes('@') &&
-                             !member.email.includes('example.com');
-          
+          const isRealEmail = member.email &&
+            member.email !== `${member.userId?.substring(0, 8) || 'unknown'}@example.com` &&
+            member.email.includes('@') &&
+            !member.email.includes('example.com');
+
           if (isRealEmail && member.role) {
             return `${member.email} · Role: ${member.role}`;
           }
@@ -54,7 +85,7 @@ const ChannelMembers = () => {
 
         return (
           <div
-            key={member.userId}
+            key={uniqueKey}
             className="flex items-center gap-3 py-2 hover:bg-gray-50 rounded-lg px-2"
           >
             <Avatar src={member.avatarUrl || member.avatar}>{displayName?.[0] || '?'}</Avatar>
@@ -73,14 +104,25 @@ const ChannelMembers = () => {
                 </p>
               )}
             </div>
-            <button className="text-gray-400 hover:text-gray-600">
-              &#8226;&#8226;&#8226;
-            </button>
+            {isAdmin && memberId !== user?.id && (
+              <button
+                onClick={() => handleRemoveMember(memberId, displayName)}
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                title="Remove member"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            {!isAdmin && (memberId !== user?.id) && (
+              <button className="text-gray-400 hover:text-gray-600">
+                &#8226;&#8226;&#8226;
+              </button>
+            )}
           </div>
         );
       })}
 
-      <button 
+      <button
         onClick={() => setIsAddPeopleModalOpen(true)}
         className="w-full flex items-center gap-3 py-3 hover:bg-gray-50 rounded-lg px-2 mt-2"
       >
@@ -96,7 +138,7 @@ const ChannelMembers = () => {
         onClose={() => setIsAddPeopleModalOpen(false)}
         channelId={currentChannel?.id}
         channelName={currentChannel?.channelName}
-        currentMembers={channelParticipants.map(member => member.userId)}
+        currentMembers={channelParticipants.map(member => member.userId || member.id)}
       />
     </div>
   );

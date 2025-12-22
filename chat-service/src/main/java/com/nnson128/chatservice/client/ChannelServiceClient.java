@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 
-@FeignClient(name = "relationship-service", url = "${relationship-service.url}")
+@FeignClient(name = "relationship-service")
 public interface ChannelServiceClient {
     @GetMapping("/api/v1/channels/{channelId}/participants/ids")
     ApiResponse<List<UUID>> getParticipantIdsByChannelId(@PathVariable("channelId") UUID channelId);

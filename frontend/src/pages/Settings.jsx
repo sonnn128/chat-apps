@@ -6,24 +6,25 @@ import {
   Menu,
   Layout,
   Space,
+  theme,
 } from "antd";
-import { UserOutlined, NotificationOutlined, LeftOutlined, SecurityScanOutlined } from "@ant-design/icons"; // Thêm SecurityScanOutlined cho Privacy
+import { UserOutlined, NotificationOutlined, LeftOutlined, SecurityScanOutlined, BgColorsOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "@/stores/slices/authSlice";
 import { successToast } from "@/utils/toast";
 import Account from "@/components/Settings/Account";
 import NotificationsSection from "@/components/Settings/Notifications";
-// Import Privacy component nếu có
-// import Privacy from "@/components/Settings/Privacy";
+import Appearance from "@/components/Settings/Appearance";
 
 const { Sider, Content } = Layout;
 const { Title } = Typography;
 
 const sections = [
   { name: "Account", icon: <UserOutlined /> },
+  { name: "Appearance", icon: <BgColorsOutlined /> },
   { name: "Notifications", icon: <NotificationOutlined /> },
-  { name: "Privacy", icon: <SecurityScanOutlined /> }, // Thêm mục Privacy
+  { name: "Privacy", icon: <SecurityScanOutlined /> },
 ];
 
 function Settings() {
@@ -31,6 +32,7 @@ function Settings() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { token } = theme.useToken();
 
   const handleLogout = () => {
     dispatch(logout());
@@ -42,10 +44,11 @@ function Settings() {
     switch (selectedSection) {
       case "Account":
         return <Account user={user} handleLogout={handleLogout} />;
+      case "Appearance":
+        return <Appearance />;
       case "Notifications":
         return <NotificationsSection />;
       case "Privacy":
-        // Bạn cần tạo component Privacy riêng nếu muốn sử dụng
         return (
           <div style={{ padding: 24 }}>
             <Title level={2}>Privacy Settings</Title>
@@ -58,26 +61,26 @@ function Settings() {
   };
 
   return (
-    <Layout style={{ minHeight: "100vh", backgroundColor: "#f9f9f9" }}> {/* Màu nền tổng thể nhẹ nhàng hơn */}
+    <Layout style={{ minHeight: "100vh", backgroundColor: token.colorBgLayout }}>
       <motion.div
         initial={{ x: -500 }}
         animate={{ x: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }} // Điều chỉnh transition mượt mà hơn
       >
         <Sider
-          width={280} // Chiều rộng sidebar vừa phải hơn
+          width={280}
           style={{
-            backgroundColor: "#ffffff", // Nền trắng tinh khôi
-            borderRight: "none", // Bỏ đường viền để tạo cảm giác tối giản
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)", // Bóng đổ tinh tế hơn
-            position: 'relative', // Để bóng đổ hiển thị tốt
-            zIndex: 1, // Đảm bảo sidebar nằm trên
+            backgroundColor: token.colorBgContainer,
+            borderRight: "none",
+            boxShadow: token.boxShadowSecondary,
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           <div
             style={{
-              padding: "20px 24px", // Tăng padding
-              borderBottom: "1px solid #e8e8e8", // Đường phân cách nhẹ nhàng
+              padding: "20px 24px",
+              borderBottom: `1px solid ${token.colorBorderSecondary}`,
               display: "flex",
               alignItems: "center",
               gap: 12, // Tăng khoảng cách
@@ -97,7 +100,7 @@ function Settings() {
                 }}
               />
             </Link>
-            <Title level={3} style={{ margin: 0, color: "#262626", fontWeight: 600 }}> {/* Kích thước và độ đậm của Title */}
+            <Title level={3} style={{ margin: 0, color: token.colorText, fontWeight: 600 }}>
               Settings
             </Title>
           </div>
@@ -119,14 +122,11 @@ function Settings() {
                   style: { fontSize: '18px', marginRight: '10px' } // Kích thước icon trong menu
                 })}
                 style={{
-                  padding: "14px 24px", // Tăng padding cho mỗi mục
-                  margin: "4px 16px", // Tạo khoảng cách giữa các mục và từ biên
-                  borderRadius: "8px", // Bo tròn các mục
-                  backgroundColor:
-                    selectedSection === section.name ? "#e6f7ff" : "transparent", // Màu nền xanh nhẹ khi được chọn
-                  color: selectedSection === section.name ? "#1890ff" : "#595959", // Màu chữ xanh khi được chọn
-                  fontWeight: selectedSection === section.name ? 600 : 500, // Độ đậm của chữ
-                  transition: "all 0.3s ease", // Hiệu ứng chuyển động mượt mà
+                  padding: "14px 24px",
+                  margin: "4px 16px",
+                  borderRadius: "8px",
+                  fontWeight: selectedSection === section.name ? 600 : 500,
+                  transition: "all 0.3s ease",
                   display: 'flex',
                   alignItems: 'center',
                 }}
@@ -141,7 +141,7 @@ function Settings() {
 
       <Content
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: token.colorBgContainer,
           padding: 32, // Tăng padding cho phần nội dung
           borderLeft: "none", // Bỏ đường viền
           overflowY: "auto",

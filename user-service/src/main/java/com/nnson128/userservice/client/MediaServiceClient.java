@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-@FeignClient(name = "media-service", url = "${media-service.url}")
+@FeignClient(name = "media-service")
 public interface MediaServiceClient {
     
     @PostMapping(value = "/api/v1/media/upload", consumes = "multipart/form-data")

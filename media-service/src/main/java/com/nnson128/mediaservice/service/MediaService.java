@@ -26,6 +26,9 @@ public class MediaService {
         validateCloudinaryCredentials();
 
         // Validate file
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File cannot be empty");
+        }
 
         // Generate unique filename
         String originalFileName = file.getOriginalFilename();
@@ -118,6 +121,9 @@ public class MediaService {
     }
 
     private MediaType determineMediaType(String contentType) {
+        if (contentType == null) {
+            return MediaType.DOCUMENT;
+        }
         if (contentType.startsWith("image/")) {
             return MediaType.IMAGE;
         } else if (contentType.startsWith("video/")) {

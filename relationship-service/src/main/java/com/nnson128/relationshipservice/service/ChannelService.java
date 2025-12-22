@@ -14,6 +14,7 @@ import com.nnson128.chatapps_base.constants.KafkaTopics;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.ChannelUpdatedPayload;
 import com.nnson128.chatapps_base.models.events.channel.payloads.MembersAddedPayload;
+import com.nnson128.chatapps_base.models.events.channel.payloads.MemberRemovedPayload;
 import com.nnson128.relationshipservice.model.channel.Channel;
 import com.nnson128.relationshipservice.model.membership.Membership;
 import com.nnson128.relationshipservice.dto.message.ChannelMessageType;
@@ -21,6 +22,7 @@ import com.nnson128.relationshipservice.model.membership.MembershipKey;
 import com.nnson128.relationshipservice.model.membership.MembershipRole;
 import com.nnson128.relationshipservice.repository.ChannelRepository;
 import com.nnson128.relationshipservice.repository.MembershipRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -42,6 +44,7 @@ public class ChannelService {
     private final UserServiceClient userServiceClient;
     private final ChatServiceClient chatServiceClient;
     private final MembershipRepository membershipRepository;
+    private final ChannelReadStatusService channelReadStatusService;
 
     public ChannelResponse createChannel(CreateChannelRequest request, UUID creatorId) {
         // 1. create channel
@@ -267,6 +270,8 @@ public class ChannelService {
 
         // Build response using stream map
         // Get detailed user info for participants
+        // Get read status for all channels
+        Map<UUID, Long> readStatusMap = channelReadStatusService.getUserReadStatus(userId);
 
         return channels.stream()
             .map(channel -> {
@@ -274,16 +279,30 @@ public class ChannelService {
                 List<UUID> channelMembers = memberIdsMap.getOrDefault(channel.getId(), List.of());
                 List<ChannelParticipantResponse> participants = getChannelParticipants(channel.getId(), channelMembers);
 
+                boolean hasUnread = false;
+                if (!channelMessages.isEmpty()) {
+                    ChannelMessageDto latest = channelMessages.get(channelMessages.size() - 1);
+                    Long lastReadTime = readStatusMap.getOrDefault(channel.getId(), 0L);
+                    long messageTime = latest.getTimestamp() != null ? latest.getTimestamp().toEpochMilli() : 0L;
+                    
+                    if (messageTime > lastReadTime && !latest.getUserId().equals(userId)) {
+                        hasUnread = true;
+                    }
+                }
+
                 return ChannelResponse.builder()
                     .id(channel.getId())
                     .channelName(channel.getChannelName())
                     .avatar(channel.getAvatar())
+                    .themeColor(channel.getThemeColor())
+                    .themeGradient(channel.getThemeGradient())
                     .createdAt(channel.getCreatedAt())
                     .messages(channelMessages)
                     .memberIds(channelMembers)
                     .participants(participants)
                     .role(channelRoles.get(channel.getId()))
                     .channelType(channel.getChannelType())
+                    .hasUnread(hasUnread)
                     .build();
             }).collect(Collectors.toList());
     }
@@ -311,6 +330,12 @@ public class ChannelService {
 
         // 5. Publish event
         // TODO: Publish CHANNEL_DELETED event
+    }
+
+    public void markChannelAsRead(UUID channelId, UUID userId) {
+        if (isUserParticipant(channelId, userId)) {
+            channelReadStatusService.markChannelAsRead(userId, channelId);
+        }
     }
 
     public boolean isUserParticipant(UUID channelId, UUID userId) {
@@ -715,12 +740,154 @@ public class ChannelService {
             .updaterName(adminName)
             .updatedAt(java.time.LocalDateTime.now().toString())
             .memberIds(getParticipantIdsByChannelId(channel.getId()))
+            .themeColor(channel.getThemeColor())
+            .themeGradient(channel.getThemeGradient())
             .build();
 
         try {
             messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, event);
         } catch (Exception e) {
             // Log error
+        }
+    }
+
+    private void sendThemeChangeNotification(UUID channelId, UUID requesterId, String themeColor) {
+        try {
+            // Get user info
+            UserResponse requester = userServiceClient.getUserById(requesterId);
+            String requesterName = "A user";
+            if (requester != null) {
+                requesterName = requester.getFirstname() + " " + requester.getLastname();
+            }
+
+            String content = String.format("%s đã thay đổi chủ đề đoạn chat", requesterName);
+
+            SendMessageRequest messageRequest = SendMessageRequest.builder()
+                .channelId(channelId)
+                .content(content)
+                .type(ChannelMessageType.NOTICE)
+                .build();
+
+            chatServiceClient.sendMessage(requesterId, messageRequest);
+        } catch (Exception e) {
+            // Log error
+            System.err.println("Failed to send theme change notification: " + e.getMessage());
+        }
+    }
+
+    public ChannelResponse updateChannelTheme(UUID channelId, String themeColor, String themeGradient, UUID requesterId) {
+        // 1. Check if channel exists
+        Channel channel = channelRepository.findById(channelId)
+            .orElseThrow(() -> new ResourceNotFoundException("Channel not found with id: " + channelId));
+
+        // 2. Check if requester is a participant
+        if (!isUserParticipant(channelId, requesterId)) {
+            throw new RuntimeException("User is not a member of this channel");
+        }
+
+        // 3. Update theme
+        channel.setThemeColor(themeColor);
+        channel.setThemeGradient(themeGradient);
+        Channel savedChannel = channelRepository.save(channel);
+
+        // Send system notice message
+        sendThemeChangeNotification(channelId, requesterId, themeColor);
+
+        // 4. Get channel details for response
+        List<UUID> memberIds = getParticipantIdsByChannelId(channelId);
+        List<ChannelParticipantResponse> participants = getChannelParticipants(channelId, memberIds);
+
+        // 5. Publish event to notify all members about theme change
+        produceChannelUpdatedEvent(savedChannel, requesterId);
+
+        return ChannelResponse.builder()
+            .id(savedChannel.getId())
+            .channelName(savedChannel.getChannelName())
+            .avatar(savedChannel.getAvatar())
+            .themeColor(savedChannel.getThemeColor())
+            .themeGradient(savedChannel.getThemeGradient())
+            .createdAt(savedChannel.getCreatedAt())
+            .messages(new ArrayList<>())
+            .memberIds(memberIds)
+            .participants(participants)
+            .channelType(savedChannel.getChannelType())
+            .build();
+    }
+
+    @Transactional
+    public void removeMemberFromChannel(UUID channelId, UUID memberId, UUID requesterId) {
+        // 1. Validate Channel
+        Channel channel = channelRepository.findById(channelId)
+            .orElseThrow(() -> new ResourceNotFoundException("Channel not found"));
+
+        if (Channel.DIRECT_MESSAGE.equals(channel.getChannelType())) {
+             throw new RuntimeException("Cannot remove member from direct message channel");
+        }
+
+        // 2. Validate Requester (Must be ADMIN)
+        Membership requesterMembership = membershipRepository.findByMembershipKeyChannelIdAndMembershipKeyUserId(channelId, requesterId)
+            .orElseThrow(() -> new RuntimeException("Requester is not a member of this channel"));
+        
+        if (requesterMembership.getRole() != MembershipRole.ADMIN) {
+             throw new RuntimeException("Only Admin can remove members");
+        }
+
+        // 3. Validate Member to remove
+        if (!membershipRepository.existsByMembershipKeyChannelIdAndMembershipKeyUserId(channelId, memberId)) {
+            throw new ResourceNotFoundException("User is not a member of this channel");
+        }
+        
+        // Prevent removing self (use leave instead)
+        if (memberId.equals(requesterId)) {
+             throw new RuntimeException("Cannot remove yourself. Use leave channel instead.");
+        }
+
+        // 4. Remove Membership
+        MembershipKey key = MembershipKey.builder().channelId(channelId).userId(memberId).build();
+        membershipRepository.deleteById(key);
+
+        // 5. Send Notification Message
+        sendMemberRemovedNotification(channelId, requesterId, memberId);
+
+        // 6. Publish Event
+        produceMemberRemovedEvent(channel, requesterId, memberId);
+    }
+
+    private void sendMemberRemovedNotification(UUID channelId, UUID requesterId, UUID removedMemberId) {
+        try {
+            UserResponse requester = userServiceClient.getUserById(requesterId);
+            UserResponse removedMember = userServiceClient.getUserById(removedMemberId);
+            
+            String requesterName = requester != null ? requester.getFirstname() + " " + requester.getLastname() : "Admin";
+            String removedName = removedMember != null ? removedMember.getFirstname() + " " + removedMember.getLastname() : "a member";
+            
+            String content = requesterName + " đã xóa " + removedName + " khỏi nhóm";
+            
+            SendMessageRequest messageRequest = SendMessageRequest.builder()
+                .channelId(channelId)
+                .content(content)
+                .type(ChannelMessageType.NOTICE)
+                .build();
+
+            chatServiceClient.sendMessage(requesterId, messageRequest);
+        } catch (Exception e) {
+            System.err.println("Failed to send member removed notification: " + e.getMessage());
+        }
+    }
+
+    private void produceMemberRemovedEvent(Channel channel, UUID requesterId, UUID removedMemberId) {
+        try {
+            MemberRemovedPayload event = MemberRemovedPayload.builder()
+                .eventType(com.nnson128.chatapps_base.models.events.channel.ChannelEventType.MEMBERS_REMOVED_FROM_CHANNEL)
+                .channelId(channel.getId())
+                .removedByUserId(requesterId)
+                .removedMemberIds(java.util.Collections.singletonList(removedMemberId))
+                .remainingMemberIds(getParticipantIdsByChannelId(channel.getId()))
+                .build();
+
+            messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, event);
+        } catch (Exception e) {
+             System.err.println("Failed to produce member removed event: " + e.getMessage());
         }
     }
 }

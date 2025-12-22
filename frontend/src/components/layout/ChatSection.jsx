@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessages from "@/components/chat/ChatMessages";
@@ -10,7 +10,7 @@ import { websocketService } from "@/utils/ws";
 import { receiveMessage, addChannel, receiveChannelAddedNotification, receiveChannelUpdatedNotification } from "@/stores/slices/channelSlice";
 import { receiveFriendRequest, receiveFriendRequestAccepted, receiveFriendRequestRejected } from "@/stores/slices/friendshipSlice";
 import { fetchPendingRequests, fetchFriendList } from "@/stores/middlewares/friendShipMiddleware";
-import { fetchChannelById } from "@/stores/middlewares/channelMiddleware";
+import { fetchChannelById, markChannelAsRead } from "@/stores/middlewares/channelMiddleware";
 import { successToast } from "@/utils/toast";
 
 const ChatSection = () => {
@@ -20,6 +20,13 @@ const ChatSection = () => {
     const currentChannel = channels.find((x) => x.id === currentChannelId);
     const dispatch = useDispatch();
     const user = useSelector((state) => state.auth.user);
+
+    // Use ref to keep track of current channel ID for websocket callback closure
+    const currentChannelIdRef = useRef(currentChannelId);
+
+    useEffect(() => {
+        currentChannelIdRef.current = currentChannelId;
+    }, [currentChannelId]);
 
     useEffect(() => {
         const userId = user?.data?.id;
@@ -69,21 +76,21 @@ const ChatSection = () => {
                     // Handle notice messages, including channel name changes
                     if (message.type === "NOTICE" && message.content) {
                         console.log("📌 ChatSection: NOTICE message received:", message);
-                        
+
                         // Check if this is a channel name change notice
                         // Pattern: "User đã đổi tên đoạn chat thành \"New Name\""
                         const channelNameChangeMatch = message.content.match(/đã đổi tên đoạn chat thành "([^"]*)"/);
-                        
+
                         if (channelNameChangeMatch && message.key?.channelId) {
                             const newChannelName = channelNameChangeMatch[1];
                             const channelId = message.key.channelId;
-                            
+
                             console.log("✨ ChatSection: Channel name change detected:", {
                                 channelId,
                                 newChannelName,
                                 senderName: message.senderName
                             });
-                            
+
                             // Dispatch action to update the channel name in Redux
                             dispatch(receiveChannelUpdatedNotification({
                                 channelId,
@@ -91,9 +98,14 @@ const ChatSection = () => {
                             }));
                         }
                     }
-                    
+
                     // Always dispatch the message (notice or regular)
                     dispatch(receiveMessage(message));
+
+                    // Mark as read if user is currently viewing this channel
+                    if (message.key?.channelId === currentChannelIdRef.current) {
+                        dispatch(markChannelAsRead(message.key.channelId));
+                    }
                 } else if (message.eventType === "CHANNEL_CREATED") {
                     dispatch(addChannel(message));
                 } else if (message.eventType === "MEMBERS_ADDED_TO_CHANNEL") {
@@ -177,7 +189,7 @@ const ChatSection = () => {
                             ? (() => {
                                 const otherParticipant = currentChannel.participants.find(p => p.userId !== user?.data?.id);
                                 return otherParticipant ? `${otherParticipant.firstname || ''} ${otherParticipant.lastname || ''}`.trim() : (currentChannel.channelName || "Conversation");
-                              })()
+                            })()
                             : (currentChannel?.channelName || "Channel")
                     )
                 } />

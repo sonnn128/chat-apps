@@ -129,6 +129,9 @@ public class FriendshipService {
 
         membershipRepository.saveAll(List.of(membership1, membership2));
 
+        // Publish CHANNEL_CREATED event to notify both users
+        produceDirectChannelCreatedEvent(savedChannel, sortedUser1, sortedUser2);
+
         // Create notice message
         try {
             SendMessageRequest noticeRequest = SendMessageRequest.builder()
@@ -426,5 +429,66 @@ public class FriendshipService {
             throw new RuntimeException("Friendship not found");
         }
 
+    }
+
+    private void produceDirectChannelCreatedEvent(Channel channel, UUID user1, UUID user2) {
+        try {
+            // Get user info for both participants
+            UserResponse user1Response = userServiceClient.getUserById(user1);
+            UserResponse user2Response = userServiceClient.getUserById(user2);
+
+            String user1Name = "A user";
+            String user2Name = "A user";
+
+            if (user1Response != null) {
+                user1Name = user1Response.getFirstname() + " " + user1Response.getLastname();
+            }
+            if (user2Response != null) {
+                user2Name = user2Response.getFirstname() + " " + user2Response.getLastname();
+            }
+
+            // Create participants list
+            List<com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload.ParticipantInfo> participants = new java.util.ArrayList<>();
+            
+            if (user1Response != null) {
+                participants.add(com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload.ParticipantInfo.builder()
+                    .userId(user1)
+                    .firstname(user1Response.getFirstname())
+                    .lastname(user1Response.getLastname())
+                    .email(user1Response.getEmail())
+                    .avatarUrl(user1Response.getAvatarUrl())
+                    .role("MEMBER")
+                    .build());
+            }
+            
+            if (user2Response != null) {
+                participants.add(com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload.ParticipantInfo.builder()
+                    .userId(user2)
+                    .firstname(user2Response.getFirstname())
+                    .lastname(user2Response.getLastname())
+                    .email(user2Response.getEmail())
+                    .avatarUrl(user2Response.getAvatarUrl())
+                    .role("MEMBER")
+                    .build());
+            }
+
+            // Create ChannelCreatedPayload
+            com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload event = 
+                com.nnson128.chatapps_base.models.events.channel.payloads.ChannelCreatedPayload.builder()
+                    .channelId(channel.getId())
+                    .channelName(null) // Direct channels don't have names
+                    .creatorId(user1)
+                    .creatorName(user1Name)
+                    .createdAt(channel.getCreatedAt())
+                    .memberIds(List.of(user1, user2))
+                    .channelType(Channel.DIRECT_MESSAGE)
+                    .participants(participants)
+                    .build();
+
+            // Publish event
+            messageProducerService.sendMessage(KafkaTopics.CHAT_NOTIFICATIONS, event);
+        } catch (Exception e) {
+            System.out.println("⚠️ FriendshipService: Failed to publish direct channel created event: " + e.getMessage());
+        }
     }
 }

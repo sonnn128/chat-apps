@@ -17,6 +17,8 @@ public class ChannelResponse {
     private UUID id;
     private String channelName;
     private String avatar;
+    private String themeColor;      // Hex color for single color theme
+    private String themeGradient;   // CSS gradient string
     private UUID createdBy;
     private LocalDateTime createdAt;
     private List<ChannelMessageDto> messages; // Messages from chat-service
@@ -25,12 +27,15 @@ public class ChannelResponse {
     private ChannelMessageDto message; // Notice message for channel creation
     private MembershipRole role; // Current user's role in the channel
     private String channelType; // Channel type (GROUP or DIRECT_MESSAGE)
+    private boolean hasUnread; // True if there are new messages
 
     public static ChannelResponse from(Channel channel) {
         return ChannelResponse.builder()
             .id(channel.getId())
             .channelName(channel.getChannelName())
             .avatar(channel.getAvatar())
+            .themeColor(channel.getThemeColor())
+            .themeGradient(channel.getThemeGradient())
             .createdAt(channel.getCreatedAt())
             .channelType(channel.getChannelType())
             .messages(List.<ChannelMessageDto>of()) // Initialize empty messages list

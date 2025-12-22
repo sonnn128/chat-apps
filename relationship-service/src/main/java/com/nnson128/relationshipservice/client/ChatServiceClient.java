@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@FeignClient(name = "chat-service", url = "${chat-service.url}")
+@FeignClient(name = "chat-service")
 public interface ChatServiceClient {
 
     @GetMapping("/api/v1/messages/{channelId}")

@@ -7,6 +7,8 @@ import {
   sendChannelMessage,
   fetchDeleteChannel,
   fetchChannelById,
+  updateChannelTheme,
+  removeMemberFromChannel
 } from "@/stores/middlewares/channelMiddleware";
 
 const initialState = {
@@ -103,6 +105,13 @@ const channelSlice = createSlice({
       state.currentChannel = channel;
       state.currentChannelId = channel?.id || null;
     },
+    markChannelAsReadLocal: (state, action) => {
+        const channelId = action.payload;
+        const index = state.channels.findIndex(c => c.id === channelId);
+        if (index !== -1) {
+            state.channels[index].hasUnread = false;
+        }
+    },
     receiveMessage: (state, action) => {
       const channelId = action.payload.key.channelId;
       const messageId = action.payload.key.messageId;
@@ -142,6 +151,11 @@ const channelSlice = createSlice({
           channelFind.messages[messageIndex] = { ...channelFind.messages[messageIndex], ...messageWithSender };
         }
         
+        // Mark as unread if not current channel
+        if (state.currentChannelId !== channelId) {
+            channelFind.hasUnread = true;
+        }
+
         // Move channel to top
         if (channelIndex > 0) {
             const [movedChannel] = state.channels.splice(channelIndex, 1);
@@ -163,6 +177,24 @@ const channelSlice = createSlice({
           };
           state.channels.unshift(newChannel);
         }
+      }
+      
+      // Update currentChannel if it matches the message channel
+      if (state.currentChannel && state.currentChannel.id === channelId) {
+          if (!state.currentChannel.messages) {
+              state.currentChannel.messages = [];
+          }
+          const currentMsgIndex = state.currentChannel.messages.findIndex(msg => {
+              const msgId = msg.key?.messageId || msg.id;
+              return msgId === messageId;
+          });
+          
+          if (currentMsgIndex === -1) {
+              state.currentChannel.messages.push(messageWithSender);
+          } else {
+              // Update existing message
+              state.currentChannel.messages[currentMsgIndex] = { ...state.currentChannel.messages[currentMsgIndex], ...messageWithSender };
+          }
       }
       
       // Also update messageCache for real-time UI updates
@@ -238,6 +270,8 @@ const channelSlice = createSlice({
     receiveChannelUpdatedNotification: (state, action) => {
         const event = action.payload;
         // event has channelId, newChannelName, updaterId, updatedAt, and possibly other fields
+        console.log("🔔 receiveChannelUpdatedNotification:", event);
+        console.log("🎨 Theme in event:", { color: event.themeColor, gradient: event.themeGradient });
         
         // Update in channels list
         const channelIndex = state.channels.findIndex(ch => ch.id === event.channelId);
@@ -248,6 +282,8 @@ const channelSlice = createSlice({
             if (event.channelName) updates.channelName = event.channelName;
             if (event.avatar) updates.avatar = event.avatar;
             if (event.avatarUrl) updates.avatar = event.avatarUrl;
+            if (event.themeColor !== undefined) updates.themeColor = event.themeColor;
+            if (event.themeGradient !== undefined) updates.themeGradient = event.themeGradient;
             
             state.channels[channelIndex] = {
                 ...state.channels[channelIndex],
@@ -262,11 +298,35 @@ const channelSlice = createSlice({
             if (event.channelName) updates.channelName = event.channelName;
             if (event.avatar) updates.avatar = event.avatar;
             if (event.avatarUrl) updates.avatar = event.avatarUrl;
+            if (event.themeColor !== undefined) updates.themeColor = event.themeColor;
+            if (event.themeGradient !== undefined) updates.themeGradient = event.themeGradient;
             
             state.currentChannel = {
                 ...state.currentChannel,
                 ...updates
             };
+        }
+    },
+
+    receiveMemberRemovedNotification: (state, action) => {
+        const { channelId, removedMemberIds } = action.payload;
+        
+        const removeMembersFromChannel = (channel) => {
+            if (channel.memberIds) {
+                channel.memberIds = channel.memberIds.filter(id => !removedMemberIds.includes(id));
+            }
+            if (channel.participants) {
+                channel.participants = channel.participants.filter(p => !removedMemberIds.includes(p.userId || p.id));
+            }
+        };
+
+        const channelIndex = state.channels.findIndex(c => c.id === channelId);
+        if (channelIndex !== -1) {
+             removeMembersFromChannel(state.channels[channelIndex]);
+        }
+        
+        if (state.currentChannel && state.currentChannel.id === channelId) {
+            removeMembersFromChannel(state.currentChannel);
         }
     },
     
@@ -502,18 +562,56 @@ const channelSlice = createSlice({
         const channelIndex = state.channels.findIndex(ch => ch.id === responseData.channelId);
         if (channelIndex !== -1) {
           if (responseData.newMembers && responseData.newMembers.length > 0) {
-            const newParticipants = responseData.newMembers.map(member => ({
-              userId: member.id,
-              firstname: member.firstname || 'User',
-              lastname: member.lastname || 'Unknown',
-              name: `${member.firstname || 'User'} ${member.lastname || 'Unknown'}`,
-              email: member.email || `${member.id?.substring(0, 8) || 'unknown'}@example.com`,
-              avatar: member.avatarUrl || null,
-              avatarUrl: member.avatarUrl || null,
-              role: 'MEMBER'
-            }));
+            if (responseData.newMembers[0]) {
+                console.log("🔍 First new member structure:", JSON.stringify(responseData.newMembers[0], null, 2));
+            }
+            const newParticipants = responseData.newMembers.map(member => {
+              const mapped = {
+                  userId: member.userId || member.id || member.user_id,
+                  firstname: member.firstname || 'User',
+                  lastname: member.lastname || 'Unknown',
+                  name: `${member.firstname || 'User'} ${member.lastname || 'Unknown'}`,
+                  email: member.email || `${(member.userId || member.id || member.user_id)?.substring(0, 8) || 'unknown'}@example.com`,
+                  avatar: member.avatarUrl || null,
+                  avatarUrl: member.avatarUrl || null,
+                  role: 'MEMBER'
+              };
+              console.log("🧬 Mapped new member:", mapped);
+              return mapped;
+            });
             
-            state.channels[channelIndex].participants = [...(state.channels[channelIndex].participants || []), ...newParticipants];
+            // Update in channels list
+            if (state.channels[channelIndex].participants) {
+                const newIds = new Set(newParticipants.map(p => p.userId).filter(Boolean));
+                const newEmails = new Set(newParticipants.map(p => p.email).filter(Boolean));
+                
+                const existing = state.channels[channelIndex].participants.filter(p => {
+                    const pId = p.userId || p.id;
+                    if (pId && newIds.has(pId)) return false;
+                    if (p.email && newEmails.has(p.email)) return false;
+                    return true;
+                });
+                state.channels[channelIndex].participants = [...existing, ...newParticipants];
+            } else {
+                state.channels[channelIndex].participants = newParticipants;
+            }
+            
+            // Update in currentChannel if matched
+            if (state.currentChannel && state.currentChannel.id === responseData.channelId) {
+                console.log("🔄 Syncing new members to currentChannel with deduplication");
+                const newIds = new Set(newParticipants.map(p => p.userId).filter(Boolean));
+                const newEmails = new Set(newParticipants.map(p => p.email).filter(Boolean));
+
+                const existing = (state.currentChannel.participants || []).filter(p => {
+                    const pId = p.userId || p.id;
+                    if (pId && newIds.has(pId)) return false;
+                    if (p.email && newEmails.has(p.email)) return false;
+                    // Also filter out broken ghosts with no ID if we want to be aggressive, 
+                    // but safety first: let email match handle it.
+                    return true;
+                });
+                state.currentChannel.participants = [...existing, ...newParticipants];
+            }
 
           }
           
@@ -685,7 +783,50 @@ const channelSlice = createSlice({
           console.warn("⚠️ channelSlice: currentChannel doesn't match or not set");
         }
       })
-      ;
+      .addCase(updateChannelTheme.fulfilled, (state, action) => {
+        const updatedChannel = action.payload;
+        const channelIndex = state.channels.findIndex(ch => ch.id === updatedChannel.id);
+        
+        if (channelIndex !== -1) {
+          // Update theme in channel list
+          state.channels[channelIndex] = {
+            ...state.channels[channelIndex],
+            themeColor: updatedChannel.themeColor,
+            themeGradient: updatedChannel.themeGradient,
+          };
+        }
+        
+        // Update current channel if it matches
+        if (state.currentChannel && state.currentChannel.id === updatedChannel.id) {
+          state.currentChannel = {
+            ...state.currentChannel,
+            themeColor: updatedChannel.themeColor,
+            themeGradient: updatedChannel.themeGradient,
+          };
+        }
+      })
+      .addCase(removeMemberFromChannel.fulfilled, (state, action) => {
+          const { channelId, memberId } = action.payload;
+          const removedMemberIds = [memberId];
+          
+          const removeMembersFromChannel = (channel) => {
+            if (channel.memberIds) {
+                channel.memberIds = channel.memberIds.filter(id => !removedMemberIds.includes(id));
+            }
+            if (channel.participants) {
+                channel.participants = channel.participants.filter(p => !removedMemberIds.includes(p.userId || p.id));
+            }
+        };
+
+        const channelIndex = state.channels.findIndex(c => c.id === channelId);
+        if (channelIndex !== -1) {
+             removeMembersFromChannel(state.channels[channelIndex]);
+        }
+        
+        if (state.currentChannel && state.currentChannel.id === channelId) {
+            removeMembersFromChannel(state.currentChannel);
+        }
+      });
   },
 });
 
@@ -701,7 +842,10 @@ export const {
   receiveMessage,
   receiveChannelAddedNotification,
   receiveChannelUpdatedNotification,
+  receiveMemberRemovedNotification,
   cacheChannelMessages,
   addPendingMessage,
+  markChannelAsReadLocal,
 } = channelSlice.actions;
+
 export default channelSlice.reducer;
