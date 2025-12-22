@@ -231,7 +231,8 @@ services:
       EUREKA_INSTANCE_HOSTNAME: chat-service
       EUREKA_INSTANCE_STATUS_PAGE_URL: http://chat-service:9002/actuator/info
       EUREKA_INSTANCE_HEALTH_CHECK_URL: http://chat-service:9002/actuator/health
-      
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
     depends_on:
       discovery-server:
         condition: service_healthy
