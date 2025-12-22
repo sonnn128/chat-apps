@@ -134,8 +134,8 @@ services:
     build:
       context: .
       dockerfile: ./discovery-server/Dockerfile
-    env_file:
-      - ./.env
+    # env_file:
+    #   - ./.env
     ports:
       - 8761:8761
     healthcheck:
