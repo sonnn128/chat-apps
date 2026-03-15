@@ -1,14 +1,16 @@
 FROM maven:3.8.3-openjdk-17 AS build
 WORKDIR /app
 
-COPY . .
+# Thêm dòng này
+COPY settings.xml /root/.m2/settings.xml
 
-RUN mvn clean install -DskipTests -pl notification-service -am
+COPY . .
+RUN mvn clean install -DskipTests
 
 FROM eclipse-temurin:17.0.8.1_1-jre-ubi9-minimal
-RUN unlink /etc/localtime;ln -s  /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
+RUN unlink /etc/localtime;ln -s /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
 
-COPY --from=build /app/notification-service/target/notification-service-0.0.1-SNAPSHOT.jar /run/notification-service-0.0.1-SNAPSHOT.jar
+COPY --from=build /app/target/notification-service-0.0.1-SNAPSHOT.jar /run/notification-service-0.0.1-SNAPSHOT.jar
 
 EXPOSE 9006
 ENV JAVA_OPTIONS="-Xmx2048m -Xms256m"
